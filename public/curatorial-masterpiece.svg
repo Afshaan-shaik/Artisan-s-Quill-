@@ -1,0 +1,235 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1400" width="1200" height="1400">
+  <defs>
+    <!-- Master Background & Interior Gradients -->
+    <radialGradient id="ambientLight" cx="65%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#3d4e68" stop-opacity="0.8"/>
+      <stop offset="40%" stop-color="#1b2434" stop-opacity="0.95"/>
+      <stop offset="80%" stop-color="#0e131d" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#070a0f" stop-opacity="1"/>
+    </radialGradient>
+    
+    <linearGradient id="warmCafeGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a67c52" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="#543821" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#120c08" stop-opacity="0.8"/>
+    </linearGradient>
+
+    <!-- Hat Gradients -->
+    <radialGradient id="hatCrown" cx="45%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#5a4232"/>
+      <stop offset="60%" stop-color="#312217"/>
+      <stop offset="100%" stop-color="#18100a"/>
+    </radialGradient>
+    
+    <linearGradient id="hatBrim" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#4e392b"/>
+      <stop offset="50%" stop-color="#322216"/>
+      <stop offset="100%" stop-color="#1a110a"/>
+    </linearGradient>
+
+    <!-- Skin Tone Gradients -->
+    <radialGradient id="faceTone" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#d49b6a"/>
+      <stop offset="45%" stop-color="#b67c4e"/>
+      <stop offset="85%" stop-color="#7a4e2e"/>
+      <stop offset="100%" stop-color="#4a2d18"/>
+    </radialGradient>
+    
+    <radialGradient id="faceHighlight" cx="40%" cy="35%" r="40%">
+      <stop offset="0%" stop-color="#e8b88d" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#b67c4e" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Sunglasses Gradient & Specular Reflections -->
+    <linearGradient id="lensGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#151b22"/>
+      <stop offset="35%" stop-color="#090d12"/>
+      <stop offset="70%" stop-color="#182330"/>
+      <stop offset="100%" stop-color="#05070a"/>
+    </linearGradient>
+    
+    <linearGradient id="lensSheen" x1="0%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#8bb7e8" stop-opacity="0.45"/>
+      <stop offset="30%" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="60%" stop-color="#3b5980" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Shirt Gradients -->
+    <linearGradient id="shirtMaroon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#852b2b"/>
+      <stop offset="45%" stop-color="#641f20"/>
+      <stop offset="80%" stop-color="#421314"/>
+      <stop offset="100%" stop-color="#24090a"/>
+    </linearGradient>
+    
+    <linearGradient id="shirtCollar" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2c2830"/>
+      <stop offset="50%" stop-color="#4d4452"/>
+      <stop offset="100%" stop-color="#1e1b22"/>
+    </linearGradient>
+
+    <!-- Ceramic Plate & Table Gradients -->
+    <radialGradient id="plateCeramic" cx="48%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#fdfbf7"/>
+      <stop offset="70%" stop-color="#e2ded6"/>
+      <stop offset="90%" stop-color="#b8b2a5"/>
+      <stop offset="100%" stop-color="#7a7366"/>
+    </radialGradient>
+    
+    <linearGradient id="tableSurface" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38281b"/>
+      <stop offset="30%" stop-color="#6e5037"/>
+      <stop offset="70%" stop-color="#4a3422"/>
+      <stop offset="100%" stop-color="#1f140c"/>
+    </linearGradient>
+    
+    <filter id="cinematicGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.85"/>
+    </filter>
+  </defs>
+
+  <!-- Background Environment & Cafe Window Ambient Depth -->
+  <rect width="1200" height="1400" fill="url(#ambientLight)"/>
+  <rect width="1200" height="1400" fill="url(#warmCafeGlow)"/>
+
+  <!-- Architectural Background Details (Wood paneling & window framing) -->
+  <path d="M 0 0 L 1200 0 L 1200 850 L 0 850 Z" fill="#0d121b" opacity="0.6"/>
+  <rect x="740" y="240" width="180" height="280" rx="6" fill="#1b283d" opacity="0.55" stroke="#354e75" stroke-width="3"/>
+  <rect x="760" y="260" width="140" height="240" rx="4" fill="#2d4060" opacity="0.35"/>
+  <line x1="830" y1="240" x2="830" y2="520" stroke="#354e75" stroke-width="2" opacity="0.6"/>
+  
+  <!-- Subtle Cafe patrons & background ambiance -->
+  <ellipse cx="640" cy="460" rx="55" ry="70" fill="#263449" opacity="0.45"/>
+  <ellipse cx="780" cy="450" rx="50" ry="65" fill="#30415a" opacity="0.4"/>
+  <path d="M 680 500 Q 720 440 760 500" stroke="#c9a875" stroke-width="3" opacity="0.3" fill="none"/>
+
+  <!-- Dining Chairs (Wooden backrest with burgundy cushion) -->
+  <g opacity="0.75">
+    <rect x="180" y="440" width="110" height="320" rx="8" fill="#1c120c" stroke="#3d291c" stroke-width="3"/>
+    <rect x="195" y="460" width="80" height="180" rx="4" fill="#6e1e24" opacity="0.85"/>
+    <rect x="910" y="440" width="110" height="320" rx="8" fill="#1c120c" stroke="#3d291c" stroke-width="3"/>
+    <rect x="925" y="460" width="80" height="180" rx="4" fill="#6e1e24" opacity="0.85"/>
+  </g>
+
+  <!-- Table Surface with Warm Ambient Glow -->
+  <path d="M 0 940 L 1200 940 L 1200 1400 L 0 1400 Z" fill="url(#tableSurface)"/>
+  <line x1="0" y1="940" x2="1200" y2="940" stroke="#e8c28b" stroke-width="2.5" opacity="0.4"/>
+  <rect x="0" y="942" width="1200" height="40" fill="#ffffff" opacity="0.04"/>
+
+  <!-- Subject Figure Silhouette & Torso (The Prodigy) -->
+  <!-- Shoulders and Torso -->
+  <path d="M 220 1020 Q 320 740 460 700 L 740 700 Q 880 740 980 1020 L 980 1400 L 220 1400 Z" fill="url(#shirtMaroon)" filter="url(#softShadow)"/>
+
+  <!-- Shirt Details, Placket, Collar & Embroidered Logo -->
+  <path d="M 450 700 L 600 860 L 750 700 L 680 670 L 520 670 Z" fill="url(#shirtCollar)"/>
+  <!-- Collar Trim Lines -->
+  <path d="M 460 710 L 595 850" stroke="#c9a875" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 740 710 L 605 850" stroke="#c9a875" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  <!-- Center Placket -->
+  <path d="M 585 850 L 615 850 L 610 1060 L 590 1060 Z" fill="#301012" stroke="#521d20" stroke-width="2"/>
+  <circle cx="600" cy="890" r="4.5" fill="#c9a875"/>
+  <circle cx="600" cy="940" r="4.5" fill="#c9a875"/>
+  <circle cx="600" cy="990" r="4.5" fill="#c9a875"/>
+
+  <!-- Chest Emblem / Badge -->
+  <rect x="490" y="880" width="70" height="45" rx="6" fill="#4d1618" stroke="#8a3034" stroke-width="1.5" opacity="0.9"/>
+  <text x="525" y="908" font-family="'Cinzel', serif, sans-serif" font-size="11" font-weight="bold" fill="#dfbd87" text-anchor="middle" letter-spacing="1">ICONIC</text>
+
+  <!-- Arms & Hands resting comfortably over the table -->
+  <!-- Left Arm -->
+  <path d="M 230 1000 Q 280 1140 440 1180 Q 420 1120 370 1020 Z" fill="#8c5836"/>
+  <!-- Right Arm -->
+  <path d="M 970 1000 Q 920 1140 760 1180 Q 780 1120 830 1020 Z" fill="#8c5836"/>
+
+  <!-- Neck & Chin -->
+  <path d="M 520 620 L 520 720 Q 600 750 680 720 L 680 620 Z" fill="#7a4e2e"/>
+
+  <!-- Head & Face Structure -->
+  <ellipse cx="600" cy="510" rx="165" ry="195" fill="url(#faceTone)" filter="url(#softShadow)"/>
+  <ellipse cx="580" cy="490" rx="120" ry="140" fill="url(#faceHighlight)"/>
+
+  <!-- Ears with subtle ambient lighting -->
+  <ellipse cx="430" cy="505" rx="24" ry="40" fill="#9e663e" stroke="#5a351c" stroke-width="2"/>
+  <ellipse cx="770" cy="505" rx="24" ry="40" fill="#9e663e" stroke="#5a351c" stroke-width="2"/>
+
+  <!-- Cheeks, Nose & Mouth Details -->
+  <!-- Nose bridge and tip -->
+  <path d="M 596 460 Q 590 530 584 555 Q 600 568 616 555 Q 610 530 604 460 Z" fill="#a86e42"/>
+  <ellipse cx="600" cy="552" rx="14" ry="8" fill="#c48a5a" opacity="0.6"/>
+  <!-- Gentle lips & expression -->
+  <path d="M 555 605 Q 600 615 645 605 Q 600 622 555 605 Z" fill="#663126"/>
+  <path d="M 565 607 Q 600 611 635 607" stroke="#421a13" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Iconic Black Sunglasses / Wayfarer Shades -->
+  <!-- Frame bridge & rims -->
+  <g id="noir-sunglasses" filter="url(#softShadow)">
+    <path d="M 440 435 Q 520 425 580 445 Q 600 448 620 445 Q 680 425 760 435 Q 770 470 750 515 Q 710 545 640 540 Q 605 530 595 490 Q 585 530 560 540 Q 490 545 450 515 Q 430 470 440 435 Z" fill="#0d1117" stroke="#1f2937" stroke-width="5"/>
+    
+    <!-- Left Lens -->
+    <path d="M 452 445 Q 520 438 568 455 Q 575 495 555 525 Q 500 535 465 510 Q 448 480 452 445 Z" fill="url(#lensGlass)"/>
+    <path d="M 458 450 Q 495 444 540 455 L 515 520 Q 475 515 462 495 Z" fill="url(#lensSheen)"/>
+
+    <!-- Right Lens -->
+    <path d="M 632 455 Q 680 438 748 445 Q 752 480 735 510 Q 700 535 645 525 Q 625 495 632 455 Z" fill="url(#lensGlass)"/>
+    <path d="M 642 455 Q 685 444 732 450 L 718 495 Q 685 515 650 520 Z" fill="url(#lensSheen)"/>
+
+    <!-- Gold Accent Rivets on Frame -->
+    <circle cx="445" cy="442" r="2.5" fill="#dfbd87"/>
+    <circle cx="755" cy="442" r="2.5" fill="#dfbd87"/>
+    <!-- Specular Highlight Lines across top bar -->
+    <path d="M 455 438 Q 520 430 575 445" stroke="#ffffff" stroke-width="1.5" opacity="0.4"/>
+    <path d="M 625 445 Q 680 430 745 438" stroke="#ffffff" stroke-width="1.5" opacity="0.4"/>
+  </g>
+
+  <!-- Majestic Wide-Brimmed Safari / Fedora Hat -->
+  <g id="masterpiece-hat" filter="url(#softShadow)">
+    <!-- Hat Brim (Upper Arching Silhouette) -->
+    <ellipse cx="600" cy="380" rx="310" ry="190" fill="url(#hatBrim)"/>
+    <!-- Inner brim shadow -->
+    <ellipse cx="600" cy="380" rx="275" ry="165" fill="#140d08"/>
+    <!-- Hat Crown -->
+    <path d="M 390 360 Q 430 140 600 130 Q 770 140 810 360 Q 600 395 390 360 Z" fill="url(#hatCrown)"/>
+    <!-- Hat Crown Crease & Dimple -->
+    <path d="M 470 200 Q 600 235 730 200 Q 600 155 470 200 Z" fill="#1f140c" opacity="0.85"/>
+    <!-- Leather / Silk Hat Band -->
+    <path d="M 390 360 Q 600 395 810 360 L 805 340 Q 600 375 395 340 Z" fill="#2c1d12" stroke="#c9a875" stroke-width="1.5" opacity="0.95"/>
+    <circle cx="430" cy="358" r="4" fill="#dfbd87"/>
+    <circle cx="770" cy="358" r="4" fill="#dfbd87"/>
+    
+    <!-- Outer Brim Edge Rim Highlight -->
+    <path d="M 290 380 Q 600 180 910 380" stroke="#78583e" stroke-width="4" fill="none" opacity="0.6"/>
+  </g>
+
+  <!-- Foreground: Large White Ceramic Plate with Rim Highlights -->
+  <g id="dining-plate" filter="url(#softShadow)">
+    <ellipse cx="600" cy="1160" rx="360" ry="155" fill="#14100c" opacity="0.4"/>
+    <ellipse cx="600" cy="1140" rx="340" ry="140" fill="url(#plateCeramic)"/>
+    <!-- Inner Dish Well -->
+    <ellipse cx="600" cy="1145" rx="250" ry="95" fill="#f4f1ea"/>
+    <!-- Golden Rim Trim / Ambient Specular Ring -->
+    <ellipse cx="600" cy="1140" rx="320" ry="130" fill="none" stroke="#e8c28b" stroke-width="2.5" opacity="0.6"/>
+    <ellipse cx="600" cy="1145" rx="245" ry="90" fill="none" stroke="#d5c8b2" stroke-width="1.5" opacity="0.7"/>
+    <!-- Specular Highlight Curve -->
+    <path d="M 360 1130 Q 600 1060 840 1130" stroke="#ffffff" stroke-width="3" fill="none" opacity="0.75"/>
+  </g>
+
+  <!-- Hands / Fingers poised gracefully at the edge of the plate -->
+  <g id="poised-hands">
+    <!-- Left Hand Fingers on plate rim -->
+    <path d="M 400 1160 Q 420 1210 470 1210 Q 510 1200 520 1160 Q 480 1140 400 1160 Z" fill="#b0784d" stroke="#523219" stroke-width="2"/>
+    <path d="M 425 1165 Q 440 1200 465 1200" stroke="#854d24" stroke-width="2"/>
+    <path d="M 465 1165 Q 475 1200 495 1195" stroke="#854d24" stroke-width="2"/>
+
+    <!-- Right Hand Forearm & Wrist resting by plate -->
+    <path d="M 720 1160 Q 750 1210 800 1210 Q 840 1190 850 1160 Q 790 1140 720 1160 Z" fill="#b0784d" stroke="#523219" stroke-width="2"/>
+  </g>
+
+  <!-- Cinematic Vignette & Ambient Golden Atmospheric Mist -->
+  <rect width="1200" height="1400" fill="none" stroke="url(#warmCafeGlow)" stroke-width="40" opacity="0.3"/>
+  <circle cx="600" cy="510" r="480" fill="none" stroke="#dfbd87" stroke-width="1.5" opacity="0.12"/>
+</svg>

@@ -1,0 +1,6 @@
+{
+  "name": "The Artisan's Quill",
+  "description": "A premium minimalist digital gallery and showcase for paintings, drawings, digital media, and curated poetry cards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

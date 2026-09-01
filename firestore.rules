@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Artist Profiles Collection
+    match /profiles/{userId} {
+      allow read: if true; // Public directory reading
+      allow create, update: if true;
+      allow delete: if isOwner(userId);
+    }
+
+    // Artworks Collection (Global Real-Time Feed)
+    match /artworks/{artworkId} {
+      allow read, create: if true; // Public gallery real-time broadcast for all 500+ users
+      allow update: if true; // Allows real-time live like increments
+      allow delete: if isAuthenticated();
+    }
+
+    // Comments & Reflections
+    match /comments/{commentId} {
+      allow read, create: if true; // Open real-time commenting
+      allow update, delete: if true;
+    }
+
+    // Exhibitions
+    match /exhibitions/{exhibitionId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

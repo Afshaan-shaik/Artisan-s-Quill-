@@ -1,0 +1,979 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Sparkles,
+  Search,
+  Filter,
+  Layers,
+  Feather,
+  Palette,
+  Bookmark,
+  BookMarked,
+  Plus,
+  RefreshCw,
+  Compass,
+  Database,
+  Eye,
+  Trash2,
+  Heart,
+  Clock,
+  Award,
+  ShieldCheck,
+  Film,
+  Ghost
+} from 'lucide-react';
+import { Artwork, ArtCategory, UserProfile, Exhibition } from './types';
+import { GalleryService } from './services/api';
+import { useRealtimeGallery } from './hooks/useRealtimeGallery';
+import { useGalleryStore } from './store/useGalleryStore';
+import { Navbar } from './components/Navbar';
+import { MasonryGrid } from './components/MasonryGrid';
+import { RealtimeDirectUploader } from './components/RealtimeDirectUploader';
+import { ArtworkDetailModal } from './components/ArtworkDetailModal';
+import { ExhibitionsView } from './components/ExhibitionsView';
+import { ArtistProfileModal } from './components/ArtistProfileModal';
+import { BackendArchitectureModal } from './components/BackendArchitectureModal';
+import { ExhibitionUploadModal } from './components/ExhibitionUploadModal';
+import { FloatingGuestbook } from './components/FloatingGuestbook';
+import { EditArtworkModal } from './components/EditArtworkModal';
+import { CuratorialSpotlight } from './components/CuratorialSpotlight';
+import { ArtisticCursor } from './components/ArtisticCursor';
+import { ShareArtworkModal } from './components/ShareArtworkModal';
+import { AboutUsView } from './components/AboutUsView';
+import { ProfilePictureModal } from './components/ProfilePictureModal';
+import { AddProfileModal } from './components/AddProfileModal';
+import { GalleryWallModal } from './components/GalleryWallModal';
+import { CertificateOfAuthenticityModal } from './components/CertificateOfAuthenticityModal';
+import { ColorStudioModal } from './components/ColorStudioModal';
+import { FragmentInspectorModal } from './components/FragmentInspectorModal';
+import { AuthModal } from './components/AuthModal';
+import { MoodBoardsView } from './components/MoodBoardsView';
+import { CommunityHubView } from './components/CommunityHubView';
+import { AddToMoodBoardModal } from './components/AddToMoodBoardModal';
+import { CinemaModePlayer } from './components/CinemaModePlayer';
+import { ReadingQueueView } from './components/ReadingQueueView';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { subscribeToCloudArtworks, subscribeToCloudComments, signOutFirebaseUser } from './services/firebase';
+
+export default function App() {
+  const { artworks: realtimeArtworks, isRealtimeConnected, toggleLike: toggleRealtimeLike } = useRealtimeGallery();
+  const selectedCategory = useGalleryStore(state => state.selectedCategory);
+  const setSelectedCategory = useGalleryStore(state => state.setSelectedCategory);
+  const searchQuery = useGalleryStore(state => state.searchQuery);
+  const setSearchQuery = useGalleryStore(state => state.setSearchQuery);
+  const [exhibitions, setExhibitions] = useState<Exhibition[]>(() => {
+    try {
+      return GalleryService.getExhibitions();
+    } catch {
+      return [];
+    }
+  });
+  const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
+    try {
+      return GalleryService.getCurrentUser();
+    } catch {
+      return {
+        id: 'guest',
+        name: 'Guest Visitor',
+        handle: '@visitor',
+        avatar: '',
+        coverImage: '',
+        bio: '',
+        discipline: 'Visitor',
+        location: '',
+        verified: false,
+        artworksCount: 0,
+        followersCount: 0,
+        followingCount: 0,
+        badges: []
+      };
+    }
+  });
+
+  // Navigation & Filtering State
+      const [activeView, setActiveView] = useState<'feed' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults'>('feed');
+  const [feedFilter, setFeedFilter] = useState<'curated' | 'popular' | 'latest'>('curated');
+  const [dateRangeFilter, setDateRangeFilter] = useState<{ start?: string; end?: string; }>({});
+
+  // Modals
+  const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
+  const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isExhibitionModalOpen, setIsExhibitionModalOpen] = useState(false);
+  const [uploadModalCategory, setUploadModalCategory] = useState<ArtCategory>('painting');
+  const [isBackendModalOpen, setIsBackendModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [artworkToEdit, setArtworkToEdit] = useState<Artwork | null>(null);
+  const [artworkToShare, setArtworkToShare] = useState<Artwork | null>(null);
+  const [isProfilePictureModalOpen, setIsProfilePictureModalOpen] = useState(false);
+  const [isAddProfileModalOpen, setIsAddProfileModalOpen] = useState(false);
+  const [addProfileModalInitialTab, setAddProfileModalInitialTab] = useState<'details' | 'avatar' | 'quote' | 'social'>('details');
+  const [isAddProfileCreateMode, setIsAddProfileCreateMode] = useState(false);
+  const [isColorStudioOpen, setIsColorStudioOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [artworkForMoodBoard, setArtworkForMoodBoard] = useState<Artwork | null>(null);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('signup');
+
+  // Immersive Deep Fragment & Gallery Features
+  const [artworkForFragmentInspector, setArtworkForFragmentInspector] = useState<Artwork | null>(null);
+  const [artworkForGalleryWall, setArtworkForGalleryWall] = useState<Artwork | null>(null);
+  const [artworkForCertificate, setArtworkForCertificate] = useState<Artwork | null>(null);
+  const [artworkForColorStudio, setArtworkForColorStudio] = useState<Artwork | null>(null);
+
+  // Notification Banner
+  const [statusNotification, setStatusNotification] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
+
+  // Cinema Mode
+  const [isCinemaModeOpen, setIsCinemaModeOpen] = useState(false);
+
+  // Reading Queue (Saved View sub-tab)
+  const [savedTab, setSavedTab] = useState<'works' | 'queue'>('works');
+
+  const triggerNotification = (message: string, type: 'success' | 'info' | 'error' = 'info') => {
+    setStatusNotification({ message, type });
+    setTimeout(() => setStatusNotification(null), 4500);
+  };
+
+  // Load artworks based on view and active artist
+  const refreshArtworks = () => {
+    const activeArtist = GalleryService.getCurrentUser();
+    setCurrentUser(activeArtist);
+    setExhibitions(GalleryService.getExhibitions());
+  };
+
+  const artworks = React.useMemo(() => {
+    let list = [...realtimeArtworks];
+    
+    if (activeView === 'recycle-bin') {
+      list = GalleryService.getDeletedArtworks(currentUser);
+    } else {
+      // Category filter
+      if (activeView === 'saved') {
+        list = list.filter(a => a.isSaved);
+      } else {
+        if (selectedCategory !== 'all') {
+          list = list.filter(a => a.category === selectedCategory);
+        }
+      }
+
+      // Search filter
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        list = list.filter(a => 
+          a.title.toLowerCase().includes(q) || 
+          a.artist.name.toLowerCase().includes(q) ||
+          (a.tags && a.tags.some(t => t.toLowerCase().includes(q)))
+        );
+      }
+
+      // Feed filter
+      if (activeView !== 'saved') {
+         if (feedFilter === 'popular') {
+           list.sort((a, b) => b.likesCount - a.likesCount);
+         } else if (feedFilter === 'latest') {
+           list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+         }
+      }
+
+      // Date range filter
+      if (dateRangeFilter.start) {
+        list = list.filter(a => new Date(a.createdAt) >= new Date(dateRangeFilter.start!));
+      }
+      if (dateRangeFilter.end) {
+        list = list.filter(a => new Date(a.createdAt) <= new Date(dateRangeFilter.end!));
+      }
+    }
+    
+    return list;
+  }, [realtimeArtworks, selectedCategory, searchQuery, activeView, feedFilter, dateRangeFilter, currentUser]);
+
+  // Open artwork and sync URL parameter for direct permalinks
+  const handleOpenArtwork = (art: Artwork | null) => {
+    setSelectedArtwork(art);
+    if (typeof window !== 'undefined') {
+      try {
+        const url = new URL(window.location.href);
+        if (art) {
+          url.searchParams.set('artwork', art.id);
+          window.history.pushState({ artworkId: art.id }, '', url.toString());
+        } else {
+          url.searchParams.delete('artwork');
+          const cleanUrl = url.pathname + (url.search ? url.search : '');
+          window.history.pushState({}, '', cleanUrl);
+        }
+      } catch {
+        // Safe history fallback
+      }
+    }
+  };
+
+  const handleCloseArtwork = () => {
+    handleOpenArtwork(null);
+  };
+
+  useEffect(() => {
+    GalleryService.init().then(() => {
+      // Check for valid HTTP-only serverless session cookie if session is currently guest
+      if (GalleryService.isGuestSession()) {
+        fetch('/api/auth/me')
+          .then((res) => res.json())
+          .then((data) => {
+            if (data?.authenticated && data?.user) {
+              GalleryService.saveCurrentUser(data.user);
+              setCurrentUser(data.user);
+              refreshArtworks();
+            }
+          })
+          .catch(() => {});
+      }
+
+      refreshArtworks();
+
+      // Deep linking: Immediately open the requested artwork if shared via direct link / WhatsApp / social
+      try {
+        if (typeof window !== 'undefined') {
+          const urlParams = new URLSearchParams(window.location.search);
+          let artworkId = urlParams.get('artwork');
+          if (!artworkId && window.location.hash.startsWith('#artwork-')) {
+            artworkId = window.location.hash.replace('#artwork-', '');
+          }
+          if (artworkId) {
+            const targetArt = GalleryService.getArtworkById(artworkId);
+            if (targetArt) {
+              setSelectedArtwork(targetArt);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error resolving direct artwork URL:', err);
+      }
+    });
+
+    // Real-time Cloud Firestore Multi-User Sync
+    // Allows 500+ users across phones, tablets, and laptops to see new creations instantly
+
+
+    const unsubscribeComments = subscribeToCloudComments((cloudComments) => {
+      GalleryService.mergeCloudComments(cloudComments);
+    });
+
+    return () => {
+      unsubscribeComments();
+    };
+  }, []);
+
+  // Listen to browser Back/Forward (popstate) navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const artworkId = urlParams.get('artwork');
+        if (artworkId) {
+          const target = GalleryService.getArtworkById(artworkId);
+          setSelectedArtwork(target || null);
+        } else {
+          setSelectedArtwork(null);
+        }
+      } catch {
+        // Safe fallback
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    refreshArtworks();
+  }, [selectedCategory, searchQuery, activeView, feedFilter, dateRangeFilter, currentUser.id]);
+
+  // Actions
+  const handleToggleLike = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    GalleryService.toggleLikeArtwork(id);
+    refreshArtworks();
+    if (selectedArtwork && selectedArtwork.id === id) {
+      setSelectedArtwork(GalleryService.getArtworkById(id) || null);
+    }
+  };
+
+  const handleToggleSave = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    GalleryService.toggleSaveArtwork(id);
+    refreshArtworks();
+    if (selectedArtwork && selectedArtwork.id === id) {
+      setSelectedArtwork(GalleryService.getArtworkById(id) || null);
+    }
+  };
+
+  const handleSelectArtist = (artistId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedArtistId(artistId);
+  };
+
+  const handleUploadSuccess = (newArtwork: Artwork) => {
+    const created = GalleryService.createArtwork(newArtwork);
+    setIsUploadModalOpen(false);
+    refreshArtworks();
+    handleOpenArtwork(created);
+    triggerNotification(`Masterpiece "${created.title}" successfully published under ${currentUser.name}'s atelier.`, 'success');
+  };
+
+  const handleExhibitionUploadSuccess = (exhibition: Omit<Exhibition, 'id'>) => {
+    GalleryService.createExhibition(exhibition);
+    setIsExhibitionModalOpen(false);
+    refreshArtworks();
+    triggerNotification(`Exhibition "${exhibition.title}" inaugurated.`, 'success');
+  };
+
+  const handleDeleteExhibition = (id: string) => {
+    GalleryService.deleteExhibition(id);
+    refreshArtworks();
+  };
+
+  const handleOpenUpload = (category?: ArtCategory) => {
+    setUploadModalCategory(category || 'painting');
+    setIsUploadModalOpen(true);
+  };
+
+  const handleSelectExhibition = (exhibitionId: string) => {
+    const exh = exhibitions.find((e) => e.id === exhibitionId);
+    if (!exh) return;
+    const filtered = GalleryService.getArtworks({ exhibitionId });
+    setArtworks(filtered);
+    setActiveView('feed');
+    setSelectedCategory('all');
+  };
+
+  const handleEditArtwork = (artwork: Artwork) => {
+    if (!GalleryService.canUserManageArtwork(artwork, currentUser)) {
+      triggerNotification(`Access Denied: "${artwork.title}" was created by ${artwork.artist.name}. Only the author can edit this artwork.`, 'error');
+      return;
+    }
+    setArtworkToEdit(artwork);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = (updatedArtwork: Artwork) => {
+    const res = GalleryService.updateArtwork(updatedArtwork.id, updatedArtwork, currentUser);
+    if (res.error) {
+      triggerNotification(res.error, 'error');
+      return;
+    }
+    setIsEditModalOpen(false);
+    setArtworkToEdit(null);
+    refreshArtworks();
+    if (res.artwork) {
+      setSelectedArtwork(res.artwork);
+      triggerNotification(`Changes to "${res.artwork.title}" saved successfully.`, 'success');
+    }
+  };
+
+  const handleDeleteArtwork = (id: string) => {
+    const res = GalleryService.deleteArtwork(id, currentUser);
+    if (!res.success) {
+      triggerNotification(res.message, 'error');
+      return;
+    }
+    setSelectedArtwork(null);
+    refreshArtworks();
+    triggerNotification(res.message, 'success');
+  };
+
+  const handleRestoreArtwork = (id: string) => {
+    const res = GalleryService.restoreArtwork(id, currentUser);
+    if (!res.success) {
+      triggerNotification(res.message, 'error');
+      return;
+    }
+    setSelectedArtwork(null);
+    refreshArtworks();
+    triggerNotification(res.message, 'success');
+  };
+
+  const handlePermanentDeleteArtwork = (id: string) => {
+    const res = GalleryService.permanentlyDeleteArtwork(id, currentUser);
+    if (!res.success) {
+      triggerNotification(res.message, 'error');
+      return;
+    }
+    setSelectedArtwork(null);
+    refreshArtworks();
+    triggerNotification(res.message, 'success');
+  };
+
+  const handleAuthSuccess = (user: UserProfile) => {
+    setCurrentUser(user);
+    refreshArtworks();
+    triggerNotification(`Authenticated as ${user.name} (${user.handle}). Private studio session active.`, 'success');
+  };
+
+  const handleLogout = async () => {
+    await signOutFirebaseUser();
+    GalleryService.logout();
+    const guest = GalleryService.getCurrentUser(); // returns GUEST_USER after logout
+    setCurrentUser(guest);
+    refreshArtworks();
+    triggerNotification('You have signed out. Browsing as Guest.', 'info');
+  };
+
+  return (
+    <ErrorBoundary>
+      <div className="min-h-screen w-full bg-gradient-to-br from-[#050608] via-[#0f111a] to-[#050608] text-neutral-200 flex flex-col font-sans selection:bg-[#c9a875]/30 selection:text-[#f8f5eb] relative overflow-x-hidden">
+      {/* Global Ambient Canvas Texture */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 pointer-events-none opacity-[0.035] mix-blend-overlay bg-canvas-grain z-[45]"
+      />
+
+      {/* Custom Interactive Artistic Golden Cursor */}
+      <ArtisticCursor />
+
+      {/* Status Notification Toast */}
+      {statusNotification && (
+        <div className="fixed top-20 right-6 z-[80] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-5 py-3 rounded-xl border backdrop-blur-2xl shadow-2xl text-xs font-mono-code ${
+              statusNotification.type === 'error'
+                ? 'bg-rose-950/95 border-rose-500 text-rose-200 shadow-[0_0_25px_rgba(244,63,94,0.4)]'
+                : statusNotification.type === 'success'
+                ? 'bg-emerald-950/95 border-emerald-500 text-emerald-200 shadow-[0_0_25px_rgba(16,185,129,0.4)]'
+                : 'bg-neutral-900/95 border-[#c9a875] text-[#dfbd87] shadow-[0_0_25px_rgba(201,168,117,0.35)]'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 shrink-0 text-[#c9a875]" />
+            <span>{statusNotification.message}</span>
+            <button
+              onClick={() => setStatusNotification(null)}
+              className="p-1 hover:text-white rounded-full transition-colors ml-2 cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Navbar Header */}
+      <Navbar
+        selectedCategory={selectedCategory}
+        onSelectCategory={(cat) => {
+          setSelectedCategory(cat);
+          setActiveView('feed');
+        }}
+        searchQuery={searchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          if (q && activeView !== 'feed' && activeView !== 'saved') {
+            setActiveView('feed');
+          }
+        }}
+        dateRange={dateRangeFilter}
+        onDateRangeChange={setDateRangeFilter}
+        activeView={activeView}
+        onSelectView={setActiveView}
+        onOpenUpload={handleOpenUpload}
+        onOpenBackendModal={() => setIsBackendModalOpen(true)}
+        onSelectCurrentUser={() => setSelectedArtistId(currentUser.id)}
+        onOpenEditProfile={() => {
+          setIsAddProfileCreateMode(false);
+          setAddProfileModalInitialTab('details');
+          setIsAddProfileModalOpen(true);
+        }}
+        onOpenCreateProfile={() => {
+          setAuthModalMode('signup');
+          setIsAuthModalOpen(true);
+        }}
+        onOpenLoginModal={() => {
+          setAuthModalMode('login');
+          setIsAuthModalOpen(true);
+        }}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+      />
+
+      {/* Main Content Area */}
+      <main className="flex-1 w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 space-y-8">
+        
+        {/* Active Artist Session Banner — shown only when authenticated */}
+        {currentUser.id !== 'guest' && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:px-5 rounded-xl bg-[#090c12]/90 border border-[#c9a875]/30 shadow-md backdrop-blur-md">
+            <div className="flex items-center gap-2.5 text-xs text-neutral-300 font-mono-code">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Authenticated Artist:</span>
+              <span className="font-bold text-white uppercase">{currentUser.name}</span>
+              <span className="text-[#c9a875]">({currentUser.handle})</span>
+            </div>
+
+            <div className="flex items-center gap-3 text-[10px] uppercase font-mono-code text-neutral-400">
+              <span className="flex items-center gap-1 text-emerald-400">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Full Access to Own Works</span>
+              </span>
+              <span className="text-neutral-600">•</span>
+              <span className="text-[#dfbd87]">Other Artists Protected</span>
+            </div>
+          </div>
+        )}
+        {currentUser.id === 'guest' && (
+          <div className="flex items-center gap-3 p-3 sm:px-5 rounded-xl bg-neutral-900/60 border border-white/10 shadow-sm">
+            <Ghost className="w-4 h-4 text-neutral-500 shrink-0" />
+            <p className="text-xs text-neutral-400 font-mono-code">
+              Browsing as <span className="text-white font-bold">Guest</span> — Artworks are visible to all. 
+              <button
+                onClick={() => { setAuthModalMode('login'); setIsAuthModalOpen(true); }}
+                className="text-[#c9a875] hover:text-white underline underline-offset-2 ml-1 cursor-pointer transition-colors"
+              >
+                Sign in
+              </button>
+              {' '}or{' '}
+              <button
+                onClick={() => { setAuthModalMode('signup'); setIsAuthModalOpen(true); }}
+                className="text-[#c9a875] hover:text-white underline underline-offset-2 cursor-pointer transition-colors"
+              >
+                create a profile
+              </button>
+              {' '}to upload your own works.
+            </p>
+          </div>
+        )}
+
+        {activeView === 'about' && (
+          <AboutUsView
+            currentUser={currentUser}
+            onNavigateCategory={(category) => {
+              setSelectedCategory(category);
+              setActiveView('feed');
+            }}
+            onOpenUpload={() => handleOpenUpload('painting')}
+            onOpenEditProfile={() => setIsProfilePictureModalOpen(true)}
+          />
+        )}
+
+        {activeView === 'feed' && (
+          <>
+            {/* Curatorial Spotlight Hero Section */}
+            <CuratorialSpotlight
+              artworks={artworks.length > 0 ? artworks : realtimeArtworks}
+              onSelectArtwork={handleOpenArtwork}
+              onToggleLike={handleToggleLike}
+              onToggleSave={handleToggleSave}
+              onSelectArtist={handleSelectArtist}
+              onShareArtwork={(art) => setArtworkToShare(art)}
+            />
+
+            {/* Feed Subheader & Curatorial Filter Suite */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-4 border-b border-white/10">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-serif-display tracking-[0.06em] text-white flex items-center gap-3">
+                  {selectedCategory === 'all' && 'Curated Sanctuary Stream'}
+                  {selectedCategory === 'painting' && 'Fine Oil & Pigment Paintings'}
+                  {selectedCategory === 'drawing' && 'Charcoal, Graphite & Ink on Cotton Paper'}
+                  {selectedCategory === 'digital' && 'Generative Shaders & 3D Digital Media'}
+                  {selectedCategory === 'video' && 'Motion Loops & Cinema Fluid Dynamics'}
+                  {selectedCategory === 'poetry' && 'The Poetic Archive & Lyric Verse Cards'}
+                </h2>
+                <p className="text-xs text-neutral-400 font-mono-code mt-1.5 flex items-center gap-2">
+                  <span>Displaying {artworks.length} indexed work{artworks.length !== 1 ? 's' : ''}</span>
+                  <span className="text-[#c9a875]">•</span>
+                  <span>Curated Atelier Archive</span>
+                </p>
+              </div>
+
+              {/* Enlarged Curated / Most Liked / Latest Filter Capsule */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-neutral-900/90 border border-white/15 shadow-xl backdrop-blur-md">
+                  <button
+                    id="filter-curated-btn"
+                    onClick={() => setFeedFilter('curated')}
+                    className={`flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 ${
+                      feedFilter === 'curated'
+                        ? 'bg-[#c9a875] text-black shadow-[0_0_18px_rgba(201,168,117,0.5)]'
+                        : 'text-neutral-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <Sparkles className={`w-4 h-4 ${feedFilter === 'curated' ? 'text-black' : 'text-[#c9a875]'}`} />
+                    <span>Curated</span>
+                  </button>
+
+                  <button
+                    id="filter-popular-btn"
+                    onClick={() => setFeedFilter('popular')}
+                    className={`flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 ${
+                      feedFilter === 'popular'
+                        ? 'bg-rose-500 text-white shadow-[0_0_18px_rgba(244,63,94,0.5)]'
+                        : 'text-neutral-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <Heart className={`w-4 h-4 ${feedFilter === 'popular' ? 'text-white fill-white' : 'text-rose-400'}`} />
+                    <span>Most Liked</span>
+                  </button>
+
+                  <button
+                    id="filter-latest-btn"
+                    onClick={() => setFeedFilter('latest')}
+                    className={`flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 ${
+                      feedFilter === 'latest'
+                        ? 'bg-white text-black shadow-[0_0_18px_rgba(255,255,255,0.45)]'
+                        : 'text-neutral-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <Clock className={`w-4 h-4 ${feedFilter === 'latest' ? 'text-black' : 'text-amber-400'}`} />
+                    <span>Latest</span>
+                  </button>
+                </div>
+
+                {/* Cinema Mode Button */}
+                <button
+                  id="cinema-mode-btn"
+                  onClick={() => setIsCinemaModeOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-neutral-900/90 border border-white/15 text-neutral-300 hover:text-white hover:bg-white/10 hover:border-[#c9a875]/60 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-xl backdrop-blur-md"
+                  title="View Gallery as Cinematic Slideshow"
+                >
+                  <Film className="w-4 h-4 text-[#c9a875]" />
+                  <span className="hidden sm:inline">Cinema</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Masonry Grid */}
+            <MasonryGrid
+              artworks={artworks}
+              onSelectArtwork={handleOpenArtwork}
+              onToggleLike={handleToggleLike}
+              onToggleSave={handleToggleSave}
+              onSelectArtist={handleSelectArtist}
+              onShareArtwork={(art) => setArtworkToShare(art)}
+              selectedCategory={selectedCategory}
+              onOpenUpload={handleOpenUpload}
+            />
+          </>
+        )}
+
+        {activeView === 'exhibitions' && (
+          <ExhibitionsView
+            exhibitions={exhibitions}
+            artworks={realtimeArtworks}
+            onSelectExhibition={handleSelectExhibition}
+            onSelectArtwork={handleOpenArtwork}
+            onAddExhibition={() => setIsExhibitionModalOpen(true)}
+            onDeleteExhibition={handleDeleteExhibition}
+          />
+        )}
+
+        {activeView === 'community' && (
+          <CommunityHubView
+            currentUser={currentUser}
+            onSelectArtwork={handleOpenArtwork}
+            onToggleLike={handleToggleLike}
+            onToggleSave={handleToggleSave}
+            onSelectArtist={handleSelectArtist}
+            onShareArtwork={(art) => setArtworkToShare(art)}
+            onOpenUpload={handleOpenUpload}
+            onAddToMoodBoard={(art) => setArtworkForMoodBoard(art)}
+          />
+        )}
+
+        {activeView === 'vaults' && (
+          <MoodBoardsView
+            currentUser={currentUser}
+            onSelectArtwork={handleOpenArtwork}
+            onToggleLike={handleToggleLike}
+            onToggleSave={handleToggleSave}
+            onSelectArtist={handleSelectArtist}
+            onShareArtwork={(art) => setArtworkToShare(art)}
+            onOpenUpload={handleOpenUpload}
+          />
+        )}
+
+        {activeView === 'saved' && (
+          <div className="space-y-6">
+            <div className="pb-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-serif-display tracking-[0.08em] text-white flex items-center gap-2.5">
+                  <Bookmark className="w-5 h-5 text-[#c9a875]" />
+                  Saved Works &amp; Bookmarked Poetry
+                </h2>
+                <p className="text-xs font-mono-code text-neutral-400 mt-1">
+                  Your private collector archive
+                </p>
+              </div>
+
+              {/* Sub-tabs: Saved Works | Reading Queue */}
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-neutral-900/80 border border-white/10">
+                <button
+                  onClick={() => setSavedTab('works')}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    savedTab === 'works'
+                      ? 'bg-[#c9a875] text-black shadow-[0_0_12px_rgba(201,168,117,0.4)]'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  <Bookmark className="w-3.5 h-3.5" />
+                  <span>Saved ({artworks.length})</span>
+                </button>
+                <button
+                  onClick={() => setSavedTab('queue')}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    savedTab === 'queue'
+                      ? 'bg-[#c9a875] text-black shadow-[0_0_12px_rgba(201,168,117,0.4)]'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  <BookMarked className="w-3.5 h-3.5" />
+                  <span>Queue</span>
+                </button>
+              </div>
+            </div>
+
+            {savedTab === 'works' ? (
+              <MasonryGrid
+                artworks={artworks}
+                onSelectArtwork={handleOpenArtwork}
+                onToggleLike={handleToggleLike}
+                onToggleSave={handleToggleSave}
+                onSelectArtist={handleSelectArtist}
+                onShareArtwork={(art) => setArtworkToShare(art)}
+                selectedCategory="all"
+                onOpenUpload={handleOpenUpload}
+              />
+            ) : (
+              <ReadingQueueView onOpenArtwork={handleOpenArtwork} />
+            )}
+          </div>
+        )}
+
+        {activeView === 'recycle-bin' && (
+          <div className="space-y-6">
+            <div className="pb-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-serif-display tracking-[0.08em] text-white flex items-center gap-2.5">
+                  <Trash2 className="w-5 h-5 text-red-400" />
+                  Your Recycle Bin & Archived Works
+                </h2>
+                <p className="text-xs font-mono-code text-neutral-400 mt-1">
+                  Showing discarded artworks created by <span className="text-white font-bold">{currentUser.name}</span> ({artworks.length} item{artworks.length !== 1 ? 's' : ''}). Protected from other users.
+                </p>
+              </div>
+            </div>
+
+            <MasonryGrid
+              artworks={artworks}
+              onSelectArtwork={handleOpenArtwork}
+              onToggleLike={handleToggleLike}
+              onToggleSave={handleToggleSave}
+              onSelectArtist={handleSelectArtist}
+              onShareArtwork={(art) => setArtworkToShare(art)}
+              selectedCategory="all"
+              onOpenUpload={handleOpenUpload}
+            />
+          </div>
+        )}
+      </main>
+
+      {/* Museum Hallmark & End-of-Gallery Divider */}
+      <div className="relative z-10 w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-12 pb-2 flex items-center justify-center">
+        <div className="flex items-center gap-4 text-neutral-600">
+          <div className="h-px w-24 sm:w-40 bg-gradient-to-r from-transparent to-[#c9a875]/40" />
+          <span className="font-serif-display italic text-xs tracking-[0.3em] uppercase text-[#c9a875]/70 flex items-center gap-2">
+            ✦ Atelier Sanctuary Archive ✦
+          </span>
+          <div className="h-px w-24 sm:w-40 bg-gradient-to-l from-transparent to-[#c9a875]/40" />
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="relative z-20 py-10 px-4 sm:px-6 lg:px-8 xl:px-10 border-t border-white/10 bg-[#050608] text-neutral-400 shadow-2xl">
+        <div className="w-full max-w-[1760px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-[10px] sm:text-xs uppercase tracking-[0.2em] font-mono-code">
+          <div className="flex flex-col text-center md:text-left space-y-1">
+            <div className="text-neutral-300 font-medium">
+              © 2026 THE ARTISAN'S QUILL.
+            </div>
+            <div className="text-neutral-500 text-[9px] tracking-[0.25em]">
+              ALL RIGHTS RESERVED • SANCTUARY FOR ARTISTS & POETS.
+            </div>
+          </div>
+          <div className="text-[#c9a875] tracking-[0.25em] font-semibold text-center">
+            SUPPORTING ARTISTS & DIGITAL POETS SINCE 2026
+          </div>
+          <div className="flex items-center">
+            <button
+              id="footer-developed-by-btn"
+              onClick={() => setActiveView('about')}
+              className="hover:text-white text-[#dfbd87] transition-colors cursor-pointer group flex items-center gap-1.5"
+              title="About Developer & Artist Afshaan Shaikh"
+            >
+              <span>DEVELOPED BY:</span>
+              <span className="font-bold text-white group-hover:text-[#dfbd87] underline decoration-[#c9a875]/40 underline-offset-4 tracking-[0.2em]">
+                AFSHAAN SHAIKH
+              </span>
+            </button>
+          </div>
+        </div>
+      </footer>
+
+      {/* Modals Suite */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <RealtimeDirectUploader 
+            onClose={() => setIsUploadModalOpen(false)}
+            onSuccess={() => {
+              setIsUploadModalOpen(false);
+              triggerNotification('Masterpiece successfully published.', 'success');
+            }} 
+          />
+        </div>
+      )}
+
+      <ExhibitionUploadModal
+        isOpen={isExhibitionModalOpen}
+        onClose={() => setIsExhibitionModalOpen(false)}
+        onSuccess={handleExhibitionUploadSuccess}
+      />
+
+      <ArtworkDetailModal
+        artwork={selectedArtwork}
+        currentUser={currentUser}
+        allArtworks={artworks}
+        onNavigateArtwork={handleOpenArtwork}
+        onClose={handleCloseArtwork}
+        onToggleLike={handleToggleLike}
+        onToggleSave={handleToggleSave}
+        onSelectArtist={handleSelectArtist}
+        onShare={(art) => setArtworkToShare(art)}
+        onAddToMoodBoard={(art) => setArtworkForMoodBoard(art)}
+        activeView={activeView}
+        onEdit={handleEditArtwork}
+        onDelete={handleDeleteArtwork}
+        onRestore={handleRestoreArtwork}
+        onPermanentDelete={handlePermanentDeleteArtwork}
+        onOpenGalleryWall={(art) => setArtworkForGalleryWall(art)}
+        onOpenCertificate={(art) => setArtworkForCertificate(art)}
+        onOpenColorStudio={(art) => setArtworkForColorStudio(art)}
+        onOpenFragmentInspector={(art) => {
+          setArtworkForFragmentInspector(art);
+        }}
+      />
+
+      {/* Deep Fragment Inspector Modal */}
+      <FragmentInspectorModal
+        isOpen={Boolean(artworkForFragmentInspector)}
+        artwork={artworkForFragmentInspector}
+        onClose={() => setArtworkForFragmentInspector(null)}
+      />
+
+      <ShareArtworkModal
+        artwork={artworkToShare}
+        onClose={() => setArtworkToShare(null)}
+      />
+
+      <EditArtworkModal
+        isOpen={isEditModalOpen}
+        artwork={artworkToEdit}
+        currentUser={currentUser}
+        onClose={() => setIsEditModalOpen(false)}
+        onSuccess={handleSaveEdit}
+      />
+
+      <ArtistProfileModal
+        artistId={selectedArtistId}
+        artworks={realtimeArtworks}
+        currentUser={currentUser}
+        onClose={() => setSelectedArtistId(null)}
+        onSelectArtwork={handleOpenArtwork}
+        onToggleLike={handleToggleLike}
+        onToggleSave={handleToggleSave}
+        onUpdateProfile={(updated) => {
+          setCurrentUser(updated);
+          refreshArtworks();
+        }}
+        onOpenUpload={handleOpenUpload}
+      />
+
+      <ProfilePictureModal
+        isOpen={isProfilePictureModalOpen}
+        onClose={() => setIsProfilePictureModalOpen(false)}
+        currentUser={currentUser}
+        onSuccess={(updated) => {
+          setCurrentUser(updated);
+          refreshArtworks();
+          triggerNotification('Profile image and details updated.', 'success');
+        }}
+      />
+
+      {/* Add / Edit Profile Dedicated Studio Modal */}
+      <AddProfileModal
+        isOpen={isAddProfileModalOpen}
+        onClose={() => setIsAddProfileModalOpen(false)}
+        currentUser={currentUser}
+        onSuccess={(updated) => {
+          setCurrentUser(updated);
+          refreshArtworks();
+          triggerNotification('Studio Profile details successfully updated.', 'success');
+        }}
+        isCreateMode={isAddProfileCreateMode}
+        initialTab={addProfileModalInitialTab}
+      />
+
+      {/* Authentication & Profile Creation Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        initialMode={authModalMode}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
+
+      {/* Virtual Exhibition Wall Modal */}
+      <GalleryWallModal
+        isOpen={Boolean(artworkForGalleryWall)}
+        artwork={artworkForGalleryWall}
+        onClose={() => setArtworkForGalleryWall(null)}
+      />
+
+      {/* Certificate of Authenticity Modal */}
+      <CertificateOfAuthenticityModal
+        isOpen={Boolean(artworkForCertificate)}
+        artwork={artworkForCertificate}
+        onClose={() => setArtworkForCertificate(null)}
+      />
+
+      {/* Color Studio Modal */}
+      <ColorStudioModal
+        isOpen={Boolean(artworkForColorStudio)}
+        artwork={artworkForColorStudio}
+        onClose={() => setArtworkForColorStudio(null)}
+      />
+
+      <BackendArchitectureModal
+        isOpen={isBackendModalOpen}
+        onClose={() => setIsBackendModalOpen(false)}
+      />
+
+      <AddToMoodBoardModal
+        isOpen={!!artworkForMoodBoard}
+        artwork={artworkForMoodBoard}
+        currentUser={currentUser}
+        onClose={() => setArtworkForMoodBoard(null)}
+        onSuccess={() => {
+          setArtworkForMoodBoard(null);
+          // Optional: trigger a notification here if we had a global toast system
+        }}
+      />
+
+      <FloatingGuestbook />
+
+      {/* Cinema Mode Slideshow Player */}
+      {isCinemaModeOpen && (
+        <CinemaModePlayer
+          artworks={realtimeArtworks}
+          onClose={() => setIsCinemaModeOpen(false)}
+        />
+      )}
+    </div>
+  </ErrorBoundary>
+);
+}
+
+
+
+
+
+

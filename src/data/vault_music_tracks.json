@@ -1,0 +1,66 @@
+[
+  {
+    "id": "vault-qwTop2qs1tE",
+    "title": "IT: Welcome to Derry - Opening Theme",
+    "originalTitle": "IT: Welcome to Derry | Opening Credits | HBO Max",
+    "artist": "HBO Max",
+    "durationSeconds": 115,
+    "youtubeId": "qwTop2qs1tE",
+    "artworkUrl": "https://img.youtube.com/vi/qwTop2qs1tE/hqdefault.jpg",
+    "localAudioPath": "/audio/qwTop2qs1tE.mp4",
+    "filename": "qwTop2qs1tE.mp4",
+    "genre": "Vault Exclusive",
+    "collection": "Vault Music"
+  },
+  {
+    "id": "vault-4NRXx6U8ABQ",
+    "title": "Blinding Lights",
+    "originalTitle": "The Weeknd - Blinding Lights (Official Video)",
+    "artist": "The Weeknd",
+    "durationSeconds": 263,
+    "youtubeId": "4NRXx6U8ABQ",
+    "artworkUrl": "https://img.youtube.com/vi/4NRXx6U8ABQ/hqdefault.jpg",
+    "localAudioPath": "/audio/4NRXx6U8ABQ.mp4",
+    "filename": "4NRXx6U8ABQ.mp4",
+    "genre": "Vault Exclusive",
+    "collection": "Vault Music"
+  },
+  {
+    "id": "vault-Rif-RTvmmss",
+    "title": "Starboy (ft. Daft Punk)",
+    "originalTitle": "The Weeknd - Starboy (Audio) ft. Daft Punk",
+    "artist": "The Weeknd",
+    "durationSeconds": 231,
+    "youtubeId": "Rif-RTvmmss",
+    "artworkUrl": "https://img.youtube.com/vi/Rif-RTvmmss/hqdefault.jpg",
+    "localAudioPath": "/audio/Rif-RTvmmss.mp4",
+    "filename": "Rif-RTvmmss.mp4",
+    "genre": "Vault Exclusive",
+    "collection": "Vault Music"
+  },
+  {
+    "id": "vault-wsKhe5rTKw8",
+    "title": "M.",
+    "originalTitle": "M.",
+    "artist": "Anıl Emre Daldal",
+    "durationSeconds": 224,
+    "youtubeId": "wsKhe5rTKw8",
+    "artworkUrl": "https://img.youtube.com/vi/wsKhe5rTKw8/hqdefault.jpg",
+    "localAudioPath": "/audio/wsKhe5rTKw8.mp4",
+    "filename": "wsKhe5rTKw8.mp4",
+    "genre": "Vault Exclusive",
+    "collection": "Vault Music"
+  },
+  {
+    "id": "vault-m-remix",
+    "title": "M-Remix",
+    "originalTitle": "M. (Anıl Emre Daldal Remix by M E D Z Z)",
+    "artist": "Anıl Emre Daldal (M E D Z Z Remix)",
+    "durationSeconds": 55,
+    "artworkUrl": "/audio/M-Remix.jpg",
+    "localAudioPath": "/audio/M-Remix.mp4",
+    "filename": "M-Remix.mp4",
+    "genre": "Vault Exclusive / Remix",
+    "collection": "Vault Music"
+  }
+]
