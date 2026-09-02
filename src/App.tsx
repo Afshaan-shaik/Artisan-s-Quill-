@@ -19,7 +19,8 @@ import {
   Award,
   ShieldCheck,
   Film,
-  Ghost
+  Ghost,
+  ArrowRight
 } from 'lucide-react';
 import { Artwork, ArtCategory, UserProfile, Exhibition } from './types';
 import { GalleryService } from './services/api';
@@ -55,6 +56,7 @@ import { ReadingQueueView } from './components/ReadingQueueView';
 import { FluidInkPoetryStudioModal } from './components/FluidInkPoetryStudioModal';
 import { AIPoeticBardModal } from './components/AIPoeticBardModal';
 import { ConstellationStarMapModal } from './components/ConstellationStarMapModal';
+import { ConstellationCosmosView } from './components/ConstellationCosmosView';
 import { Collector3DVaultModal } from './components/Collector3DVaultModal';
 import { PoeticScrollModal } from './components/PoeticScrollModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -97,7 +99,7 @@ export default function App() {
   });
 
   // Navigation & Filtering State
-      const [activeView, setActiveView] = useState<'feed' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults'>('feed');
+  const [activeView, setActiveView] = useState<'feed' | 'cosmos' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults'>('feed');
   const [feedFilter, setFeedFilter] = useState<'curated' | 'popular' | 'latest'>('curated');
   const [dateRangeFilter, setDateRangeFilter] = useState<{ start?: string; end?: string; }>({});
 
@@ -649,6 +651,15 @@ export default function App() {
           />
         )}
 
+        {activeView === 'cosmos' && (
+          <ConstellationCosmosView
+            artworks={realtimeArtworks}
+            onSelectArtwork={handleOpenArtwork}
+            onOpenUpload={handleOpenUpload}
+            onSwitchToGallery={() => setActiveView('feed')}
+          />
+        )}
+
         {activeView === 'feed' && (
           <>
             {/* Curatorial Spotlight Hero Section */}
@@ -660,6 +671,49 @@ export default function App() {
               onSelectArtist={handleSelectArtist}
               onShareArtwork={(art) => setArtworkToShare(art)}
             />
+
+            {/* 3D Constellation Cosmos Gateway Banner Card */}
+            <div
+              id="feed-cosmos-banner-card"
+              onClick={() => setActiveView('cosmos')}
+              className="relative overflow-hidden rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-[#090b14]/95 via-[#121524]/90 to-[#090b14]/95 border border-[#c9a875]/40 hover:border-[#c9a875] shadow-xl hover:shadow-[0_0_30px_rgba(201,168,117,0.25)] transition-all duration-300 cursor-pointer group select-none"
+              title="Click to view the 3D constellation of data or art data"
+            >
+              {/* Subtle background cosmic radial glow */}
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(201,168,117,0.18),transparent_65%)] pointer-events-none" />
+              <div className="absolute top-2 right-4 text-neutral-600 text-3xl font-serif-display select-none opacity-20 group-hover:opacity-40 transition-opacity">
+                ✦ 🌌 ✦
+              </div>
+
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1.5 max-w-2xl">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-md bg-[#c9a875]/20 border border-[#c9a875]/40 text-[10px] font-mono-code font-bold uppercase tracking-wider text-[#dfbd87]">
+                      ✦ 3D WebGL Realtime Engine
+                    </span>
+                    <span className="text-xs font-mono-code text-neutral-400">
+                      • {realtimeArtworks.length} Star Nodes Active
+                    </span>
+                  </div>
+
+                  <h3 className="text-lg sm:text-xl font-serif-display font-medium text-white group-hover:text-[#f3e3cb] transition-colors flex items-center gap-2">
+                    <span>3D Constellation Cosmos &amp; Interactive Starmap</span>
+                    <span className="text-xs text-[#c9a875] opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
+                  </h3>
+
+                  <p className="text-xs font-mono-code text-neutral-300">
+                    Click to view the 3D constellation of data or art data in a well-structured format. Every painting, poem, digital art, drawing &amp; motion loop shines as an interactive celestial star.
+                  </p>
+                </div>
+
+                <div className="shrink-0 flex items-center">
+                  <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-mono-code text-xs font-bold uppercase tracking-wider group-hover:scale-105 group-hover:shadow-[0_0_18px_rgba(201,168,117,0.5)] transition-all">
+                    <span>Explore 3D Cosmos</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              </div>
+            </div>
 
             {/* Feed Subheader & Curatorial Filter Suite */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-4 border-b border-white/10">

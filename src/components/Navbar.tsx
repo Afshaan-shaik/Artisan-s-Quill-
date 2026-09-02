@@ -32,8 +32,8 @@ interface NavbarProps {
   onSearchChange: (query: string) => void;
   dateRange: { start?: string; end?: string; };
   onDateRangeChange: (range: { start?: string; end?: string; }) => void;
-  activeView: 'feed' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults';
-  onSelectView: (view: 'feed' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults') => void;
+  activeView: 'feed' | 'cosmos' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults';
+  onSelectView: (view: 'feed' | 'cosmos' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults') => void;
   onOpenUpload: (category?: ArtCategory, format?: string) => void;
   onOpenInkStudio?: () => void;
   onOpenBardModal?: () => void;
@@ -301,6 +301,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Compass className="w-3.5 h-3.5" />
               <span>All Works</span>
+            </button>
+
+            {/* 3D Constellation Cosmos Interactive Starmap Tab */}
+            <button
+              id="nav-3d-cosmos-btn"
+              onClick={() => onSelectView('cosmos')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer whitespace-nowrap ${
+                activeView === 'cosmos'
+                  ? 'bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-bold shadow-md shadow-[#c9a875]/20 ring-1 ring-[#c9a875]/50'
+                  : 'text-neutral-300 hover:text-[#dfbd87] hover:bg-white/10'
+              }`}
+              title="Click to view 3D constellation of art data"
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${activeView === 'cosmos' ? 'text-black' : 'text-[#c9a875]'}`} />
+              <span>3D Cosmos</span>
             </button>
 
             <button
