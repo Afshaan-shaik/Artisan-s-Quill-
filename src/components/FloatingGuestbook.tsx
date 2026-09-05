@@ -59,12 +59,11 @@ export const FloatingGuestbook: React.FC = () => {
     const popupTimeout = setTimeout(() => {
       setActiveNotes((prev) => [...prev, newNote]);
 
-      // Keep the poetic note visible in the middle for 9 seconds before graceful exit
-      const removeTimeout = setTimeout(() => {
-        setActiveNotes((prev) => prev.filter((n) => n.id !== noteId));
-      }, 9000);
-
-      timeoutsRef.current.push(removeTimeout);
+      // Remove note after 14 seconds to allow ample time to read the slow-floating note
+      const hideTimeout = setTimeout(() => {
+        setActiveNotes((prev) => prev.filter((n) => n.id !== newNote.id));
+      }, 14000);
+      timeoutsRef.current.push(hideTimeout);
     }, 2000);
 
     timeoutsRef.current.push(popupTimeout);
@@ -78,12 +77,13 @@ export const FloatingGuestbook: React.FC = () => {
           {activeNotes.map((note) => (
             <motion.div
               key={note.id}
-              initial={{ opacity: 0, y: '80vh', scale: 0.85 }}
+              initial={{ opacity: 0, y: '100vh', scale: 0.88 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: '-35vh', scale: 0.95 }}
+              exit={{ opacity: 0, y: '-30vh', scale: 0.95 }}
               transition={{
-                duration: 1.2,
-                ease: [0.16, 1, 0.3, 1],
+                y: { duration: 3.2, ease: [0.19, 1, 0.22, 1] },
+                scale: { duration: 3.2, ease: [0.19, 1, 0.22, 1] },
+                opacity: { duration: 1.8, ease: 'easeOut' },
               }}
               className="pointer-events-auto relative p-8 sm:p-12 max-w-sm sm:max-w-md w-full bg-[#050608]/92 backdrop-blur-3xl border border-[#c9a875]/30 rounded-xl shadow-[0_0_50px_rgba(201,168,117,0.18)] flex flex-col items-center text-center group"
             >
