@@ -112,6 +112,9 @@ export default function App() {
     if (validViews.includes(target)) {
       return target as any;
     }
+    if (['connect-section', 'inquire', 'inquiries', 'collabs', 'collaborations', 'inquiries-collabs'].includes(target)) {
+      return 'about';
+    }
     return 'feed';
   };
 

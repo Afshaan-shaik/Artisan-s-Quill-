@@ -86,6 +86,38 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
     return () => window.removeEventListener('atelier_founder_profile_updated', handleFounderUpdated);
   }, [currentUser]);
 
+  // Direct redirection to Inquiries & Collaborations tab/section
+  const handleScrollToInquiries = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    if (typeof window !== 'undefined') {
+      history.replaceState(null, '', '#connect-section');
+    }
+    const target = document.getElementById('connect-section') || document.getElementById('inquire-collabs-section');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => {
+        const input = document.getElementById('inquiry-full-name');
+        if (input) input.focus({ preventScroll: true });
+      }, 500);
+    }
+  };
+
+  // Auto-scroll to Inquiries & Collaborations if URL specifies it on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+    const params = new URLSearchParams(window.location.search);
+    const tab = (params.get('tab') || params.get('section') || '').toLowerCase();
+    if (
+      ['connect-section', 'inquire', 'inquiries', 'collabs', 'collaborations', 'inquire-collabs'].includes(hash) ||
+      ['connect-section', 'inquire', 'inquiries', 'collabs', 'collaborations', 'inquire-collabs'].includes(tab)
+    ) {
+      setTimeout(() => {
+        handleScrollToInquiries();
+      }, 300);
+    }
+  }, []);
+
   // Strict founder edit authorization check — only Sanctuary Creator Afshaan Shaikh can edit
   const isFounderLoggedIn = isFounderUser(currentUser);
 
@@ -432,10 +464,12 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
 
                 <a
                   href="#connect-section"
-                  className="flex items-center gap-2 px-4 py-2.5 text-xs uppercase tracking-wider text-neutral-400 hover:text-[#dfbd87] transition-colors"
+                  onClick={handleScrollToInquiries}
+                  className="flex items-center gap-2 px-4 py-2.5 text-xs uppercase tracking-wider text-neutral-400 hover:text-[#dfbd87] transition-colors cursor-pointer group"
+                  title="Direct Concierge: Inquiries & Collaborations with Afshaan Shaikh"
                 >
                   <span>Inquire with Afshaan</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </a>
               </div>
             </div>
@@ -496,7 +530,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
       {/* ─────────────────────────────────────────────────────────────
           SECTION 3: INQUIRIES & COLLABORATIONS WITH AFSHAAN SHAIKH
          ───────────────────────────────────────────────────────────── */}
-      <section id="connect-section" className="pt-8 border-t border-white/10 scroll-mt-24">
+      <section id="connect-section" className="pt-8 border-t border-white/10 scroll-mt-28">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
           
           {/* Left Column: Direct Inquiries Info */}
