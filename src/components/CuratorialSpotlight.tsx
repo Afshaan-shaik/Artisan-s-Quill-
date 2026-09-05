@@ -143,7 +143,7 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
       aria-label="Curatorial Spotlight Hero Section"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-[#c9a875]/30 bg-[#06070a] shadow-[0_20px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(201,168,117,0.12)] transition-all duration-300 group"
+      className="relative w-full overflow-hidden bg-[#06070a] -mx-5 sm:-mx-8 lg:-mx-12 xl:-mx-16 transition-all duration-300 group"
     >
       {/* ─────────────────────────────────────────────────────────────
           1. Continuous Ken Burns Background Image Layer / Live Video Background
@@ -175,14 +175,13 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
           2. Dark Gradient Overlay & Cinematic Vignette
           (Ensures all text pops with crisp contrast and luxury depth)
          ───────────────────────────────────────────────────────────── */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#06070a] via-[#06070a]/75 to-[#06070a]/40 sm:to-black/30 pointer-events-none" />
-      <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#06070a]/90 via-[#06070a]/60 to-transparent pointer-events-none" />
-      <div className="absolute inset-0 z-10 radial-vignette opacity-60 pointer-events-none" />
+      <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#06070a] via-[#06070a]/70 to-[#06070a]/40 sm:to-black/30 pointer-events-none" />
+      <div className="absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_center,rgba(6,7,10,0.45)_0%,rgba(6,7,10,0.85)_75%,#06070a_100%)] pointer-events-none" />
 
       {/* ─────────────────────────────────────────────────────────────
           3. Interactive Content Layer
          ───────────────────────────────────────────────────────────── */}
-      <div className="relative z-20 p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-between min-h-[380px] sm:min-h-[440px] md:min-h-[480px]">
+      <div className="relative z-20 px-5 sm:px-8 lg:px-12 xl:px-16 py-10 sm:py-14 md:py-18 flex flex-col justify-between min-h-[480px] sm:min-h-[560px] md:min-h-[620px] lg:min-h-[680px]">
         
         {/* Top Header Ribbon in Spotlight */}
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -237,12 +236,12 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
           )}
         </div>
 
-        {/* Center / Body Section: Cinematic Title, Verse / Curator Notes, and Details */}
-        <div className="my-6 sm:my-8 max-w-3xl space-y-4">
+        {/* Center / Body Section: Cinematic Title, Verse / Curator Notes, and Details Centered in the Middle */}
+        <div className="my-8 sm:my-10 max-w-4xl mx-auto text-center flex flex-col items-center space-y-4">
           {/* Artist Byline */}
           <div
             onClick={(e) => onSelectArtist(currentWork.artist.id, e)}
-            className="inline-flex items-center gap-3 p-1.5 pr-4 rounded-full bg-black/50 hover:bg-black/80 border border-white/10 hover:border-[#c9a875]/50 transition-all cursor-pointer backdrop-blur-md"
+            className="inline-flex items-center gap-3 p-1.5 pr-4 rounded-full bg-black/60 hover:bg-black/85 border border-white/12 hover:border-[#c9a875]/60 transition-all cursor-pointer backdrop-blur-md mx-auto hover:scale-105 active:scale-95"
             title={`View profile of ${currentWork.artist.name}`}
           >
             <Avatar
@@ -267,13 +266,13 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
           {/* Masterpiece Title */}
           <h1
             onClick={() => onSelectArtwork(currentWork)}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif-display tracking-[0.04em] text-white hover:text-[#f8f0de] transition-colors cursor-pointer leading-[1.1] drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]"
+            className="font-editorial text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light tracking-[-0.01em] text-white hover:text-[#f8f0de] transition-colors cursor-pointer leading-[0.95] drop-shadow-[0_2px_24px_rgba(0,0,0,0.95)] text-center mx-auto"
           >
             {currentWork.title}
           </h1>
 
           {/* Medium, Year & Dimensions */}
-          <p className="text-xs sm:text-sm font-mono-code text-[#c9a875] flex flex-wrap items-center gap-2">
+          <p className="text-xs sm:text-sm font-mono-code text-[#c9a875] flex flex-wrap items-center justify-center gap-2 mx-auto">
             <span>{currentWork.medium || 'Curated Atelier Medium'}</span>
             <span>•</span>
             <span>{currentWork.year}</span>
@@ -287,35 +286,35 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
 
           {/* If Poetry: Evocative Stanza Quote */}
           {isPoetry && poemFirstStanza ? (
-            <div className="relative pl-4 sm:pl-5 border-l-2 border-[#c9a875]/70 my-3 py-1">
-              <Quote className="w-4 h-4 text-[#c9a875]/60 absolute -top-2 left-0 -translate-x-1/2 bg-[#06070a] rounded-full" />
-              <p className="font-cormorant text-base sm:text-lg md:text-xl text-neutral-200 italic leading-relaxed whitespace-pre-line line-clamp-3">
+            <div className="relative px-6 py-3.5 border-y border-[#c9a875]/30 my-3 max-w-2xl mx-auto text-center bg-black/40 backdrop-blur-md rounded-sm">
+              <Quote className="w-4 h-4 text-[#c9a875]/60 absolute -top-2 left-1/2 -translate-x-1/2 bg-[#06070a] rounded-full p-0.5" />
+              <p className="font-cormorant text-base sm:text-lg md:text-xl text-neutral-200 italic leading-relaxed whitespace-pre-line line-clamp-3 text-center">
                 "{poemFirstStanza}"
               </p>
               {currentWork.poetryContent?.authorSignature && (
-                <span className="block text-xs font-mono-code text-neutral-400 mt-1">
-                  {currentWork.poetryContent.authorSignature}
+                <span className="block text-xs font-mono-code text-[#c9a875]/70 mt-1.5">
+                  &mdash; {currentWork.poetryContent.authorSignature}
                 </span>
               )}
             </div>
           ) : (
             /* If Art/Video/Drawing: Curator Note or Description */
-            <p className="text-sm sm:text-base text-neutral-300 leading-relaxed line-clamp-2 sm:line-clamp-3 max-w-2xl drop-shadow">
+            <p className="text-sm sm:text-base text-neutral-300 leading-relaxed line-clamp-2 sm:line-clamp-3 max-w-2xl mx-auto text-center drop-shadow">
               {currentWork.curatorNote || currentWork.description}
             </p>
           )}
         </div>
 
-        {/* Bottom Actions Suite: "View Masterpiece" Primary Button + Social Counters */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-white/10">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Sleek 'View Masterpiece' Button */}
+        {/* Bottom Actions Suite: Centered View Masterpiece + Social Counters */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 border-t border-white/10 w-full max-w-4xl mx-auto">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {/* View Masterpiece CTA */}
             <button
               id="view-masterpiece-spotlight-btn"
               onClick={() => onSelectArtwork(currentWork)}
-              className="flex items-center gap-2.5 px-6 sm:px-8 py-3 rounded-full bg-gradient-to-r from-[#c9a875] to-[#e4cb9c] text-black text-xs sm:text-sm font-bold uppercase tracking-[0.16em] shadow-[0_0_25px_rgba(201,168,117,0.5)] hover:shadow-[0_0_35px_rgba(201,168,117,0.75)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-gradient-to-r from-[#c9a875] via-[#dfbd87] to-[#c9a875] text-black font-extrabold text-xs uppercase tracking-widest hover:brightness-110 shadow-[0_0_25px_rgba(201,168,117,0.5)] transition-all cursor-pointer hover:scale-105 active:scale-95"
             >
-              <Eye className="w-4 h-4 text-black" />
+              <Eye className="w-3.5 h-3.5 text-black" />
               <span>View Masterpiece</span>
             </button>
 
@@ -376,7 +375,7 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
           </div>
 
           {/* Category-Specific Badge or Reading/Viewing indicator */}
-          <div className="flex items-center gap-3 text-xs text-neutral-400 font-mono-code">
+          <div className="flex items-center justify-center gap-3 text-xs text-neutral-400 font-mono-code">
             {isPoetry && currentWork.poetryContent?.readingTimeMinutes && (
               <span className="flex items-center gap-1.5 text-[#e0c49a]">
                 <Clock className="w-3.5 h-3.5" />

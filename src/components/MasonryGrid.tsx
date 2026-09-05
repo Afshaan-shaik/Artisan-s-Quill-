@@ -125,7 +125,7 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
       id={`artwork-card-${artwork.id}`}
       data-artwork-title={artwork.title}
       onClick={() => onSelectArtwork(artwork)}
-      className="relative group overflow-hidden ultra-glass-panel glass-holographic-sheen card-3d-tilt rounded-xl border border-white/10 shadow-2xl cursor-pointer w-full transition-all duration-500 ease-out hover:scale-[1.02] hover:border-[#c9a875]/60 hover:z-10"
+      className="artwork-tile w-full group"
       style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}
     >
       {/* Image / Video Container */}
@@ -186,58 +186,57 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
           />
         )}
 
-        {/* Category Tag */}
-        <div className="absolute top-5 left-5 px-3 py-1 bg-black/60 backdrop-blur-md border border-white/10 text-[10px] uppercase tracking-widest text-neutral-200 z-10 flex items-center gap-1.5 shadow-md">
+        {/* Category badge — editorial monochrome pill */}
+        <div className="absolute top-4 left-4 px-2.5 py-1 bg-black/70 backdrop-blur-md text-[9px] uppercase tracking-[0.18em] text-neutral-300 z-10 flex items-center gap-1.5 font-mono-code">
           {getCategoryIcon(artwork.category)}
           <span>{artwork.category}</span>
         </div>
 
         {/* Masterpiece of the Day Badge */}
         {(artwork.id === 'spotlight-masterpiece-1' || artwork.tags?.includes('Masterpiece of the Day')) && (
-          <div className="absolute top-5 right-5 z-10 flex items-center gap-1.5 px-2.5 py-1 bg-[#c9a875]/90 backdrop-blur-md border border-[#dfbd87] text-black text-[9px] font-extrabold tracking-widest uppercase shadow-[0_0_15px_rgba(201,168,117,0.5)]">
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-2 py-1 bg-[#c9a875] text-black text-[9px] font-extrabold tracking-widest uppercase">
             <Sparkles className="w-3 h-3 text-black" />
-            <span>#1 Masterpiece</span>
+            <span>#1</span>
           </div>
         )}
 
         {/* Video Duration Badge */}
         {artwork.category === 'video' && (
-          <div className="absolute top-5 right-5 z-10 flex items-center gap-1.5 px-2.5 py-1 bg-black/60 backdrop-blur-md border border-white/10 text-white text-[10px] font-medium tracking-widest uppercase shadow-md">
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-2 py-1 bg-black/70 backdrop-blur-md text-white text-[9px] font-mono-code tracking-widest uppercase">
             <Play className="w-3 h-3 fill-current text-[#f0a8d0]" />
             <span>{artwork.videoData?.duration}</span>
           </div>
         )}
 
-        {/* Hover Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 flex flex-col justify-end p-6 sm:p-8 transition-opacity duration-300">
-          <h3 className="text-xl sm:text-2xl font-light tracking-tight text-white mb-1 leading-snug drop-shadow-md">
+        {/* Wall label — slides up on hover via CSS class */}
+        <div className="wall-label">
+          <h3 className="font-editorial text-xl sm:text-2xl font-light text-white mb-0.5 leading-tight">
             {artwork.title}
           </h3>
-          <p className="text-[10px] uppercase tracking-widest text-[#c9a875] mb-5 font-mono-code">
-            {artwork.artist.name} • {artwork.medium || artwork.category}
+          <p className="text-[9px] uppercase tracking-[0.18em] text-[#c9a875] mb-4 font-mono-code">
+            {artwork.artist.name} &middot; {artwork.medium || artwork.category}
           </p>
 
           <div className="flex items-center gap-3">
             <button
               onClick={(e) => handleLike(artwork.id, artwork.isLiked, e)}
-              className={`flex items-center gap-1.5 text-[10px] uppercase tracking-widest transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 text-[9px] uppercase tracking-widest transition-colors cursor-pointer ${
                 artwork.isLiked ? 'text-rose-400' : 'text-neutral-300 hover:text-white'
               }`}
             >
-              <Heart className={`w-4 h-4 ${artwork.isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
+              <Heart className={`w-3.5 h-3.5 ${artwork.isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
               <span>{artwork.likesCount}</span>
             </button>
 
             <button
               onClick={(e) => { e.stopPropagation(); onToggleSave(artwork.id, e); }}
-              className={`flex items-center gap-1.5 text-[10px] uppercase tracking-widest transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 text-[9px] uppercase tracking-widest transition-colors cursor-pointer ${
                 artwork.isSaved ? 'text-[#c9a875]' : 'text-neutral-300 hover:text-white'
               }`}
             >
-              <Bookmark className={`w-4 h-4 ${artwork.isSaved ? 'fill-[#c9a875] text-[#c9a875]' : ''}`} />
+              <Bookmark className={`w-3.5 h-3.5 ${artwork.isSaved ? 'fill-[#c9a875] text-[#c9a875]' : ''}`} />
               <span>{artwork.isSaved ? 'Saved' : 'Save'}</span>
             </button>
-
 
             <button
               onClick={(e) => {
@@ -245,14 +244,13 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
                 if (onShareArtwork) {
                   onShareArtwork(artwork);
                 } else {
-                  const url = `${window.location.origin}${window.location.pathname}?artwork=${artwork.id}`;
-                  navigator.clipboard.writeText(url);
+                  navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?artwork=${artwork.id}`);
                 }
               }}
-              className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[#dfbd87] hover:text-white transition-colors cursor-pointer ml-auto"
-              title="Share and Curate Artwork"
+              className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest text-[#dfbd87] hover:text-white transition-colors cursor-pointer ml-auto font-mono-code"
+              title="Share Artwork"
             >
-              <Share2 className="w-3.5 h-3.5 text-[#c9a875]" />
+              <Share2 className="w-3 h-3 text-[#c9a875]" />
               <span>Share</span>
             </button>
           </div>
@@ -355,18 +353,22 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
 
   if (artworks.length === 0) {
     return (
-      <div className="py-24 text-center bg-neutral-900/50 rounded-sm p-12 max-w-2xl mx-auto border border-white/5 my-8">
-        <Palette className="w-12 h-12 text-neutral-600 mx-auto mb-6" />
-        <h3 className="text-2xl font-light tracking-tight text-white mb-2 uppercase">The Sanctuary Awaits</h3>
-        <p className="text-neutral-400 text-sm max-w-md mx-auto mb-8 font-light">
-          No works found under this filter. Be the visionary to inaugurate this collection.
-        </p>
+      <div className="py-32 text-center max-w-lg mx-auto my-16 space-y-6">
+        <div className="w-16 h-px bg-gradient-to-r from-transparent via-[#c9a875]/40 to-transparent mx-auto" />
+        <Palette className="w-10 h-10 text-neutral-700 mx-auto" />
+        <div className="space-y-2">
+          <h3 className="font-editorial text-2xl font-light text-white">The Sanctuary Awaits</h3>
+          <p className="text-neutral-500 text-sm font-sans leading-relaxed">
+            No works found under this filter. Be the visionary to inaugurate this collection.
+          </p>
+        </div>
         <button
           onClick={() => onOpenUpload(selectedCategory !== 'all' ? selectedCategory : 'painting')}
-          className="px-5 py-2 text-[10px] uppercase tracking-[0.2em] border border-white/20 hover:bg-white hover:text-black transition-colors cursor-pointer text-white bg-transparent"
+          className="btn-ghost-gold mx-auto"
         >
           Submit Work
         </button>
+        <div className="w-16 h-px bg-gradient-to-r from-transparent via-[#c9a875]/40 to-transparent mx-auto" />
       </div>
     );
   }

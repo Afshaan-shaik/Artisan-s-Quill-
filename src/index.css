@@ -1,15 +1,50 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────
+   DESIGN TOKENS — THE ARTISAN'S QUILL
+   Editorial Gallery & Atelier Aesthetic
+   ───────────────────────────────────────────────────────────── */
+
 @layer base {
   :root {
-    --font-serif: 'Playfair Display', Georgia, serif;
-    --font-cormorant: 'Cormorant Garamond', serif;
+    /* Typography */
+    --font-editorial:  'Fraunces', 'Playfair Display', Georgia, serif;
+    --font-serif:      'Playfair Display', Georgia, serif;
+    --font-cormorant:  'Cormorant Garamond', serif;
     --font-newsreader: 'Newsreader', Georgia, serif;
-    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-display: 'Cinzel', serif;
-    --font-mono: 'Space Mono', monospace;
-    --font-signature: 'Alex Brush', 'Playfair Display', cursive, Georgia, serif;
+    --font-sans:       'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display:    'Cinzel', serif;
+    --font-mono:       'Space Mono', monospace;
+    --font-signature:  'Alex Brush', 'Playfair Display', cursive, Georgia, serif;
+
+    /* Gold palette — use sparingly */
+    --gold:            #c9a875;
+    --gold-light:      #dfbd87;
+    --gold-pale:       #f3e3cb;
+    --gold-thin:       rgba(201, 168, 117, 0.20);
+    --gold-hairline:   rgba(201, 168, 117, 0.15);
+
+    /* Ink / charcoal base */
+    --ink-deepest:     #050608;
+    --ink-deep:        #06070a;
+    --ink-mid:         #0a0c12;
+    --ink-surface:     #12141c;
+
+    /* Editorial spacing */
+    --section-pad-y:   clamp(80px, 10vw, 160px);
+    --section-pad-x:   clamp(1.5rem, 5vw, 5rem);
+
+    /* Body copy */
+    --body-lh: 1.85;
   }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FONT UTILITIES
+   ───────────────────────────────────────────────────────────── */
+
+.font-editorial {
+  font-family: var(--font-editorial);
 }
 
 .font-signature {
@@ -36,6 +71,10 @@
   font-family: var(--font-mono);
 }
 
+/* ─────────────────────────────────────────────────────────────
+   GLOBAL GRAIN OVERLAY  (2–3 % opacity — tactile richness)
+   ───────────────────────────────────────────────────────────── */
+
 .bg-noise {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
@@ -44,26 +83,23 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grainFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grainFilter)'/%3E%3C/svg%3E");
 }
 
-/* Custom subtle scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+/* ─────────────────────────────────────────────────────────────
+   SCROLLBAR
+   ───────────────────────────────────────────────────────────── */
 
-::-webkit-scrollbar-track {
-  background: #0d0e12;
-}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #0d0e12; }
+::-webkit-scrollbar-thumb { background: #1e2130; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #2e3345; }
 
-::-webkit-scrollbar-thumb {
-  background: #252833;
-  border-radius: 9999px;
-}
+/* hide scrollbar while keeping scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #393e4f;
-}
+/* ─────────────────────────────────────────────────────────────
+   GLASS PANELS
+   ───────────────────────────────────────────────────────────── */
 
-/* Subtle glow effects */
 .glass-panel {
   background: rgba(18, 20, 26, 0.75);
   backdrop-filter: blur(16px);
@@ -84,11 +120,14 @@
 }
 
 .glass-card-hover:hover {
-  border-color: rgba(201, 168, 117, 0.35);
-  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.8), 0 0 20px -5px rgba(201, 168, 117, 0.12);
+  border-color: rgba(201, 168, 117, 0.3);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.8), 0 0 20px -5px rgba(201, 168, 117, 0.08);
 }
 
-/* Poetry theme backgrounds */
+/* ─────────────────────────────────────────────────────────────
+   POETRY THEME BACKGROUNDS
+   ───────────────────────────────────────────────────────────── */
+
 .poetry-bg-obsidian {
   background: radial-gradient(circle at 50% 0%, #171923 0%, #0d0e13 100%);
   border-color: rgba(255, 255, 255, 0.08);
@@ -114,17 +153,14 @@
   border-color: rgba(229, 62, 62, 0.2);
 }
 
-/* Continuous subtle slow zoom (Ken Burns effect) for cinematic spotlight banners */
+/* ─────────────────────────────────────────────────────────────
+   KEN BURNS (hero spotlight background)
+   ───────────────────────────────────────────────────────────── */
+
 @keyframes kenburns-slow {
-  0% {
-    transform: scale(1) translate(0%, 0%);
-  }
-  50% {
-    transform: scale(1.08) translate(-1.2%, -0.8%);
-  }
-  100% {
-    transform: scale(1.15) translate(1.2%, 0.8%);
-  }
+  0%   { transform: scale(1)    translate(0%, 0%); }
+  50%  { transform: scale(1.08) translate(-1.2%, -0.8%); }
+  100% { transform: scale(1.15) translate(1.2%, 0.8%); }
 }
 
 .animate-ken-burns {
@@ -132,36 +168,275 @@
   will-change: transform;
 }
 
-/* Atmosphere Dynamic Sanctuary Theme Classes */
+/* ─────────────────────────────────────────────────────────────
+   EDITORIAL NAV UNDERLINE — animated draw-in on hover
+   ───────────────────────────────────────────────────────────── */
+
+.nav-link-editorial {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: rgba(228, 229, 235, 0.7);
+  transition: color 0.2s ease;
+}
+
+.nav-link-editorial::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-link-editorial:hover,
+.nav-link-editorial.active {
+  color: #ffffff;
+}
+
+.nav-link-editorial:hover::after,
+.nav-link-editorial.active::after {
+  transform: scaleX(1);
+}
+
+/* Category underline tabs (feed page only) */
+.category-tab {
+  position: relative;
+  padding: 0.5rem 0.25rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: rgba(160, 163, 180, 0.7);
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.category-tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.category-tab:hover { color: rgba(228, 229, 235, 0.9); }
+.category-tab.active { color: #ffffff; }
+.category-tab.active::after { transform: scaleX(1); }
+
+/* ─────────────────────────────────────────────────────────────
+   GHOST / OUTLINE CTA BUTTON — one primary ghost style
+   ───────────────────────────────────────────────────────────── */
+
+.btn-ghost-gold {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.25s ease, color 0.25s ease;
+  overflow: hidden;
+}
+
+.btn-ghost-gold::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-ghost-gold:hover {
+  border-color: var(--gold);
+  color: var(--gold-pale);
+}
+
+.btn-ghost-gold:hover::after {
+  transform: scaleX(1);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   UNDERLINE-ONLY INPUT (contact / forms)
+   ───────────────────────────────────────────────────────────── */
+
+.input-underline {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0;
+  padding: 0.75rem 0 0.5rem;
+  width: 100%;
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.input-underline::placeholder {
+  color: rgba(160, 163, 180, 0.5);
+}
+
+.input-underline:focus {
+  border-bottom-color: var(--gold);
+}
+
+/* Floating label wrapper */
+.input-float-group {
+  position: relative;
+  padding-top: 1.25rem;
+}
+
+.input-float-label {
+  position: absolute;
+  top: 1.25rem;
+  left: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(160, 163, 180, 0.5);
+  pointer-events: none;
+  transition: top 0.2s ease, font-size 0.2s ease, color 0.2s ease;
+}
+
+.input-underline:focus ~ .input-float-label,
+.input-underline:not(:placeholder-shown) ~ .input-float-label {
+  top: 0;
+  font-size: 0.6rem;
+  color: var(--gold);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SCROLL-TRIGGERED REVEAL ANIMATIONS
+   ───────────────────────────────────────────────────────────── */
+
+.reveal-up {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-up.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered children */
+.reveal-up:nth-child(2) { transition-delay: 0.08s; }
+.reveal-up:nth-child(3) { transition-delay: 0.16s; }
+.reveal-up:nth-child(4) { transition-delay: 0.24s; }
+
+/* ─────────────────────────────────────────────────────────────
+   MAGNETIC BUTTON (JS adds transform via inline style)
+   ───────────────────────────────────────────────────────────── */
+
+.btn-magnetic {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ARTWORK TILE — gallery grid
+   ───────────────────────────────────────────────────────────── */
+
+.artwork-tile {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  background: #0a0c12;
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.8);
+  transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.artwork-tile:hover {
+  box-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.95),
+              0 0 0 1px rgba(201, 168, 117, 0.15);
+  transform: translateY(-3px);
+}
+
+/* Wall label (slides up on hover) */
+.artwork-tile .wall-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1.5rem 1rem 0.875rem;
+  background: linear-gradient(to top, rgba(5, 6, 8, 0.96) 0%, rgba(5, 6, 8, 0.7) 60%, transparent 100%);
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.artwork-tile:hover .wall-label {
+  transform: translateY(0);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   EDITORIAL SECTION SPACING
+   ───────────────────────────────────────────────────────────── */
+
+.editorial-section {
+  padding-top: var(--section-pad-y);
+  padding-bottom: var(--section-pad-y);
+}
+
+.editorial-divider {
+  border: none;
+  border-top: 1px solid rgba(201, 168, 117, 0.15);
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ATMOSPHERE THEMES
+   ───────────────────────────────────────────────────────────── */
+
 body {
   transition: background-color 0.8s ease, color 0.8s ease;
+  cursor: none;  /* hide system cursor — custom ArtisticCursor takes over */
 }
 
-body.theme-dawn {
-  background-color: #0c0f16;
-}
+body.theme-dawn          { background-color: #0c0f16; }
+body.theme-golden-hour   { background-color: #0b0805; }
+body.theme-midnight-rain { background-color: #05070c; }
+body.theme-candlelight   { background-color: #0a0604; }
 
-body.theme-golden-hour {
-  background-color: #0b0805;
-}
+/* ─────────────────────────────────────────────────────────────
+   PRINT (Certificate of Authenticity)
+   ───────────────────────────────────────────────────────────── */
 
-body.theme-midnight-rain {
-  background-color: #05070c;
-}
-
-body.theme-candlelight {
-  background-color: #0a0604;
-}
-
-/* Print stylesheet for Certificate of Authenticity */
 @media print {
   body {
     background: white !important;
     color: black !important;
+    cursor: auto;
   }
-  header, footer, nav, button, .no-print {
-    display: none !important;
-  }
+  header, footer, nav, button, .no-print { display: none !important; }
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -178,7 +453,7 @@ body.theme-candlelight {
   backdrop-filter: blur(28px) saturate(190%);
   -webkit-backdrop-filter: blur(28px) saturate(190%);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 
+  box-shadow:
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.25),
     0 25px 50px -12px rgba(0, 0, 0, 0.85),
     0 0 30px -5px rgba(201, 168, 117, 0.12);
@@ -194,7 +469,7 @@ body.theme-candlelight {
   backdrop-filter: blur(36px) saturate(200%);
   -webkit-backdrop-filter: blur(36px) saturate(200%);
   border: 1px solid rgba(201, 168, 117, 0.35);
-  box-shadow: 
+  box-shadow:
     inset 0 1px 2px 0 rgba(255, 255, 255, 0.35),
     0 35px 70px -15px rgba(0, 0, 0, 0.95),
     0 0 45px -5px rgba(201, 168, 117, 0.25);
@@ -210,7 +485,7 @@ body.theme-candlelight {
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(201, 168, 117, 0.45);
-  box-shadow: 
+  box-shadow:
     inset 0 1px 1px 0 rgba(255, 235, 195, 0.4),
     0 20px 40px -10px rgba(0, 0, 0, 0.9),
     0 0 35px rgba(201, 168, 117, 0.25);
@@ -222,17 +497,13 @@ body.theme-candlelight {
   -webkit-text-fill-color: transparent;
 }
 
-.perspective-1000 {
-  perspective: 1000px;
-}
+/* ─────────────────────────────────────────────────────────────
+   3D / PERSPECTIVE UTILITIES
+   ───────────────────────────────────────────────────────────── */
 
-.perspective-2000 {
-  perspective: 2000px;
-}
-
-.preserve-3d {
-  transform-style: preserve-3d;
-}
+.perspective-1000 { perspective: 1000px; }
+.perspective-2000 { perspective: 2000px; }
+.preserve-3d { transform-style: preserve-3d; }
 
 .card-3d-tilt {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -267,5 +538,136 @@ body.theme-candlelight {
 
 .glass-holographic-sheen:hover::after {
   transform: rotate(25deg) translateY(100%);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   READING PROGRESS BAR (poem reading view)
+   ───────────────────────────────────────────────────────────── */
+
+.reading-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(to right, var(--gold), var(--gold-light));
+  z-index: 9999;
+  transform-origin: left;
+  transition: transform 0.1s linear;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PRELOADER
+   ───────────────────────────────────────────────────────────── */
+
+@keyframes quill-draw {
+  from { stroke-dashoffset: 300; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.quill-draw-path {
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+  animation: quill-draw 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ARTWORK TILE — gallery masonry card
+   ───────────────────────────────────────────────────────────── */
+
+.artwork-tile {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  border-radius: 2px;
+  background: #050608;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.artwork-tile:hover {
+  transform: scale(1.015);
+  z-index: 10;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   POETRY TILE — vellum-tinted reading card in masonry
+   ───────────────────────────────────────────────────────────── */
+
+.poetry-tile {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  border-radius: 2px;
+  background: linear-gradient(160deg, #0c0e15 0%, #080a0f 60%, #060709 100%);
+  border: 1px solid rgba(201, 168, 117, 0.10);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.poetry-tile:hover {
+  transform: scale(1.015);
+  z-index: 10;
+  border-color: rgba(201, 168, 117, 0.28);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), 0 0 30px -8px rgba(201, 168, 117, 0.12);
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   WALL LABEL — slides up from bottom on card hover
+   Museum-style attribution overlay
+   ───────────────────────────────────────────────────────────── */
+
+.wall-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.5rem;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.96) 0%,
+    rgba(0, 0, 0, 0.55) 45%,
+    transparent 100%
+  );
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.artwork-tile:hover .wall-label {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   GHOST CTA BUTTON — editorial gold outline, no fill
+   ───────────────────────────────────────────────────────────── */
+
+.btn-ghost-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+  border: 1px solid rgba(201, 168, 117, 0.55);
+  color: #dfbd87;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+}
+
+.btn-ghost-gold:hover {
+  border-color: #c9a875;
+  color: #ffffff;
+  background: rgba(201, 168, 117, 0.08);
+}
+
+.btn-ghost-gold:active {
+  transform: scale(0.98);
 }
 

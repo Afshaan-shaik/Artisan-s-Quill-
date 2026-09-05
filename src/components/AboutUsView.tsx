@@ -227,27 +227,24 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
           SECTION 1: OUR VISIONARY & CREATOR (AFSHAAN SHAIKH EXCLUSIVELY)
          ───────────────────────────────────────────────────────────── */}
       <section className="space-y-12">
-        {/* Section Header */}
-        <div className="text-center space-y-3">
-          <div className="flex items-center justify-center gap-2 text-xs font-mono-code uppercase tracking-[0.3em] text-[#c9a875]">
-            <Feather className="w-3.5 h-3.5" />
-            <span>The Artisan & Software Architect</span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif-display font-light text-white tracking-tight">
-            Our <span className="italic text-[#dfbd87] font-normal">Visionary</span>
+      {/* Section Header */}
+        <div className="space-y-4 mb-16">
+          <p className="text-[10px] uppercase tracking-[0.4em] font-mono-code text-[#c9a875]/60">
+            The Artisan & Software Architect
+          </p>
+          <h1 className="font-editorial text-5xl sm:text-6xl lg:text-7xl font-light text-white tracking-[-0.01em] leading-[0.95]">
+            Our <em className="text-[#dfbd87] not-italic">Visionary</em>
           </h1>
-          <p className="text-sm sm:text-base text-neutral-400 max-w-2xl mx-auto font-sans leading-relaxed">
+          <p className="text-sm sm:text-base text-neutral-400 max-w-2xl font-sans leading-relaxed">
             At the rare confluence of mathematical rigor, lyrical poetry, and unyielding aesthetic discipline.
           </p>
         </div>
 
-        {/* Visionary Feature Card */}
-        <div className="relative rounded-2xl bg-gradient-to-b from-[#0e1017] via-[#090b10] to-[#06070a] border border-[#c9a875]/30 shadow-[0_10px_50px_rgba(0,0,0,0.8)] overflow-hidden">
-          {/* Ambient Lighting Background Accents */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#c9a875]/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#dfbd87]/5 rounded-full blur-3xl pointer-events-none" />
+        {/* Visionary Feature — open layout, no card border */}
+        <div className="relative pt-2">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#c9a875]/20 to-transparent" />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 p-6 sm:p-10 lg:p-14 relative z-10 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 pt-10 items-start">
             
             {/* Left: Portrait Canvas */}
             <div className="lg:col-span-5 flex flex-col items-center">
@@ -353,9 +350,9 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                   )}
                 </div>
 
-                <div className="text-xs sm:text-sm font-mono-code font-bold uppercase tracking-[0.25em] text-[#dfbd87]">
-                  ARTIST | POET | CODER | SOFTWARE DEVELOPER
-                </div>
+                <span className="text-[11px] font-mono-code font-bold uppercase tracking-[0.25em] text-[#dfbd87]">
+                    Artist &nbsp;·&nbsp; Poet &nbsp;·&nbsp; Coder &nbsp;·&nbsp; Software Developer
+                  </span>
               </div>
 
               {/* Bio & Evocative Manifesto */}
@@ -365,55 +362,30 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                 is created with deliberate craftsmanship—an architectural devotion to permanence where code breathes with the soul of fine art.
               </p>
 
-              {/* 4 Pillars Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-[#c9a875]/50 transition-colors">
-                  <div className="flex items-center gap-2.5 text-[#e0c49a] mb-1">
-                    <Palette className="w-4 h-4 text-[#c9a875]" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-white">Visual Fine Art</span>
+              {/* 4 Pillars — open rows with left-border accent */}
+              <div className="space-y-5 pt-2">
+                {[
+                  { icon: <Palette className="w-4 h-4" />, label: 'Visual Fine Art', desc: 'Digital paintings, chiaroscuro studies, and atmospheric cinematic portraiture.' },
+                  { icon: <Feather className="w-4 h-4" />, label: 'Poetic Literature', desc: 'Lyrical stanzas, contemplative vellum cards, and philosophical verse.' },
+                  { icon: <Code2 className="w-4 h-4" />, label: 'Algorithmic Coder', desc: 'Creative shaders, interactive graphics, and generative computational engines.' },
+                  { icon: <Terminal className="w-4 h-4" />, label: 'Software Developer', desc: 'Full-stack architecture, database systems, TypeScript, and resilient APIs.' },
+                ].map((p) => (
+                  <div key={p.label} className="flex items-start gap-4 border-l border-[#c9a875]/25 pl-4 hover:border-[#c9a875]/60 transition-colors">
+                    <span className="text-[#c9a875]/60 mt-0.5 shrink-0">{p.icon}</span>
+                    <div>
+                      <p className="text-xs font-mono-code font-bold uppercase tracking-wider text-white mb-0.5">{p.label}</p>
+                      <p className="text-xs text-neutral-400 leading-relaxed">{p.desc}</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    Digital paintings, chiaroscuro studies, and atmospheric cinematic portraiture.
-                  </p>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-[#c9a875]/50 transition-colors">
-                  <div className="flex items-center gap-2.5 text-[#e0c49a] mb-1">
-                    <Feather className="w-4 h-4 text-[#c9a875]" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-white">Poetic Literature</span>
-                  </div>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    Lyrical stanzas, contemplative vellum cards, and philosophical verse.
-                  </p>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-[#c9a875]/50 transition-colors">
-                  <div className="flex items-center gap-2.5 text-[#e0c49a] mb-1">
-                    <Code2 className="w-4 h-4 text-[#c9a875]" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-white">Algorithmic Coder</span>
-                  </div>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    Creative shaders, interactive graphics, and generative computational engines.
-                  </p>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-[#c9a875]/50 transition-colors">
-                  <div className="flex items-center gap-2.5 text-[#e0c49a] mb-1">
-                    <Terminal className="w-4 h-4 text-[#c9a875]" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-white">Software Developer</span>
-                  </div>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    Full-stack architecture, database systems, TypeScript, and resilient APIs.
-                  </p>
-                </div>
+                ))}
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-3">
+              <div className="flex flex-wrap items-center gap-4 pt-4">
                 {onNavigateCategory && (
                   <button
                     onClick={() => onNavigateCategory('all')}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-white text-black font-bold text-xs uppercase tracking-widest rounded-full hover:bg-[#dfbd87] transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
+                    className="btn-ghost-gold"
                   >
                     <Layers className="w-3.5 h-3.5" />
                     <span>Explore Atelier</span>
@@ -423,16 +395,16 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                 {onNavigateCategory && (
                   <button
                     onClick={() => onNavigateCategory('poetry')}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#c9a875]/15 hover:bg-[#c9a875]/30 border border-[#c9a875]/60 text-[#dfbd87] hover:text-white font-bold text-xs uppercase tracking-widest rounded-full transition-all cursor-pointer hover:scale-105 active:scale-95"
+                    className="flex items-center gap-2 text-xs font-mono-code uppercase tracking-[0.15em] text-neutral-400 hover:text-[#dfbd87] transition-colors cursor-pointer group"
                   >
-                    <Feather className="w-3.5 h-3.5 text-[#c9a875]" />
+                    <Feather className="w-3.5 h-3.5 text-[#c9a875] group-hover:text-[#dfbd87]" />
                     <span>Read Verse</span>
                   </button>
                 )}
 
                 <a
                   href="#connect-section"
-                  className="flex items-center gap-2 px-4 py-2.5 text-xs uppercase tracking-wider text-neutral-400 hover:text-[#dfbd87] transition-colors"
+                  className="flex items-center gap-2 text-xs uppercase tracking-wider text-neutral-500 hover:text-[#dfbd87] transition-colors font-mono-code"
                 >
                   <span>Inquire with Afshaan</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -444,70 +416,42 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
         </div>
       </section>
 
-      {/* ─────────────────────────────────────────────────────────────
-          SECTION 2: THE SANCTUARY MANIFESTO & BESPOKE ATELIER
-         ───────────────────────────────────────────────────────────── */}
-      <section className="space-y-12">
-        <div className="p-8 sm:p-12 rounded-2xl bg-gradient-to-r from-neutral-950 via-[#0e1017] to-neutral-950 border border-[#c9a875]/30 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-[#c9a875]/5 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="space-y-8 relative z-10">
-            <div className="space-y-3 text-center sm:text-left">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-[#c9a875] font-mono-code font-bold flex items-center justify-center sm:justify-start gap-2">
-                <Quote className="w-3.5 h-3.5 text-[#c9a875]" /> The Sanctuary Manifesto
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-serif-display font-medium text-white tracking-wide">
-                Where Algorithmic Precision Meets Lyrical Solitude
-              </h2>
+      {/* ─── Manifesto ─── */}
+      <section className="space-y-10 border-t border-white/6 pt-16">
+        <div className="space-y-3">
+          <p className="text-[10px] uppercase tracking-[0.4em] font-mono-code text-[#c9a875]/60">The Sanctuary Manifesto</p>
+          <h2 className="font-editorial text-3xl sm:text-5xl font-light text-white tracking-[-0.01em] leading-tight max-w-3xl">
+            Where Algorithmic Precision<br />Meets Lyrical Solitude
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-2">
+          {[
+            { icon: <ShieldCheck className="w-4 h-4" />, label: 'Architectural Purity', desc: 'Designing resilient full-stack systems with high-order geometric precision, ensuring sub-millisecond responsiveness and unyielding privacy.' },
+            { icon: <Compass className="w-4 h-4" />, label: 'Atmospheric Spatial UI', desc: 'Interfaces conceived as museum salons—meticulously weighted whitespace, tailored palettes, and purposeful motion that honors the user\'s contemplation.' },
+            { icon: <Award className="w-4 h-4" />, label: 'Enduring Provenance', desc: 'Dual-persisted data vaults and cryptographic certificates ensuring that creative works and collector archives remain immortal across decades.' },
+          ].map((p) => (
+            <div key={p.label} className="space-y-3 border-t border-[#c9a875]/20 pt-5">
+              <span className="text-[#c9a875]/70">{p.icon}</span>
+              <p className="text-xs font-mono-code font-bold uppercase tracking-wider text-white">{p.label}</p>
+              <p className="text-xs text-neutral-400 leading-relaxed">{p.desc}</p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-white/10">
-              <div className="space-y-2 p-4 rounded-xl bg-black/40 border border-white/5">
-                <div className="text-xs uppercase tracking-wider text-[#dfbd87] font-mono-code font-bold flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#c9a875]" /> Architectural Purity
-                </div>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Designing resilient full-stack systems with high-order geometric precision, ensuring sub-millisecond responsiveness and unyielding privacy.
-                </p>
-              </div>
-
-              <div className="space-y-2 p-4 rounded-xl bg-black/40 border border-white/5">
-                <div className="text-xs uppercase tracking-wider text-[#dfbd87] font-mono-code font-bold flex items-center gap-2">
-                  <Compass className="w-4 h-4 text-[#c9a875]" /> Atmospheric Spatial UI
-                </div>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Interfaces conceived as museum salons—meticulously weighted whitespace, tailored palettes, and purposeful motion that honors the user's contemplation.
-                </p>
-              </div>
-
-              <div className="space-y-2 p-4 rounded-xl bg-black/40 border border-white/5">
-                <div className="text-xs uppercase tracking-wider text-[#dfbd87] font-mono-code font-bold flex items-center gap-2">
-                  <Award className="w-4 h-4 text-[#c9a875]" /> Enduring Provenance
-                </div>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Dual-persisted data vaults and cryptographic certificates ensuring that creative works and collector archives remain immortal across decades.
-                </p>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
           SECTION 3: INQUIRIES & COLLABORATIONS WITH AFSHAAN SHAIKH
          ───────────────────────────────────────────────────────────── */}
-      <section id="connect-section" className="pt-8 border-t border-white/10 scroll-mt-24">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
+      <section id="connect-section" className="pt-16 border-t border-white/6 scroll-mt-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
           
-          {/* Left Column: Direct Inquiries Info */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="space-y-3">
-              <span className="text-[11px] font-mono-code uppercase tracking-[0.3em] text-[#c9a875] font-semibold">
-                DIRECT CONCIERGE
-              </span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif-display font-light text-white tracking-tight leading-tight">
-                Inquiries & <br />
-                <span className="italic text-[#dfbd87] font-normal">Collaborations</span>
+          {/* Left Column */}
+          <div className="lg:col-span-5 space-y-8">
+            <div className="space-y-4">
+              <p className="text-[10px] uppercase tracking-[0.4em] font-mono-code text-[#c9a875]/60">Direct Concierge</p>
+              <h2 className="font-editorial text-4xl sm:text-5xl lg:text-6xl font-light text-white tracking-[-0.01em] leading-[0.95]">
+                Inquiries &amp; <em className="text-[#dfbd87] not-italic">Collaborations</em>
               </h2>
             </div>
 
@@ -561,8 +505,8 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Inquiries Form */}
-          <div className="lg:col-span-7 bg-[#0b0d13] p-6 sm:p-10 rounded-2xl border border-white/10 shadow-2xl relative">
+          {/* Right Column: Inquiry Form — open, no card border */}
+          <div className="lg:col-span-7 border-t border-[#c9a875]/15 pt-8 lg:border-t-0 lg:pt-0 lg:border-l lg:border-l-white/6 lg:pl-12">
             {submitSuccess && lastInquiry ? (
               <div className="py-8 text-center space-y-6 animate-fadeIn">
                 <div className="w-14 h-14 rounded-full bg-[#c9a875]/20 border-2 border-[#c9a875] flex items-center justify-center mx-auto text-[#dfbd87] shadow-[0_0_30px_rgba(201,168,117,0.3)]">
@@ -696,7 +640,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                     id="inquiry-type-select"
                     value={inquiryType}
                     onChange={(e) => setInquiryType(e.target.value)}
-                    className="w-full bg-[#0e111a] border border-white/15 focus:border-[#c9a875] rounded-md px-3 py-2.5 text-sm text-white focus:outline-none transition-colors"
+                    className="w-full bg-transparent border-b border-neutral-700 focus:border-[#c9a875] py-2.5 text-sm text-white focus:outline-none transition-colors appearance-none cursor-pointer"
                   >
                     <option value="art-acquisition">Fine Art Acquisition & Licensing</option>
                     <option value="poetry-commission">Bespoke Poetic Verse Commission</option>

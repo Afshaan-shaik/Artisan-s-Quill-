@@ -1,25 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
-  Search,
-  Filter,
   Layers,
   Feather,
-  Palette,
   Bookmark,
-  BookMarked,
-  Plus,
-  RefreshCw,
-  Compass,
-  Database,
-  Eye,
   Trash2,
   Heart,
   Clock,
-  Award,
-  ShieldCheck,
   Film,
-  Ghost,
   ArrowRight
 } from 'lucide-react';
 import { Artwork, ArtCategory, UserProfile, Exhibition } from './types';
@@ -61,6 +49,11 @@ import { ConstellationCosmosView } from './components/ConstellationCosmosView';
 import { Collector3DVaultModal } from './components/Collector3DVaultModal';
 import { PoeticScrollModal } from './components/PoeticScrollModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { FloatingAudioToggle } from './components/FloatingAudioToggle';
+import { StudioFAB } from './components/StudioFAB';
+import { EditorialPreloader } from './components/EditorialPreloader';
+import { NotFoundView } from './components/NotFoundView';
+import { motion, AnimatePresence } from 'motion/react';
 import { subscribeToCloudArtworks, subscribeToCloudComments, signOutFirebaseUser } from './services/firebase';
 import { getActiveSupabaseUser, signOutSupabase, onSupabaseAuthStateChange } from './services/supabaseClient';
 
@@ -598,6 +591,9 @@ export default function App() {
         className="fixed inset-0 pointer-events-none opacity-[0.035] mix-blend-overlay bg-canvas-grain z-[45]"
       />
 
+      {/* Editorial Sanctuary Preloader */}
+      <EditorialPreloader />
+
       {/* Custom Interactive Artistic Golden Cursor */}
       <ArtisticCursor />
 
@@ -667,53 +663,35 @@ export default function App() {
         onLogout={handleLogout}
       />
 
+      {/* Ambient music — floating bottom-right, visible to all */}
+      <FloatingAudioToggle />
+
+      {/* Studio FAB — owner-only, floating bottom-left */}
+      {isFounderUser(currentUser) && (
+        <StudioFAB
+          onOpenUpload={handleOpenUpload}
+          onSelectView={handleSelectView}
+          onOpenBackendModal={() => setIsBackendModalOpen(true)}
+          onOpenInkStudio={() => setIsInkStudioOpen(true)}
+          onOpenEditProfile={() => {
+            setIsAddProfileCreateMode(false);
+            setAddProfileModalInitialTab('details');
+            setIsAddProfileModalOpen(true);
+          }}
+        />
+      )}
+
       {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 space-y-8">
-        
-        {/* Active Artist Session Banner — shown only when authenticated */}
-        {currentUser.id !== 'guest' && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:px-5 rounded-xl bg-[#090c12]/90 border border-[#c9a875]/30 shadow-md backdrop-blur-md">
-            <div className="flex items-center gap-2.5 text-xs text-neutral-300 font-mono-code">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Authenticated Artist:</span>
-              <span className="font-bold text-white uppercase">{currentUser.name}</span>
-              <span className="text-[#c9a875]">({currentUser.handle})</span>
-            </div>
-
-            <div className="flex items-center gap-3 text-[10px] uppercase font-mono-code text-neutral-400">
-              <span className="flex items-center gap-1 text-emerald-400">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Full Access to Own Works</span>
-              </span>
-              <span className="text-neutral-600">•</span>
-              <span className="text-[#dfbd87]">Other Artists Protected</span>
-            </div>
-          </div>
-        )}
-        {currentUser.id === 'guest' && (
-          <div className="flex items-center gap-3 p-3 sm:px-5 rounded-xl bg-neutral-900/60 border border-white/10 shadow-sm">
-            <Ghost className="w-4 h-4 text-neutral-500 shrink-0" />
-            <p className="text-xs text-neutral-400 font-mono-code">
-              Browsing as <span className="text-white font-bold">Guest</span> — Artworks are visible to all. 
-              <button
-                onClick={() => { setAuthModalMode('login'); setIsAuthModalOpen(true); }}
-                className="text-[#c9a875] hover:text-white underline underline-offset-2 ml-1 cursor-pointer transition-colors"
-              >
-                Sign in
-              </button>
-              {' '}or{' '}
-              <button
-                onClick={() => { setAuthModalMode('signup'); setIsAuthModalOpen(true); }}
-                className="text-[#c9a875] hover:text-white underline underline-offset-2 cursor-pointer transition-colors"
-              >
-                create a profile
-              </button>
-              {' '}to upload your own works.
-            </p>
-          </div>
-        )}
-
-        {activeView === 'about' && (
+      <main className="flex-1 w-full max-w-[1760px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-16 py-0 space-y-0">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeView}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {activeView === 'about' && (
           <AboutUsView
             currentUser={currentUser}
             onNavigateCategory={(category) => {
@@ -764,53 +742,46 @@ export default function App() {
               onShareArtwork={(art) => setArtworkToShare(art)}
             />
 
-            {/* 3D Constellation Cosmos Gateway Banner Card */}
+            {/* 3D Constellation Cosmos Gateway Banner */}
             <div
               id="feed-cosmos-banner-card"
               onClick={() => handleSelectView('cosmos')}
-              className="relative overflow-hidden rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-[#090b14]/95 via-[#121524]/90 to-[#090b14]/95 border border-[#c9a875]/40 hover:border-[#c9a875] shadow-xl hover:shadow-[0_0_30px_rgba(201,168,117,0.25)] transition-all duration-300 cursor-pointer group select-none"
-              title="Click to view the 3D constellation of data or art data"
+              className="relative overflow-hidden rounded-sm p-6 sm:p-8 bg-[#07090e] border border-[#c9a875]/20 hover:border-[#c9a875]/50 transition-all duration-300 cursor-pointer group select-none my-8"
+              title="Enter the 3D Constellation Cosmos"
             >
-              {/* Subtle background cosmic radial glow */}
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(201,168,117,0.18),transparent_65%)] pointer-events-none" />
-              <div className="absolute top-2 right-4 text-neutral-600 text-3xl font-serif-display select-none opacity-20 group-hover:opacity-40 transition-opacity">
-                ✦ 🌌 ✦
-              </div>
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(201,168,117,0.08),transparent_70%)] pointer-events-none" />
 
-              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1.5 max-w-2xl">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-md bg-[#c9a875]/20 border border-[#c9a875]/40 text-[10px] font-mono-code font-bold uppercase tracking-wider text-[#dfbd87]">
-                      ✦ 3D WebGL Realtime Engine
-                    </span>
-                    <span className="text-xs font-mono-code text-neutral-400">
-                      • {realtimeArtworks.length} Star Nodes Active
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-2 max-w-2xl">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[9px] font-mono-code uppercase tracking-[0.3em] text-[#c9a875]/80">
+                      WebGL Experience &middot; {realtimeArtworks.length} Star Nodes
                     </span>
                   </div>
 
-                  <h3 className="text-lg sm:text-xl font-serif-display font-medium text-white group-hover:text-[#f3e3cb] transition-colors flex items-center gap-2">
-                    <span>3D Constellation Cosmos &amp; Interactive Starmap</span>
+                  <h3 className="text-xl sm:text-2xl font-editorial font-light text-white group-hover:text-[#dfbd87] transition-colors flex items-center gap-2">
+                    <span>3D Constellation Cosmos &amp; Starmap</span>
                     <span className="text-xs text-[#c9a875] opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
                   </h3>
 
-                  <p className="text-xs font-mono-code text-neutral-300">
-                    Click to view the 3D constellation of data or art data in a well-structured format. Every painting, poem, digital art, drawing &amp; motion loop shines as an interactive celestial star.
+                  <p className="font-editorial italic text-sm text-neutral-400 leading-relaxed">
+                    Navigate our entire creative universe as an interactive celestial constellation. Every verse, canvas, drawing, and shader shines as an individual coordinate in space.
                   </p>
                 </div>
 
                 <div className="shrink-0 flex items-center">
-                  <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-mono-code text-xs font-bold uppercase tracking-wider group-hover:scale-105 group-hover:shadow-[0_0_18px_rgba(201,168,117,0.5)] transition-all">
-                    <span>Explore 3D Cosmos</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                  <span className="btn-ghost-gold flex items-center gap-2">
+                    <span>Enter 3D Cosmos</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Feed Subheader & Curatorial Filter Suite */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-4 border-b border-white/10">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-8 pb-6 border-b border-white/6">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-serif-display tracking-[0.06em] text-white flex items-center gap-3">
+                <h2 className="text-2xl sm:text-3xl font-editorial font-light tracking-[0.04em] text-white">
                   {selectedCategory === 'all' && 'Curated Sanctuary Stream'}
                   {selectedCategory === 'painting' && 'Fine Oil & Pigment Paintings'}
                   {selectedCategory === 'drawing' && 'Charcoal, Graphite & Ink on Cotton Paper'}
@@ -818,52 +789,50 @@ export default function App() {
                   {selectedCategory === 'video' && 'Motion Loops & Cinema Fluid Dynamics'}
                   {selectedCategory === 'poetry' && 'The Poetic Archive & Lyric Verse Cards'}
                 </h2>
-                <p className="text-xs text-neutral-400 font-mono-code mt-1.5 flex items-center gap-2">
-                  <span>Displaying {artworks.length} indexed work{artworks.length !== 1 ? 's' : ''}</span>
-                  <span className="text-[#c9a875]">•</span>
-                  <span>Curated Atelier Archive</span>
+                <p className="text-xs text-neutral-500 font-mono-code mt-1.5 uppercase tracking-[0.15em]">
+                  {artworks.length} indexed work{artworks.length !== 1 ? 's' : ''} &middot; Curated Atelier Archive
                 </p>
               </div>
 
-              {/* Enlarged Curated / Most Liked / Latest Filter Capsule */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-neutral-900/90 border border-white/15 shadow-xl backdrop-blur-md">
+              {/* Editorial Curated / Most Liked / Latest Filter Suite */}
+              <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+                <div className="flex items-center gap-1 border-b border-white/10 pb-0.5">
                   <button
                     id="filter-curated-btn"
                     onClick={() => setFeedFilter('curated')}
-                    className={`flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono-code uppercase tracking-[0.18em] transition-all duration-200 cursor-pointer ${
                       feedFilter === 'curated'
-                        ? 'bg-[#c9a875] text-black shadow-[0_0_18px_rgba(201,168,117,0.5)]'
-                        : 'text-neutral-300 hover:text-white hover:bg-white/10'
+                        ? 'text-[#c9a875] border-b-2 border-[#c9a875] -mb-[3px] font-semibold'
+                        : 'text-neutral-400 hover:text-white'
                     }`}
                   >
-                    <Sparkles className={`w-4 h-4 ${feedFilter === 'curated' ? 'text-black' : 'text-[#c9a875]'}`} />
+                    <Sparkles className="w-3.5 h-3.5 text-[#c9a875]" />
                     <span>Curated</span>
                   </button>
 
                   <button
                     id="filter-popular-btn"
                     onClick={() => setFeedFilter('popular')}
-                    className={`flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono-code uppercase tracking-[0.18em] transition-all duration-200 cursor-pointer ${
                       feedFilter === 'popular'
-                        ? 'bg-rose-500 text-white shadow-[0_0_18px_rgba(244,63,94,0.5)]'
-                        : 'text-neutral-300 hover:text-white hover:bg-white/10'
+                        ? 'text-rose-300 border-b-2 border-rose-400 -mb-[3px] font-semibold'
+                        : 'text-neutral-400 hover:text-white'
                     }`}
                   >
-                    <Heart className={`w-4 h-4 ${feedFilter === 'popular' ? 'text-white fill-white' : 'text-rose-400'}`} />
+                    <Heart className={`w-3.5 h-3.5 ${feedFilter === 'popular' ? 'text-rose-400 fill-rose-400' : 'text-neutral-400'}`} />
                     <span>Most Liked</span>
                   </button>
 
                   <button
                     id="filter-latest-btn"
                     onClick={() => setFeedFilter('latest')}
-                    className={`flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono-code uppercase tracking-[0.18em] transition-all duration-200 cursor-pointer ${
                       feedFilter === 'latest'
-                        ? 'bg-white text-black shadow-[0_0_18px_rgba(255,255,255,0.45)]'
-                        : 'text-neutral-300 hover:text-white hover:bg-white/10'
+                        ? 'text-white border-b-2 border-white -mb-[3px] font-semibold'
+                        : 'text-neutral-400 hover:text-white'
                     }`}
                   >
-                    <Clock className={`w-4 h-4 ${feedFilter === 'latest' ? 'text-black' : 'text-amber-400'}`} />
+                    <Clock className="w-3.5 h-3.5 text-neutral-400" />
                     <span>Latest</span>
                   </button>
                 </div>
@@ -872,10 +841,10 @@ export default function App() {
                 <button
                   id="cinema-mode-btn"
                   onClick={() => setIsCinemaModeOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-neutral-900/90 border border-white/15 text-neutral-300 hover:text-white hover:bg-white/10 hover:border-[#c9a875]/60 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-xl backdrop-blur-md"
+                  className="btn-ghost-gold flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono-code uppercase tracking-[0.18em] cursor-pointer"
                   title="View Gallery as Cinematic Slideshow"
                 >
-                  <Film className="w-4 h-4 text-[#c9a875]" />
+                  <Film className="w-3.5 h-3.5 text-[#c9a875]" />
                   <span className="hidden sm:inline">Cinema</span>
                 </button>
               </div>
@@ -936,12 +905,12 @@ export default function App() {
           <div className="space-y-6">
             <div className="pb-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h2 className="text-xl sm:text-2xl font-serif-display tracking-[0.08em] text-white flex items-center gap-2.5">
+                <h2 className="text-2xl sm:text-3xl font-editorial font-light tracking-[-0.01em] text-white flex items-center gap-2.5">
                   <Bookmark className="w-5 h-5 text-[#c9a875]" />
-                  Saved Works &amp; Bookmarked Masterpieces
+                  <span>Saved Works &amp; Collector Archive</span>
                 </h2>
-                <p className="text-xs font-mono-code text-neutral-400 mt-1">
-                  Your private collector sanctuary — {artworks.length} saved piece{artworks.length !== 1 ? 's' : ''}
+                <p className="text-xs font-mono-code text-neutral-400 mt-1 uppercase tracking-[0.15em]">
+                  Your private collector sanctuary &mdash; {artworks.length} saved piece{artworks.length !== 1 ? 's' : ''}
                 </p>
               </div>
             </div>
@@ -959,20 +928,22 @@ export default function App() {
                 onOpenBardModal={handleOpenBardWithPoem}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 max-w-md mx-auto">
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-[#c9a875]">
-                  <Bookmark className="w-8 h-8" />
+              <div className="flex flex-col items-center justify-center py-24 text-center space-y-4 max-w-md mx-auto">
+                <div className="w-12 h-12 rounded-full border border-[#c9a875]/30 flex items-center justify-center text-[#c9a875]">
+                  <Bookmark className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-serif-display text-white">No Saved Works Yet</h3>
-                <p className="text-xs text-neutral-400 font-mono-code leading-relaxed">
+                <h3 className="text-xl font-editorial font-light text-white">No Saved Works Yet</h3>
+                <p className="text-xs text-neutral-400 font-editorial italic leading-relaxed">
                   Browse the sanctuary gallery and tap the bookmark icon on any painting, drawing, poem, or digital artwork to save it to your private sanctuary archive.
                 </p>
-                <button
-                  onClick={() => handleSelectView('feed')}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-bold text-xs uppercase tracking-wider transition-transform hover:scale-105 cursor-pointer shadow-lg shadow-[#c9a875]/20"
-                >
-                  Explore Sanctuary Gallery
-                </button>
+                <div className="pt-2">
+                  <button
+                    onClick={() => handleSelectView('feed')}
+                    className="btn-ghost-gold cursor-pointer"
+                  >
+                    Explore Atelier Sanctuary
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -982,12 +953,12 @@ export default function App() {
           <div className="space-y-6">
             <div className="pb-4 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl sm:text-2xl font-serif-display tracking-[0.08em] text-white flex items-center gap-2.5">
-                  <Trash2 className="w-5 h-5 text-red-400" />
-                  Your Recycle Bin & Archived Works
+                <h2 className="text-2xl sm:text-3xl font-editorial font-light tracking-[-0.01em] text-white flex items-center gap-2.5">
+                  <Trash2 className="w-5 h-5 text-rose-400" />
+                  <span>Your Recycle Bin &amp; Archived Works</span>
                 </h2>
-                <p className="text-xs font-mono-code text-neutral-400 mt-1">
-                  Showing discarded artworks created by <span className="text-white font-bold">{currentUser.name}</span> ({artworks.length} item{artworks.length !== 1 ? 's' : ''}). Protected from other users.
+                <p className="text-xs font-mono-code text-neutral-400 mt-1 uppercase tracking-[0.15em]">
+                  Discarded creations by <span className="text-white font-bold">{currentUser.name}</span> ({artworks.length} item{artworks.length !== 1 ? 's' : ''}) &middot; Protected
                 </p>
               </div>
             </div>
@@ -1004,49 +975,103 @@ export default function App() {
             />
           </div>
         )}
+
+            {!['about', 'cosmos', 'feed', 'exhibitions', 'community', 'vaults', 'saved', 'recycle-bin'].includes(activeView) && (
+              <NotFoundView onReturnToFeed={() => handleSelectView('feed')} />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
-      {/* Museum Hallmark & End-of-Gallery Divider */}
-      <div className="relative z-10 w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-12 pb-2 flex items-center justify-center">
-        <div className="flex items-center gap-4 text-neutral-600">
-          <div className="h-px w-24 sm:w-40 bg-gradient-to-r from-transparent to-[#c9a875]/40" />
-          <span className="font-serif-display italic text-xs tracking-[0.3em] uppercase text-[#c9a875]/70 flex items-center gap-2">
-            ✦ Atelier Sanctuary Archive ✦
-          </span>
-          <div className="h-px w-24 sm:w-40 bg-gradient-to-l from-transparent to-[#c9a875]/40" />
-        </div>
-      </div>
+      {/* ── Editorial Footer ────────────────────────────────── */}
+      <footer className="relative z-20 mt-24 border-t border-[#c9a875]/12 bg-[#050608]">
+        {/* Gold hairline separator */}
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#c9a875]/25 to-transparent" />
 
-      {/* Footer */}
-      <footer className="relative z-20 py-10 px-4 sm:px-6 lg:px-8 xl:px-10 border-t border-white/10 bg-[#050608] text-neutral-400 shadow-2xl">
-        <div className="w-full max-w-[1760px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-[10px] sm:text-xs uppercase tracking-[0.2em] font-mono-code">
-          <div className="flex flex-col text-center md:text-left space-y-1">
-            <div className="text-neutral-300 font-medium">
-              © 2026 THE ARTISAN'S QUILL.
+        <div className="w-full max-w-[1760px] mx-auto px-5 sm:px-8 lg:px-12 xl:px-16 pt-16 pb-10">
+          {/* Large display headline */}
+          <div className="mb-12">
+            <p className="text-[10px] uppercase tracking-[0.4em] font-mono-code text-[#c9a875]/50 mb-3">
+              Est. 2026 &mdash; Digital Atelier
+            </p>
+            <h2 className="font-editorial text-4xl sm:text-5xl lg:text-6xl font-light text-white/90 tracking-[-0.01em] leading-[1.1]">
+              The Artisan's Quill
+            </h2>
+            <p className="font-editorial italic text-lg sm:text-xl text-[#c9a875]/70 mt-2">
+              Where the quill meets the brush
+            </p>
+          </div>
+
+          {/* Three-column grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 border-t border-white/6 pt-10">
+            {/* Col 1 — About */}
+            <div className="space-y-3">
+              <h3 className="text-[10px] uppercase tracking-[0.35em] text-[#c9a875]/60 font-mono-code">Atelier</h3>
+              <p className="text-sm text-neutral-400 leading-relaxed max-w-xs">
+                A curated digital sanctuary for fine art, lyrical poetry, and algorithmic creation — by Afshaan Shaikh.
+              </p>
             </div>
-            <div className="text-neutral-500 text-[9px] tracking-[0.25em]">
-              ALL RIGHTS RESERVED • SANCTUARY FOR ARTISTS & POETS.
+
+            {/* Col 2 — Navigation */}
+            <div className="space-y-3">
+              <h3 className="text-[10px] uppercase tracking-[0.35em] text-[#c9a875]/60 font-mono-code">Navigate</h3>
+              <nav className="flex flex-col gap-2" aria-label="Footer navigation">
+                {[
+                  { label: 'Works', view: 'feed' as const },
+                  { label: 'Exhibitions', view: 'exhibitions' as const },
+                  { label: 'Saved Works', view: 'saved' as const },
+                  { label: 'About Afshaan', view: 'about' as const },
+                ].map((link) => (
+                  <button
+                    key={link.view}
+                    onClick={() => handleSelectView(link.view)}
+                    className="text-sm text-neutral-400 hover:text-white transition-colors text-left cursor-pointer w-fit"
+                  >
+                    {link.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {/* Col 3 — Contact */}
+            <div className="space-y-3">
+              <h3 className="text-[10px] uppercase tracking-[0.35em] text-[#c9a875]/60 font-mono-code">Contact</h3>
+              <div className="flex flex-col gap-2">
+                <a
+                  href="mailto:afshaan100@gmail.com"
+                  className="text-sm text-neutral-400 hover:text-white transition-colors"
+                >
+                  afshaan100@gmail.com
+                </a>
+                <a
+                  href="https://afshaanshaikh.dev"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-neutral-400 hover:text-[#c9a875] transition-colors"
+                >
+                  afshaanshaikh.dev ↗
+                </a>
+              </div>
             </div>
           </div>
-          <div className="text-[#c9a875] tracking-[0.25em] font-semibold text-center">
-            SUPPORTING ARTISTS & DIGITAL POETS SINCE 2026
-          </div>
-          <div className="flex items-center">
+
+          {/* Bottom row */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-10 pt-6 border-t border-white/5">
+            <p className="text-[10px] text-neutral-600 font-mono-code uppercase tracking-[0.25em]">
+              &copy; 2026 The Artisan's Quill &mdash; All rights reserved
+            </p>
             <button
               id="footer-developed-by-btn"
               onClick={() => handleSelectView('about')}
-              className="hover:text-white text-[#dfbd87] transition-colors cursor-pointer group flex items-center gap-1.5"
-              title="About Developer & Artist Afshaan Shaikh"
+              className="text-[10px] text-neutral-500 hover:text-[#c9a875] transition-colors font-mono-code uppercase tracking-[0.2em] cursor-pointer"
             >
-              <span>DEVELOPED BY:</span>
-              <span className="font-bold text-white group-hover:text-[#dfbd87] underline decoration-[#c9a875]/40 underline-offset-4 tracking-[0.2em]">
-                AFSHAAN SHAIKH
-              </span>
+              Developed by Afshaan Shaikh
             </button>
           </div>
         </div>
       </footer>
 
+      {/* Modals Suite */}
       {/* Modals Suite */}
       <MediaUploadModal
         isOpen={isUploadModalOpen}
