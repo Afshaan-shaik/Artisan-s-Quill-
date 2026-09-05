@@ -223,11 +223,11 @@ const ZenOverlay: React.FC<ZenOverlayProps> = ({
 
           {/* Title */}
           <div>
-            <h2 className="font-editorial text-3xl sm:text-4xl md:text-5xl font-light tracking-[-0.01em] text-white leading-tight">
+            <h2 className="font-serif-display text-3xl sm:text-4xl md:text-5xl font-light tracking-wide text-white leading-tight">
               {artwork.title}
             </h2>
             {poetry.subtitle && (
-              <p className="text-[10px] uppercase tracking-[0.3em] text-[#c9a875]/60 mt-3 font-mono-code">
+              <p className="text-[11px] uppercase tracking-[0.25em] text-[#c9a875]/70 mt-3 font-mono-code">
                 {poetry.subtitle}
               </p>
             )}
@@ -253,9 +253,9 @@ const ZenOverlay: React.FC<ZenOverlayProps> = ({
                     return (
                       <p
                         key={lIdx}
-                        className={`font-editorial font-light text-xl sm:text-2xl md:text-3xl leading-[1.85] transition-all duration-300 ease-out ${
+                        className={`font-serif-display italic text-xl sm:text-2xl md:text-3xl leading-[1.85] transition-all duration-300 ease-out ${
                           isLineActive
-                            ? 'text-[#f8e7c9] border-l-2 border-[#dfbd87] pl-4 drop-shadow-[0_0_18px_rgba(201,168,117,0.6)]'
+                            ? 'text-[#f8e7c9] font-normal scale-[1.02] drop-shadow-[0_0_22px_rgba(201,168,117,0.85)] bg-gradient-to-r from-[#c9a875]/25 via-[#c9a875]/10 to-transparent px-4 py-2 rounded-xl border-l-4 border-[#dfbd87]'
                             : 'text-neutral-200'
                         }`}
                       >
@@ -460,7 +460,7 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
         id={`poetry-card-${artwork.id}`}
         data-artwork-title={artwork.title}
         onClick={() => onSelect(artwork)}
-        className="group poetry-tile p-7 sm:p-9 md:p-10 flex flex-col justify-between items-center text-center relative cursor-pointer transition-all duration-500 ease-out overflow-hidden min-h-[420px] max-h-[520px]"
+        className="group ultra-glass-panel glass-holographic-sheen card-3d-tilt p-7 sm:p-9 md:p-10 flex flex-col justify-between items-center text-center relative rounded-xl cursor-pointer transition-all duration-500 ease-out hover:scale-[1.018] hover:border-[#c9a875]/60 hover:z-10 overflow-hidden min-h-[420px] max-h-[520px]"
       >
         {/* Author Watermark */}
         <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
@@ -469,9 +469,9 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
           </span>
         </div>
 
-        {/* Poetry tag — editorial monochrome */}
-        <div className="absolute top-4 left-4 text-[9px] uppercase tracking-[0.18em] text-[#c9a875]/70 font-mono-code z-10">
-          Verse
+        {/* Poetry Tag */}
+        <div className="absolute top-5 left-5 text-[10px] uppercase tracking-widest text-[#c9a875]/90 font-mono-code z-10 px-2.5 py-0.5 rounded-full bg-black/60 border border-[#c9a875]/30 shadow-xs">
+          Poetry
         </div>
 
         {/* Top-Right Controls */}
@@ -535,11 +535,11 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
 
         {/* Poem Header */}
         <div className="mt-6 mb-5 relative z-10 w-full">
-          <h3 className="font-editorial text-xl sm:text-2xl font-light tracking-[-0.01em] text-white mb-1 leading-tight">
+          <h3 className="font-serif-display text-xl sm:text-2xl font-normal tracking-wide text-white mb-1">
             {artwork.title}
           </h3>
           {poetry.subtitle && (
-            <p className="text-[9px] uppercase tracking-[0.25em] text-[#c9a875]/60 font-mono-code">
+            <p className="text-[9px] uppercase tracking-[0.25em] text-[#c9a875]/80 font-mono-code">
               {poetry.subtitle}
             </p>
           )}
@@ -547,7 +547,7 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
 
         {/* Poem Body (Curated Gallery Preview) */}
         <div className="space-y-4 relative z-10 w-full flex-1 flex flex-col justify-center overflow-hidden">
-          <div className="font-editorial font-light text-lg sm:text-xl leading-[1.8] text-neutral-200 whitespace-pre-line text-center line-clamp-4">
+          <div className="font-serif-display italic text-lg sm:text-xl leading-[1.75] text-neutral-200 whitespace-pre-line text-center line-clamp-4">
             {firstStanza.split('\n').map((line, lIdx) => {
               const isLineActive = activeLine?.stanzaIdx === 0 && activeLine?.lineIdx === lIdx;
               return (
@@ -561,7 +561,7 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
                 >
                   {lIdx === 0 ? (
                     <>
-                      <span className="inline-block float-left font-editorial text-4xl sm:text-5xl text-[#c9a875] font-light leading-[0.85] mr-2 -mt-0.5 select-none">
+                      <span className="inline-block float-left font-serif text-4xl sm:text-5xl text-[#c9a875] font-normal leading-[0.85] mr-2 -mt-0.5 select-none drop-shadow-[0_2px_8px_rgba(201,168,117,0.3)]">
                         {firstLetter}
                       </span>
                       <span>{restOfFirstStanza.split('\n')[0]}</span>
@@ -575,7 +575,7 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
           </div>
 
           {poetry.stanzas.length > 1 && (
-            <div className="font-editorial font-light text-base sm:text-lg leading-[1.75] text-neutral-400 whitespace-pre-line line-clamp-3">
+            <div className="font-serif-display italic text-base sm:text-lg leading-[1.7] text-neutral-400 whitespace-pre-line line-clamp-3">
               {poetry.stanzas[1].split('\n').map((line, lIdx) => {
                 const isLineActive = activeLine?.stanzaIdx === 1 && activeLine?.lineIdx === lIdx;
                 return (

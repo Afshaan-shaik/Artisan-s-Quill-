@@ -19,18 +19,15 @@ import {
   Award,
   ShieldCheck,
   Film,
-  Ghost,
-  ArrowRight
+  Ghost
 } from 'lucide-react';
 import { Artwork, ArtCategory, UserProfile, Exhibition } from './types';
-import { DEFAULT_USER } from './data/initialData';
-import { GalleryService, isFounderUser } from './services/api';
+import { GalleryService } from './services/api';
 import { useRealtimeGallery } from './hooks/useRealtimeGallery';
 import { useGalleryStore } from './store/useGalleryStore';
 import { Navbar } from './components/Navbar';
 import { MasonryGrid } from './components/MasonryGrid';
-import { MediaUploadModal } from './components/MediaUploadModal';
-import { realtimeBroker } from './services/realtimeBroker';
+import { RealtimeDirectUploader } from './components/RealtimeDirectUploader';
 import { ArtworkDetailModal } from './components/ArtworkDetailModal';
 import { ExhibitionsView } from './components/ExhibitionsView';
 import { ArtistProfileModal } from './components/ArtistProfileModal';
@@ -54,18 +51,11 @@ import { CommunityHubView } from './components/CommunityHubView';
 import { AddToMoodBoardModal } from './components/AddToMoodBoardModal';
 import { CinemaModePlayer } from './components/CinemaModePlayer';
 import { ReadingQueueView } from './components/ReadingQueueView';
-import { FluidInkPoetryStudioModal } from './components/FluidInkPoetryStudioModal';
-import { AIPoeticBardModal } from './components/AIPoeticBardModal';
-import { ConstellationStarMapModal } from './components/ConstellationStarMapModal';
-import { ConstellationCosmosView } from './components/ConstellationCosmosView';
-import { Collector3DVaultModal } from './components/Collector3DVaultModal';
-import { PoeticScrollModal } from './components/PoeticScrollModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { subscribeToCloudArtworks, subscribeToCloudComments, signOutFirebaseUser } from './services/firebase';
-import { getActiveSupabaseUser, signOutSupabase, onSupabaseAuthStateChange } from './services/supabaseClient';
 
 export default function App() {
-  const { artworks: realtimeArtworks, isRealtimeConnected, toggleLike: toggleRealtimeLike, toggleSave: toggleRealtimeSave } = useRealtimeGallery();
+  const { artworks: realtimeArtworks, isRealtimeConnected, toggleLike: toggleRealtimeLike } = useRealtimeGallery();
   const selectedCategory = useGalleryStore(state => state.selectedCategory);
   const setSelectedCategory = useGalleryStore(state => state.setSelectedCategory);
   const searchQuery = useGalleryStore(state => state.searchQuery);
@@ -100,63 +90,7 @@ export default function App() {
   });
 
   // Navigation & Filtering State
-  const getValidViewFromUrl = (): 'feed' | 'cosmos' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults' => {
-    if (typeof window === 'undefined') return 'feed';
-    const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-    const params = new URLSearchParams(window.location.search);
-    const paramView = params.get('view') || params.get('tab');
-    const path = window.location.pathname.replace(/^\//, '').toLowerCase();
-
-    const target = hash || paramView || path;
-    const validViews = ['feed', 'cosmos', 'exhibitions', 'saved', 'about', 'recycle-bin', 'community', 'vaults'];
-    if (validViews.includes(target)) {
-      return target as any;
-    }
-    return 'feed';
-  };
-
-  const [activeView, setActiveView] = useState<'feed' | 'cosmos' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults'>(() => {
-    return getValidViewFromUrl();
-  });
-
-  const handleSelectView = (view: 'feed' | 'cosmos' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults') => {
-    setActiveView(view);
-    if (typeof window !== 'undefined') {
-      if (view === 'feed') {
-        if (window.location.hash) {
-          history.replaceState(null, '', window.location.pathname + window.location.search);
-        }
-      } else {
-        window.location.hash = view;
-      }
-    }
-  };
-
-  // Bidirectional URL sync: listen to hashchange, popstate, window focus, and tab visibility switching
-  useEffect(() => {
-    const handleLocationSync = () => {
-      const target = getValidViewFromUrl();
-      setActiveView(target);
-    };
-
-    window.addEventListener('hashchange', handleLocationSync);
-    window.addEventListener('popstate', handleLocationSync);
-    window.addEventListener('focus', handleLocationSync);
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        handleLocationSync();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-
-    return () => {
-      window.removeEventListener('hashchange', handleLocationSync);
-      window.removeEventListener('popstate', handleLocationSync);
-      window.removeEventListener('focus', handleLocationSync);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
-  }, []);
+      const [activeView, setActiveView] = useState<'feed' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults'>('feed');
   const [feedFilter, setFeedFilter] = useState<'curated' | 'popular' | 'latest'>('curated');
   const [dateRangeFilter, setDateRangeFilter] = useState<{ start?: string; end?: string; }>({});
 
@@ -165,55 +99,17 @@ export default function App() {
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isExhibitionModalOpen, setIsExhibitionModalOpen] = useState(false);
-  const [uploadModalCategory, setUploadModalCategory] = useState<ArtCategory>('digital');
-  const [uploadModalFormat, setUploadModalFormat] = useState<string>('digital art');
+  const [uploadModalCategory, setUploadModalCategory] = useState<ArtCategory>('painting');
   const [isBackendModalOpen, setIsBackendModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [artworkToEdit, setArtworkToEdit] = useState<Artwork | null>(null);
   const [artworkToShare, setArtworkToShare] = useState<Artwork | null>(null);
   const [isProfilePictureModalOpen, setIsProfilePictureModalOpen] = useState(false);
-  const [profileToEdit, setProfileToEdit] = useState<UserProfile | null>(null);
   const [isAddProfileModalOpen, setIsAddProfileModalOpen] = useState(false);
   const [addProfileModalInitialTab, setAddProfileModalInitialTab] = useState<'details' | 'avatar' | 'quote' | 'social'>('details');
   const [isAddProfileCreateMode, setIsAddProfileCreateMode] = useState(false);
   const [isColorStudioOpen, setIsColorStudioOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isInkStudioOpen, setIsInkStudioOpen] = useState(false);
-  const [isBardModalOpen, setIsBardModalOpen] = useState(false);
-  const [activePoemForBard, setActivePoemForBard] = useState<{
-    title: string;
-    author: string;
-    authorHandle?: string;
-    content: string;
-  } | null>(null);
-  const [isConstellationOpen, setIsConstellationOpen] = useState(false);
-  const [isCollectorVaultOpen, setIsCollectorVaultOpen] = useState(false);
-  const [isScrollModalOpen, setIsScrollModalOpen] = useState(false);
-  const [activePoemForScroll, setActivePoemForScroll] = useState<{
-    title: string;
-    author: string;
-    authorHandle?: string;
-    stanzas: string[];
-    subtitle?: string;
-  } | null>(null);
-
-  const handleOpenBardWithPoem = (poem?: { title: string; author: string; authorHandle?: string; content: string }) => {
-    if (poem) {
-      setActivePoemForBard(poem);
-    }
-    setIsBardModalOpen(true);
-  };
-
-  const handleOpenScrollWithPoem = (poem: {
-    title: string;
-    author: string;
-    authorHandle?: string;
-    stanzas: string[];
-    subtitle?: string;
-  }) => {
-    setActivePoemForScroll(poem);
-    setIsScrollModalOpen(true);
-  };
   const [artworkForMoodBoard, setArtworkForMoodBoard] = useState<Artwork | null>(null);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('signup');
 
@@ -231,8 +127,6 @@ export default function App() {
 
   // Reading Queue (Saved View sub-tab)
   const [savedTab, setSavedTab] = useState<'works' | 'queue'>('works');
-
-  const [selectedExhibitionId, setSelectedExhibitionId] = useState<string | null>(null);
 
   const triggerNotification = (message: string, type: 'success' | 'info' | 'error' = 'info') => {
     setStatusNotification({ message, type });
@@ -261,35 +155,14 @@ export default function App() {
         }
       }
 
-      // Comprehensive Multi-Field Search Filter (Title, Artist, Category, Medium, Tags, Description, Year, Poetry)
+      // Search filter
       if (searchQuery) {
-        const q = searchQuery.toLowerCase().trim();
-        list = list.filter((a) => {
-          const titleMatch = a.title?.toLowerCase().includes(q);
-          const artistNameMatch =
-            a.artist?.name?.toLowerCase().includes(q) || a.artist?.handle?.toLowerCase().includes(q);
-          const categoryMatch = a.category?.toLowerCase().includes(q);
-          const mediumMatch = a.medium?.toLowerCase().includes(q);
-          const descMatch = a.description?.toLowerCase().includes(q);
-          const yearMatch = a.year?.toString().includes(q);
-          const tagsMatch = a.tags && a.tags.some((t) => t.toLowerCase().includes(q));
-          const poetryMatch =
-            a.poetryContent?.stanzas &&
-            a.poetryContent.stanzas.some((s) => s.toLowerCase().includes(q));
-          const exhibitionMatch = a.exhibitionName?.toLowerCase().includes(q);
-
-          return (
-            titleMatch ||
-            artistNameMatch ||
-            categoryMatch ||
-            mediumMatch ||
-            descMatch ||
-            yearMatch ||
-            tagsMatch ||
-            poetryMatch ||
-            exhibitionMatch
-          );
-        });
+        const q = searchQuery.toLowerCase();
+        list = list.filter(a => 
+          a.title.toLowerCase().includes(q) || 
+          a.artist.name.toLowerCase().includes(q) ||
+          (a.tags && a.tags.some(t => t.toLowerCase().includes(q)))
+        );
       }
 
       // Feed filter
@@ -304,17 +177,6 @@ export default function App() {
       // Date range filter
       if (dateRangeFilter.start) {
         list = list.filter(a => new Date(a.createdAt) >= new Date(dateRangeFilter.start!));
-      }
-      if (dateRangeFilter.end) {
-        list = list.filter(a => new Date(a.createdAt) <= new Date(dateRangeFilter.end!));
-      }
-      
-      // Exhibition filter
-      if (selectedExhibitionId) {
-        const exh = exhibitions.find(e => e.id === selectedExhibitionId);
-        if (exh) {
-          list = list.filter(a => exh.artworkIds.includes(a.id));
-        }
       }
       if (dateRangeFilter.end) {
         list = list.filter(a => new Date(a.createdAt) <= new Date(dateRangeFilter.end!));
@@ -350,26 +212,18 @@ export default function App() {
 
   useEffect(() => {
     GalleryService.init().then(() => {
-      // Check for valid HTTP-only serverless session cookie or active Supabase session
+      // Check for valid HTTP-only serverless session cookie if session is currently guest
       if (GalleryService.isGuestSession()) {
-        getActiveSupabaseUser().then((supaUser) => {
-          if (supaUser) {
-            GalleryService.saveCurrentUser(supaUser);
-            setCurrentUser(supaUser);
-            refreshArtworks();
-          } else {
-            fetch('/api/auth/me')
-              .then((res) => res.json())
-              .then((data) => {
-                if (data?.authenticated && data?.user) {
-                  GalleryService.saveCurrentUser(data.user);
-                  setCurrentUser(data.user);
-                  refreshArtworks();
-                }
-              })
-              .catch(() => {});
-          }
-        }).catch(() => {});
+        fetch('/api/auth/me')
+          .then((res) => res.json())
+          .then((data) => {
+            if (data?.authenticated && data?.user) {
+              GalleryService.saveCurrentUser(data.user);
+              setCurrentUser(data.user);
+              refreshArtworks();
+            }
+          })
+          .catch(() => {});
       }
 
       refreshArtworks();
@@ -398,27 +252,12 @@ export default function App() {
     // Allows 500+ users across phones, tablets, and laptops to see new creations instantly
 
 
-    const unsubscribeSupabaseAuth = onSupabaseAuthStateChange((event, session, supaUser) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-        if (supaUser) {
-          GalleryService.saveCurrentUser(supaUser);
-          setCurrentUser(supaUser);
-          refreshArtworks();
-        }
-      } else if (event === 'SIGNED_OUT') {
-        const guest = GalleryService.getCurrentUser();
-        setCurrentUser(guest);
-        refreshArtworks();
-      }
-    });
-
     const unsubscribeComments = subscribeToCloudComments((cloudComments) => {
       GalleryService.mergeCloudComments(cloudComments);
     });
 
     return () => {
       unsubscribeComments();
-      unsubscribeSupabaseAuth();
     };
   }, []);
 
@@ -450,34 +289,19 @@ export default function App() {
   // Actions
   const handleToggleLike = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleRealtimeLike(id);
+    GalleryService.toggleLikeArtwork(id);
+    refreshArtworks();
     if (selectedArtwork && selectedArtwork.id === id) {
-      setSelectedArtwork((prev) => {
-        if (!prev) return null;
-        const nextLiked = !prev.isLiked;
-        return {
-          ...prev,
-          isLiked: nextLiked,
-          likesCount: Math.max(0, prev.likesCount + (nextLiked ? 1 : -1))
-        };
-      });
+      setSelectedArtwork(GalleryService.getArtworkById(id) || null);
     }
   };
 
   const handleToggleSave = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleRealtimeSave(id);
     GalleryService.toggleSaveArtwork(id);
+    refreshArtworks();
     if (selectedArtwork && selectedArtwork.id === id) {
-      setSelectedArtwork((prev) => {
-        if (!prev) return null;
-        const nextSaved = !prev.isSaved;
-        return {
-          ...prev,
-          isSaved: nextSaved,
-          savesCount: Math.max(0, prev.savesCount + (nextSaved ? 1 : -1))
-        };
-      });
+      setSelectedArtwork(GalleryService.getArtworkById(id) || null);
     }
   };
 
@@ -486,6 +310,13 @@ export default function App() {
     setSelectedArtistId(artistId);
   };
 
+  const handleUploadSuccess = (newArtwork: Artwork) => {
+    const created = GalleryService.createArtwork(newArtwork);
+    setIsUploadModalOpen(false);
+    refreshArtworks();
+    handleOpenArtwork(created);
+    triggerNotification(`Masterpiece "${created.title}" successfully published under ${currentUser.name}'s atelier.`, 'success');
+  };
 
   const handleExhibitionUploadSuccess = (exhibition: Omit<Exhibition, 'id'>) => {
     GalleryService.createExhibition(exhibition);
@@ -499,21 +330,17 @@ export default function App() {
     refreshArtworks();
   };
 
-  const handleOpenUpload = (category?: ArtCategory, format?: string) => {
-    setUploadModalCategory(category || 'digital');
-    if (format) setUploadModalFormat(format);
+  const handleOpenUpload = (category?: ArtCategory) => {
+    setUploadModalCategory(category || 'painting');
     setIsUploadModalOpen(true);
   };
 
-  const handleUploadSuccess = (newArtwork: Artwork) => {
-    realtimeBroker.broadcastArtwork(newArtwork);
-    setIsUploadModalOpen(false);
-    triggerNotification(`"${newArtwork.title}" successfully inaugurated into the sanctuary.`, 'success');
-  };
-  
   const handleSelectExhibition = (exhibitionId: string) => {
-    setSelectedExhibitionId(exhibitionId);
-    handleSelectView('feed');
+    const exh = exhibitions.find((e) => e.id === exhibitionId);
+    if (!exh) return;
+    const filtered = GalleryService.getArtworks({ exhibitionId });
+    setArtworks(filtered);
+    setActiveView('feed');
     setSelectedCategory('all');
   };
 
@@ -630,24 +457,20 @@ export default function App() {
         selectedCategory={selectedCategory}
         onSelectCategory={(cat) => {
           setSelectedCategory(cat);
-          handleSelectView('feed');
+          setActiveView('feed');
         }}
         searchQuery={searchQuery}
         onSearchChange={(q) => {
           setSearchQuery(q);
           if (q && activeView !== 'feed' && activeView !== 'saved') {
-            handleSelectView('feed');
+            setActiveView('feed');
           }
         }}
         dateRange={dateRangeFilter}
         onDateRangeChange={setDateRangeFilter}
         activeView={activeView}
-        onSelectView={handleSelectView}
+        onSelectView={setActiveView}
         onOpenUpload={handleOpenUpload}
-        onOpenInkStudio={() => setIsInkStudioOpen(true)}
-        onOpenBardModal={() => handleOpenBardWithPoem()}
-        onOpenConstellationModal={() => setIsConstellationOpen(true)}
-        onOpenCollectorVault={() => setIsCollectorVaultOpen(true)}
         onOpenBackendModal={() => setIsBackendModalOpen(true)}
         onSelectCurrentUser={() => setSelectedArtistId(currentUser.id)}
         onOpenEditProfile={() => {
@@ -718,37 +541,10 @@ export default function App() {
             currentUser={currentUser}
             onNavigateCategory={(category) => {
               setSelectedCategory(category);
-              handleSelectView('feed');
+              setActiveView('feed');
             }}
             onOpenUpload={() => handleOpenUpload('painting')}
-            onFounderAuthenticated={(founder) => {
-              setCurrentUser(founder);
-              triggerNotification('Welcome back, Founder Afshaan Shaikh! Atelier controls unlocked.', 'success');
-            }}
-            onOpenEditProfile={(target) => {
-              const isTargetFounder =
-                !target ||
-                target.id === DEFAULT_USER.id ||
-                target.id === 'user-my-atelier' ||
-                target.handle === DEFAULT_USER.handle ||
-                target.handle === '@afshaanshaikh';
-
-              if (isTargetFounder && !isFounderUser(currentUser)) {
-                triggerNotification('Access Denied: Only Sanctuary Creator Afshaan Shaikh can edit visionary details.', 'error');
-                return;
-              }
-              setProfileToEdit(target || GalleryService.getFounderProfile());
-              setIsProfilePictureModalOpen(true);
-            }}
-          />
-        )}
-
-        {activeView === 'cosmos' && (
-          <ConstellationCosmosView
-            artworks={realtimeArtworks}
-            onSelectArtwork={handleOpenArtwork}
-            onOpenUpload={handleOpenUpload}
-            onSwitchToGallery={() => handleSelectView('feed')}
+            onOpenEditProfile={() => setIsProfilePictureModalOpen(true)}
           />
         )}
 
@@ -756,56 +552,13 @@ export default function App() {
           <>
             {/* Curatorial Spotlight Hero Section */}
             <CuratorialSpotlight
-              artworks={artworks.length > 0 ? artworks : realtimeArtworks}
+              artworks={artworks.length > 0 ? artworks : GalleryService.getArtworks()}
               onSelectArtwork={handleOpenArtwork}
               onToggleLike={handleToggleLike}
               onToggleSave={handleToggleSave}
               onSelectArtist={handleSelectArtist}
               onShareArtwork={(art) => setArtworkToShare(art)}
             />
-
-            {/* 3D Constellation Cosmos Gateway Banner Card */}
-            <div
-              id="feed-cosmos-banner-card"
-              onClick={() => handleSelectView('cosmos')}
-              className="relative overflow-hidden rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-[#090b14]/95 via-[#121524]/90 to-[#090b14]/95 border border-[#c9a875]/40 hover:border-[#c9a875] shadow-xl hover:shadow-[0_0_30px_rgba(201,168,117,0.25)] transition-all duration-300 cursor-pointer group select-none"
-              title="Click to view the 3D constellation of data or art data"
-            >
-              {/* Subtle background cosmic radial glow */}
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(201,168,117,0.18),transparent_65%)] pointer-events-none" />
-              <div className="absolute top-2 right-4 text-neutral-600 text-3xl font-serif-display select-none opacity-20 group-hover:opacity-40 transition-opacity">
-                ✦ 🌌 ✦
-              </div>
-
-              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1.5 max-w-2xl">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-md bg-[#c9a875]/20 border border-[#c9a875]/40 text-[10px] font-mono-code font-bold uppercase tracking-wider text-[#dfbd87]">
-                      ✦ 3D WebGL Realtime Engine
-                    </span>
-                    <span className="text-xs font-mono-code text-neutral-400">
-                      • {realtimeArtworks.length} Star Nodes Active
-                    </span>
-                  </div>
-
-                  <h3 className="text-lg sm:text-xl font-serif-display font-medium text-white group-hover:text-[#f3e3cb] transition-colors flex items-center gap-2">
-                    <span>3D Constellation Cosmos &amp; Interactive Starmap</span>
-                    <span className="text-xs text-[#c9a875] opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
-                  </h3>
-
-                  <p className="text-xs font-mono-code text-neutral-300">
-                    Click to view the 3D constellation of data or art data in a well-structured format. Every painting, poem, digital art, drawing &amp; motion loop shines as an interactive celestial star.
-                  </p>
-                </div>
-
-                <div className="shrink-0 flex items-center">
-                  <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-mono-code text-xs font-bold uppercase tracking-wider group-hover:scale-105 group-hover:shadow-[0_0_18px_rgba(201,168,117,0.5)] transition-all">
-                    <span>Explore 3D Cosmos</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </span>
-                </div>
-              </div>
-            </div>
 
             {/* Feed Subheader & Curatorial Filter Suite */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-4 border-b border-white/10">
@@ -891,7 +644,6 @@ export default function App() {
               onShareArtwork={(art) => setArtworkToShare(art)}
               selectedCategory={selectedCategory}
               onOpenUpload={handleOpenUpload}
-              onOpenBardModal={handleOpenBardWithPoem}
             />
           </>
         )}
@@ -899,7 +651,7 @@ export default function App() {
         {activeView === 'exhibitions' && (
           <ExhibitionsView
             exhibitions={exhibitions}
-            artworks={realtimeArtworks}
+            artworks={GalleryService.getArtworks()}
             onSelectExhibition={handleSelectExhibition}
             onSelectArtwork={handleOpenArtwork}
             onAddExhibition={() => setIsExhibitionModalOpen(true)}
@@ -938,15 +690,41 @@ export default function App() {
               <div>
                 <h2 className="text-xl sm:text-2xl font-serif-display tracking-[0.08em] text-white flex items-center gap-2.5">
                   <Bookmark className="w-5 h-5 text-[#c9a875]" />
-                  Saved Works &amp; Bookmarked Masterpieces
+                  Saved Works &amp; Bookmarked Poetry
                 </h2>
                 <p className="text-xs font-mono-code text-neutral-400 mt-1">
-                  Your private collector sanctuary — {artworks.length} saved piece{artworks.length !== 1 ? 's' : ''}
+                  Your private collector archive
                 </p>
+              </div>
+
+              {/* Sub-tabs: Saved Works | Reading Queue */}
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-neutral-900/80 border border-white/10">
+                <button
+                  onClick={() => setSavedTab('works')}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    savedTab === 'works'
+                      ? 'bg-[#c9a875] text-black shadow-[0_0_12px_rgba(201,168,117,0.4)]'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  <Bookmark className="w-3.5 h-3.5" />
+                  <span>Saved ({artworks.length})</span>
+                </button>
+                <button
+                  onClick={() => setSavedTab('queue')}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    savedTab === 'queue'
+                      ? 'bg-[#c9a875] text-black shadow-[0_0_12px_rgba(201,168,117,0.4)]'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  <BookMarked className="w-3.5 h-3.5" />
+                  <span>Queue</span>
+                </button>
               </div>
             </div>
 
-            {artworks.length > 0 ? (
+            {savedTab === 'works' ? (
               <MasonryGrid
                 artworks={artworks}
                 onSelectArtwork={handleOpenArtwork}
@@ -956,24 +734,9 @@ export default function App() {
                 onShareArtwork={(art) => setArtworkToShare(art)}
                 selectedCategory="all"
                 onOpenUpload={handleOpenUpload}
-                onOpenBardModal={handleOpenBardWithPoem}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 max-w-md mx-auto">
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-[#c9a875]">
-                  <Bookmark className="w-8 h-8" />
-                </div>
-                <h3 className="text-lg font-serif-display text-white">No Saved Works Yet</h3>
-                <p className="text-xs text-neutral-400 font-mono-code leading-relaxed">
-                  Browse the sanctuary gallery and tap the bookmark icon on any painting, drawing, poem, or digital artwork to save it to your private sanctuary archive.
-                </p>
-                <button
-                  onClick={() => handleSelectView('feed')}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-bold text-xs uppercase tracking-wider transition-transform hover:scale-105 cursor-pointer shadow-lg shadow-[#c9a875]/20"
-                >
-                  Explore Sanctuary Gallery
-                </button>
-              </div>
+              <ReadingQueueView onOpenArtwork={handleOpenArtwork} />
             )}
           </div>
         )}
@@ -1034,7 +797,7 @@ export default function App() {
           <div className="flex items-center">
             <button
               id="footer-developed-by-btn"
-              onClick={() => handleSelectView('about')}
+              onClick={() => setActiveView('about')}
               className="hover:text-white text-[#dfbd87] transition-colors cursor-pointer group flex items-center gap-1.5"
               title="About Developer & Artist Afshaan Shaikh"
             >
@@ -1048,13 +811,17 @@ export default function App() {
       </footer>
 
       {/* Modals Suite */}
-      <MediaUploadModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-        onSuccess={handleUploadSuccess}
-        initialCategory={uploadModalCategory}
-        initialFormat={uploadModalFormat}
-      />
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <RealtimeDirectUploader 
+            onClose={() => setIsUploadModalOpen(false)}
+            onSuccess={() => {
+              setIsUploadModalOpen(false);
+              triggerNotification('Masterpiece successfully published.', 'success');
+            }} 
+          />
+        </div>
+      )}
 
       <ExhibitionUploadModal
         isOpen={isExhibitionModalOpen}
@@ -1084,8 +851,6 @@ export default function App() {
         onOpenFragmentInspector={(art) => {
           setArtworkForFragmentInspector(art);
         }}
-        onOpenBardModal={handleOpenBardWithPoem}
-        onOpenScrollModal={handleOpenScrollWithPoem}
       />
 
       {/* Deep Fragment Inspector Modal */}
@@ -1110,7 +875,7 @@ export default function App() {
 
       <ArtistProfileModal
         artistId={selectedArtistId}
-        artworks={realtimeArtworks}
+        artworks={GalleryService.getArtworks()}
         currentUser={currentUser}
         onClose={() => setSelectedArtistId(null)}
         onSelectArtwork={handleOpenArtwork}
@@ -1125,23 +890,12 @@ export default function App() {
 
       <ProfilePictureModal
         isOpen={isProfilePictureModalOpen}
-        onClose={() => {
-          setIsProfilePictureModalOpen(false);
-          setProfileToEdit(null);
-        }}
+        onClose={() => setIsProfilePictureModalOpen(false)}
         currentUser={currentUser}
-        targetUser={profileToEdit}
-        onSuccess={async (updated) => {
-          const isFounder = isFounderUser(updated) || isFounderUser(currentUser);
-
-          if (isFounder) {
-            await GalleryService.syncFounderProfile().catch(() => {});
-          } else {
-            setCurrentUser(updated);
-          }
-          setProfileToEdit(null);
+        onSuccess={(updated) => {
+          setCurrentUser(updated);
           refreshArtworks();
-          triggerNotification('Profile picture and details updated in Supabase.', 'success');
+          triggerNotification('Profile image and details updated.', 'success');
         }}
       />
 
@@ -1206,54 +960,10 @@ export default function App() {
 
       <FloatingGuestbook />
 
-      {/* Fluid Ink & Gold-Leaf Poetry Studio Modal */}
-      <FluidInkPoetryStudioModal
-        isOpen={isInkStudioOpen}
-        onClose={() => setIsInkStudioOpen(false)}
-        currentUser={currentUser}
-        onPublishSuccess={handleUploadSuccess}
-        onOpenBardModal={handleOpenBardWithPoem}
-      />
-
-      {/* AI Poetic Reciter & Bard Symphony Studio Modal */}
-      <AIPoeticBardModal
-        isOpen={isBardModalOpen}
-        onClose={() => setIsBardModalOpen(false)}
-        initialPoem={activePoemForBard}
-      />
-
-      {/* 3D Constellation of Motifs Cosmos Modal */}
-      <ConstellationStarMapModal
-        isOpen={isConstellationOpen}
-        onClose={() => setIsConstellationOpen(false)}
-        artworks={realtimeArtworks.length > 0 ? realtimeArtworks : artworks}
-        onSelectArtwork={handleOpenArtwork}
-      />
-
-      {/* Collector's 3D Trophy Sanctum & Provenance Vault Modal */}
-      <Collector3DVaultModal
-        isOpen={isCollectorVaultOpen}
-        onClose={() => setIsCollectorVaultOpen(false)}
-        currentUser={currentUser}
-        userArtworks={artworks.filter(
-          (a) =>
-            (typeof a.artist === 'object' ? a.artist.id === currentUser.id : a.artist === currentUser.name) ||
-            currentUser.id !== 'guest'
-        )}
-        onSelectArtwork={handleOpenArtwork}
-      />
-
-      {/* Ancient Illuminated Calligraphic Scroll Modal */}
-      <PoeticScrollModal
-        isOpen={isScrollModalOpen}
-        onClose={() => setIsScrollModalOpen(false)}
-        poem={activePoemForScroll}
-      />
-
       {/* Cinema Mode Slideshow Player */}
       {isCinemaModeOpen && (
         <CinemaModePlayer
-          artworks={realtimeArtworks}
+          artworks={GalleryService.getArtworks()}
           onClose={() => setIsCinemaModeOpen(false)}
         />
       )}
@@ -1261,9 +971,6 @@ export default function App() {
   </ErrorBoundary>
 );
 }
-
-
-
 
 
 
