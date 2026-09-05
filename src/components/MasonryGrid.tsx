@@ -238,17 +238,6 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
               <span>{artwork.isSaved ? 'Saved' : 'Save'}</span>
             </button>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onAddToMoodBoard) onAddToMoodBoard(artwork);
-              }}
-              className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[#dfbd87] hover:text-white transition-colors cursor-pointer ml-auto"
-              title="Add to Vault"
-            >
-              <Layers className="w-3.5 h-3.5 text-[#c9a875]" />
-              <span className="hidden sm:inline">Vault</span>
-            </button>
 
             <button
               onClick={(e) => {

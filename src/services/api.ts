@@ -580,6 +580,15 @@ export class GalleryService {
     return this.toggleSave(id);
   }
 
+  static syncArtworkSaveState(id: string, isSaved: boolean): void {
+    const list = this.getStoredArtworks();
+    const index = list.findIndex((a) => a.id === id);
+    if (index !== -1) {
+      list[index] = { ...list[index], isSaved };
+      this.saveArtworks(list);
+    }
+  }
+
   static getComments(artworkId: string): Comment[] {
     const list = this.getStoredComments();
     return list.filter((c) => c.artworkId === artworkId);

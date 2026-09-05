@@ -15,6 +15,7 @@ export type RealtimeEvent =
   | { type: 'ARTWORK_UPDATED'; payload: { id: string; updates: Partial<Artwork> } }
   | { type: 'ARTWORK_DELETED'; payload: { id: string } }
   | { type: 'LIKE_UPDATED'; payload: { artworkId: string; likesCount: number } }
+  | { type: 'SAVE_UPDATED'; payload: { artworkId: string; savesCount: number } }
   | { type: 'COMMENT_ADDED'; payload: { artworkId: string; comment: Comment } }
   | { type: 'MARGIN_ADDED'; payload: { artworkId: string; reflection: MarginReflection } };
 
@@ -97,6 +98,15 @@ class RealtimeBroker {
                         {
                           type: 'LIKE_UPDATED',
                           payload: { artworkId: rec.id, likesCount: rec.likes_count }
+                        },
+                        false
+                      );
+                    }
+                    if (rec.saves_count !== undefined) {
+                      this.emit(
+                        {
+                          type: 'SAVE_UPDATED',
+                          payload: { artworkId: rec.id, savesCount: rec.saves_count }
                         },
                         false
                       );
@@ -255,6 +265,12 @@ class RealtimeBroker {
     // Push to Supabase Postgres and Cloud
     updateArtworkInSupabase(artworkId, { likesCount }).catch(() => {});
     syncArtworkLikeToCloud(artworkId, likesCount).catch(() => {});
+  }
+
+  public broadcastSave(artworkId: string, savesCount: number) {
+    this.emit({ type: 'SAVE_UPDATED', payload: { artworkId, savesCount } }, true);
+    // Push to Supabase Postgres
+    updateArtworkInSupabase(artworkId, { savesCount }).catch(() => {});
   }
 
   public broadcastComment(artworkId: string, comment: Comment) {

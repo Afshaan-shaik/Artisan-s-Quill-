@@ -11,11 +11,13 @@ export function useRealtimeGallery() {
   const updateArtwork = useGalleryStore((state) => state.updateArtwork);
   const removeArtwork = useGalleryStore((state) => state.removeArtwork);
   const setLikesCount = useGalleryStore((state) => state.setLikesCount);
+  const setSavesCount = useGalleryStore((state) => state.setSavesCount);
   const addCommentToArtwork = useGalleryStore((state) => state.addCommentToArtwork);
   const isRealtimeConnected = useGalleryStore((state) => state.isRealtimeConnected);
   const selectedCategory = useGalleryStore((state) => state.selectedCategory);
   const setSelectedCategory = useGalleryStore((state) => state.setSelectedCategory);
   const toggleStoreLike = useGalleryStore((state) => state.toggleLike);
+  const toggleStoreSave = useGalleryStore((state) => state.toggleSave);
   const loadArtworksFromDatabase = useGalleryStore((state) => state.loadArtworksFromDatabase);
 
   // 1. Initial background fetch from Supabase Postgres
@@ -39,6 +41,9 @@ export function useRealtimeGallery() {
         case 'LIKE_UPDATED':
           setLikesCount(event.payload.artworkId, event.payload.likesCount);
           break;
+        case 'SAVE_UPDATED':
+          setSavesCount(event.payload.artworkId, event.payload.savesCount);
+          break;
         case 'COMMENT_ADDED':
           addCommentToArtwork(event.payload.artworkId, event.payload.comment);
           break;
@@ -48,7 +53,7 @@ export function useRealtimeGallery() {
     return () => {
       unsubscribe();
     };
-  }, [prependArtwork, updateArtwork, removeArtwork, setLikesCount, addCommentToArtwork]);
+  }, [prependArtwork, updateArtwork, removeArtwork, setLikesCount, setSavesCount, addCommentToArtwork]);
 
   // 3. Direct Upload Pipeline with Supabase Storage and Live Broadcast
   const uploadArtwork = useCallback(
@@ -112,19 +117,19 @@ export function useRealtimeGallery() {
     []
   );
 
-  // 4. Realtime Like Action with Instant Propagation
+  // 4. Realtime Like & Save Actions with Instant Propagation
   const toggleLike = useCallback(
     (id: string) => {
-      const currentArtworks = useGalleryStore.getState().artworks;
-      const target = currentArtworks.find((a) => a.id === id);
-      if (target) {
-        const nextLiked = !target.isLiked;
-        const nextCount = Math.max(0, target.likesCount + (nextLiked ? 1 : -1));
-        toggleStoreLike(id);
-        realtimeBroker.broadcastLike(id, nextCount);
-      }
+      toggleStoreLike(id);
     },
     [toggleStoreLike]
+  );
+
+  const toggleSave = useCallback(
+    (id: string) => {
+      toggleStoreSave(id);
+    },
+    [toggleStoreSave]
   );
 
   // 5. Realtime Comment Action with Instant Propagation
@@ -160,6 +165,7 @@ export function useRealtimeGallery() {
     isRealtimeConnected,
     uploadArtwork,
     toggleLike,
+    toggleSave,
     postComment
   };
 }

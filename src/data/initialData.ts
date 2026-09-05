@@ -182,9 +182,9 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     description: 'A hypnotic, high-frequency 4K motion loop capturing fluid dynamic textures and ambient light refraction. Represents quiet contemplative motion at the frontier of digital cinema and artisan craft.',
     curatorNote: 'Selected as the #1 Masterpiece of the Day and Permanent Curatorial Spotlight. Hypnotic visual motion and pristine fluid fidelity.',
     tags: ['Masterpiece of the Day', 'Curatorial Spotlight', 'Video Cinema', 'Fluid Dynamics', 'Motion Loop'],
-    likesCount: 540,
-    viewsCount: 1980,
-    savesCount: 86,
+    likesCount: 0,
+    viewsCount: 0,
+    savesCount: 0,
     createdAt: '2026-08-25T13:37:17.985Z',
     aspectRatio: 'wide',
     colorPalette: ['#090a0f', '#c9a875', '#24283b', '#e2d9cc', '#635340'],
@@ -218,9 +218,9 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     description: 'An evocative digital fine art portrait study capturing quiet introspection, vintage cinema tonality, and atmospheric warmth. The composition frames a poised figure wearing dark sunglasses and a brimmed hat against a warm ambient bistro nocturnal glow.',
     curatorNote: 'Selected as the #1 Masterpiece of the Day and Permanent Curatorial Spotlight. Masterful lighting atmosphere, cinematic depth, and nostalgic poise.',
     tags: ['Masterpiece of the Day', 'Curatorial Spotlight', 'Digital Art', 'Cinematic Portrait', 'Noir Aesthetics'],
-    likesCount: 24,
-    viewsCount: 142,
-    savesCount: 18,
+    likesCount: 0,
+    viewsCount: 0,
+    savesCount: 0,
     createdAt: '2026-08-16T12:00:00Z',
     aspectRatio: 'portrait',
     colorPalette: ['#121520', '#c9a875', '#3e2c1e', '#8c6b45', '#f0e6d6'],
@@ -248,9 +248,9 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     description: 'A poetic exploration into the confluence of algorithmic precision and the timeless resonance of human creative expression.',
     curatorNote: 'Selected Atelier Sanctuary Founder Lyric Anthem.',
     tags: ['Poetry', 'Philosophy', 'Algorithmic Art', 'Nocturnes'],
-    likesCount: 31,
-    viewsCount: 195,
-    savesCount: 22,
+    likesCount: 0,
+    viewsCount: 0,
+    savesCount: 0,
     createdAt: '2026-08-15T18:30:00Z',
     aspectRatio: 'tall',
     colorPalette: ['#0d1117', '#c9a875', '#21262d', '#f0e6d6'],
@@ -672,7 +672,7 @@ export const INITIAL_COMMENTS: Comment[] = [
     },
     text: 'The glaze depth on the lower right strata is astonishing. It feels like standing at the threshold of a cavern before dawn.',
     createdAt: '2026-08-11T16:20:00Z',
-    likesCount: 18,
+    likesCount: 0,
     isLiked: false
   },
   {
@@ -687,8 +687,8 @@ export const INITIAL_COMMENTS: Comment[] = [
     },
     text: '"Nothing is lost that was not first surrendered..." That line stopped my heartbeat. The cadence matches the rain outside my studio perfectly.',
     createdAt: '2026-08-12T11:45:00Z',
-    likesCount: 34,
-    isLiked: true
+    likesCount: 0,
+    isLiked: false
   }
 ];
 
@@ -709,7 +709,7 @@ export const INITIAL_MARGIN_REFLECTIONS: MarginReflection[] = [
     text: 'A profound opening. It immediately strips language down to primal texture before memory even enters.',
     inkColor: 'gold',
     createdAt: '2026-08-12T14:30:00Z',
-    upvotes: 19,
+    upvotes: 0,
     isUpvoted: false,
     isCuratorPick: true
   },
@@ -729,8 +729,8 @@ export const INITIAL_MARGIN_REFLECTIONS: MarginReflection[] = [
     text: 'The olfactory imagery here is staggering—one can literally smell the petrichor and resin.',
     inkColor: 'sepia',
     createdAt: '2026-08-13T09:15:00Z',
-    upvotes: 12,
-    isUpvoted: true,
+    upvotes: 0,
+    isUpvoted: false,
     isCuratorPick: false
   },
   {
@@ -749,8 +749,8 @@ export const INITIAL_MARGIN_REFLECTIONS: MarginReflection[] = [
     text: 'Bridging computational cadence with human breath. The temporal dissonance is exquisite.',
     inkColor: 'gold',
     createdAt: '2026-08-14T18:00:00Z',
-    upvotes: 27,
-    isUpvoted: true,
+    upvotes: 0,
+    isUpvoted: false,
     isCuratorPick: true
   }
 ];

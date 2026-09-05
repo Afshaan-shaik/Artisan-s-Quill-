@@ -296,13 +296,6 @@ const ZenOverlay: React.FC<ZenOverlayProps> = ({
               <Bookmark className={`w-4 h-4 ${artwork.isSaved ? 'fill-[#c9a875] text-[#c9a875]' : ''}`} />
               <span>{artwork.isSaved ? 'Saved' : 'Save'}</span>
             </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); if (onAddToMoodBoard) onAddToMoodBoard(artwork); }}
-              className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#dfbd87] hover:text-white transition-colors cursor-pointer"
-            >
-              <Layers className="w-4 h-4 text-[#c9a875]" />
-              <span>Vault</span>
-            </button>
           </div>
 
           {/* Close hint */}
@@ -650,36 +643,6 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
             >
               <Share2 className="w-3.5 h-3.5 text-[#c9a875]" />
               <span className="hidden sm:inline">Share</span>
-            </button>
-
-            <button
-              onClick={(e) => { e.stopPropagation(); if (onAddToMoodBoard) onAddToMoodBoard(artwork); }}
-              className="flex items-center gap-1.5 text-xs uppercase tracking-widest text-[#dfbd87] hover:text-white transition-colors cursor-pointer"
-            >
-              <Layers className="w-3.5 h-3.5 text-[#c9a875]" />
-              <span className="hidden sm:inline">Vault</span>
-            </button>
-
-            {/* Read Later Queue Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (inQueue) {
-                  GalleryService.removeFromReadingQueue(artwork.id);
-                  setInQueue(false);
-                } else {
-                  GalleryService.addToReadingQueue(artwork.id);
-                  setInQueue(true);
-                  if (onAddToReadingQueue) onAddToReadingQueue(artwork);
-                }
-              }}
-              className={`flex items-center gap-1.5 text-xs uppercase tracking-widest transition-colors cursor-pointer ${
-                inQueue ? 'text-[#c9a875]' : 'text-neutral-400 hover:text-white'
-              }`}
-              title={inQueue ? 'Remove from Reading Queue' : 'Add to Reading Queue'}
-            >
-              <BookMarked className={`w-3.5 h-3.5 ${inQueue ? 'fill-[#c9a875] text-[#c9a875]' : ''}`} />
-              <span className="hidden sm:inline">{inQueue ? 'Queued' : 'Later'}</span>
             </button>
           </div>
         </div>

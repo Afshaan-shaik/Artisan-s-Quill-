@@ -65,7 +65,7 @@ import { subscribeToCloudArtworks, subscribeToCloudComments, signOutFirebaseUser
 import { getActiveSupabaseUser, signOutSupabase, onSupabaseAuthStateChange } from './services/supabaseClient';
 
 export default function App() {
-  const { artworks: realtimeArtworks, isRealtimeConnected, toggleLike: toggleRealtimeLike } = useRealtimeGallery();
+  const { artworks: realtimeArtworks, isRealtimeConnected, toggleLike: toggleRealtimeLike, toggleSave: toggleRealtimeSave } = useRealtimeGallery();
   const selectedCategory = useGalleryStore(state => state.selectedCategory);
   const setSelectedCategory = useGalleryStore(state => state.setSelectedCategory);
   const searchQuery = useGalleryStore(state => state.searchQuery);
@@ -452,16 +452,32 @@ export default function App() {
     e.stopPropagation();
     toggleRealtimeLike(id);
     if (selectedArtwork && selectedArtwork.id === id) {
-      setSelectedArtwork({ ...selectedArtwork, isLiked: !selectedArtwork.isLiked, likesCount: selectedArtwork.isLiked ? Math.max(0, selectedArtwork.likesCount - 1) : selectedArtwork.likesCount + 1 });
+      setSelectedArtwork((prev) => {
+        if (!prev) return null;
+        const nextLiked = !prev.isLiked;
+        return {
+          ...prev,
+          isLiked: nextLiked,
+          likesCount: Math.max(0, prev.likesCount + (nextLiked ? 1 : -1))
+        };
+      });
     }
   };
 
   const handleToggleSave = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    toggleRealtimeSave(id);
     GalleryService.toggleSaveArtwork(id);
-    refreshArtworks();
     if (selectedArtwork && selectedArtwork.id === id) {
-      setSelectedArtwork(GalleryService.getArtworkById(id) || null);
+      setSelectedArtwork((prev) => {
+        if (!prev) return null;
+        const nextSaved = !prev.isSaved;
+        return {
+          ...prev,
+          isSaved: nextSaved,
+          savesCount: Math.max(0, prev.savesCount + (nextSaved ? 1 : -1))
+        };
+      });
     }
   };
 
@@ -907,41 +923,15 @@ export default function App() {
               <div>
                 <h2 className="text-xl sm:text-2xl font-serif-display tracking-[0.08em] text-white flex items-center gap-2.5">
                   <Bookmark className="w-5 h-5 text-[#c9a875]" />
-                  Saved Works &amp; Bookmarked Poetry
+                  Saved Works &amp; Bookmarked Masterpieces
                 </h2>
                 <p className="text-xs font-mono-code text-neutral-400 mt-1">
-                  Your private collector archive
+                  Your private collector sanctuary — {artworks.length} saved piece{artworks.length !== 1 ? 's' : ''}
                 </p>
-              </div>
-
-              {/* Sub-tabs: Saved Works | Reading Queue */}
-              <div className="flex items-center gap-1 p-1 rounded-xl bg-neutral-900/80 border border-white/10">
-                <button
-                  onClick={() => setSavedTab('works')}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                    savedTab === 'works'
-                      ? 'bg-[#c9a875] text-black shadow-[0_0_12px_rgba(201,168,117,0.4)]'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  <Bookmark className="w-3.5 h-3.5" />
-                  <span>Saved ({artworks.length})</span>
-                </button>
-                <button
-                  onClick={() => setSavedTab('queue')}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                    savedTab === 'queue'
-                      ? 'bg-[#c9a875] text-black shadow-[0_0_12px_rgba(201,168,117,0.4)]'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  <BookMarked className="w-3.5 h-3.5" />
-                  <span>Queue</span>
-                </button>
               </div>
             </div>
 
-            {savedTab === 'works' ? (
+            {artworks.length > 0 ? (
               <MasonryGrid
                 artworks={artworks}
                 onSelectArtwork={handleOpenArtwork}
@@ -954,7 +944,21 @@ export default function App() {
                 onOpenBardModal={handleOpenBardWithPoem}
               />
             ) : (
-              <ReadingQueueView onOpenArtwork={handleOpenArtwork} />
+              <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 max-w-md mx-auto">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-[#c9a875]">
+                  <Bookmark className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-serif-display text-white">No Saved Works Yet</h3>
+                <p className="text-xs text-neutral-400 font-mono-code leading-relaxed">
+                  Browse the sanctuary gallery and tap the bookmark icon on any painting, drawing, poem, or digital artwork to save it to your private sanctuary archive.
+                </p>
+                <button
+                  onClick={() => handleSelectView('feed')}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-bold text-xs uppercase tracking-wider transition-transform hover:scale-105 cursor-pointer shadow-lg shadow-[#c9a875]/20"
+                >
+                  Explore Sanctuary Gallery
+                </button>
+              </div>
             )}
           </div>
         )}

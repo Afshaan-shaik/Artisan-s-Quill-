@@ -873,21 +873,6 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                   {isSharedCopied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
                   <span>{isSharedCopied ? 'Copied' : 'Share'}</span>
                 </button>
-
-                {onAddToMoodBoard && (
-                  <button
-                    id="detail-vault-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAddToMoodBoard(artwork);
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 text-[10px] uppercase tracking-[0.2em] border border-[#c9a875]/50 bg-black/60 text-[#e8c690] hover:bg-[#c9a875] hover:text-black hover:border-[#dfbd87] hover:shadow-[0_0_15px_rgba(201,168,117,0.4)] transition-all duration-200 cursor-pointer rounded-sm shadow-md"
-                    title="Add to Vault"
-                  >
-                    <Layers className="w-3.5 h-3.5 text-current" />
-                    <span>Vault</span>
-                  </button>
-                )}
               </div>
             </div>
 
