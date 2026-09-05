@@ -20,7 +20,7 @@ import {
   Plus
 } from 'lucide-react';
 import { UserProfile } from '../types';
-import { GalleryService } from '../services/api';
+import { GalleryService, isFounderUser } from '../services/api';
 import { DEFAULT_USER } from '../data/initialData';
 import { syncUserProfileToCloud } from '../services/firebase';
 import { uploadMediaToSupabase, upsertProfileToSupabase } from '../services/supabaseClient';
@@ -346,13 +346,14 @@ export const AddProfileModal: React.FC<AddProfileModalProps> = ({
 
     let resultUser: UserProfile;
 
-    const isFounder =
-      currentUser.id === DEFAULT_USER.id ||
-      currentUser.handle === DEFAULT_USER.handle ||
-      currentUser.handle === '@afshaanshaikh' ||
-      currentUser.name?.toLowerCase().includes('afshaan') ||
-      name.toLowerCase().includes('afshaan') ||
-      cleanHandle.toLowerCase() === 'afshaanshaikh';
+    const isFounder = isFounderUser(currentUser);
+    const handleWithoutAt = cleanHandle.toLowerCase();
+
+    // Prevent unauthorized users from claiming the founder's handle or identity
+    if ((handleWithoutAt === 'afshaanshaikh' || handleWithoutAt === 'afshaan.creator') && !isFounder) {
+      alert('The handle @afshaanshaikh is reserved exclusively for Sanctuary Founder Afshaan Shaikh.');
+      return;
+    }
 
     if (saveMode === 'new_persona' || isCreateMode) {
       resultUser = GalleryService.createUserProfile(profilePayload);
@@ -365,7 +366,7 @@ export const AddProfileModal: React.FC<AddProfileModalProps> = ({
       } as UserProfile;
 
       if (isFounder) {
-        GalleryService.updateFounderProfile(resultUser).catch(() => {});
+        GalleryService.updateFounderProfile(resultUser, currentUser).catch(() => {});
       } else {
         GalleryService.saveCurrentUser(resultUser);
       }

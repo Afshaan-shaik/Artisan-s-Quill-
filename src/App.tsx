@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { Artwork, ArtCategory, UserProfile, Exhibition } from './types';
 import { DEFAULT_USER } from './data/initialData';
-import { GalleryService } from './services/api';
+import { GalleryService, isFounderUser } from './services/api';
 import { useRealtimeGallery } from './hooks/useRealtimeGallery';
 import { useGalleryStore } from './store/useGalleryStore';
 import { Navbar } from './components/Navbar';
@@ -721,7 +721,22 @@ export default function App() {
               handleSelectView('feed');
             }}
             onOpenUpload={() => handleOpenUpload('painting')}
+            onFounderAuthenticated={(founder) => {
+              setCurrentUser(founder);
+              triggerNotification('Welcome back, Founder Afshaan Shaikh! Atelier controls unlocked.', 'success');
+            }}
             onOpenEditProfile={(target) => {
+              const isTargetFounder =
+                !target ||
+                target.id === DEFAULT_USER.id ||
+                target.id === 'user-my-atelier' ||
+                target.handle === DEFAULT_USER.handle ||
+                target.handle === '@afshaanshaikh';
+
+              if (isTargetFounder && !isFounderUser(currentUser)) {
+                triggerNotification('Access Denied: Only Sanctuary Creator Afshaan Shaikh can edit visionary details.', 'error');
+                return;
+              }
               setProfileToEdit(target || GalleryService.getFounderProfile());
               setIsProfilePictureModalOpen(true);
             }}
@@ -1117,11 +1132,7 @@ export default function App() {
         currentUser={currentUser}
         targetUser={profileToEdit}
         onSuccess={async (updated) => {
-          const isFounder =
-            updated.id === DEFAULT_USER.id ||
-            updated.handle === DEFAULT_USER.handle ||
-            updated.handle === '@afshaanshaikh' ||
-            updated.name?.toLowerCase().includes('afshaan');
+          const isFounder = isFounderUser(updated) || isFounderUser(currentUser);
 
           if (isFounder) {
             await GalleryService.syncFounderProfile().catch(() => {});

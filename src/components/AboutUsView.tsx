@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { UserProfile, ArtCategory, Inquiry } from '../types';
-import { GalleryService } from '../services/api';
+import { GalleryService, isFounderUser } from '../services/api';
 import { DEFAULT_USER } from '../data/initialData';
 import { saveInquiryToSupabase } from '../services/supabaseClient';
 
@@ -40,13 +40,15 @@ interface AboutUsViewProps {
   onNavigateCategory?: (category: ArtCategory) => void;
   onOpenUpload?: () => void;
   onOpenEditProfile?: (targetUser?: UserProfile) => void;
+  onFounderAuthenticated?: (user: UserProfile) => void;
 }
 
 export const AboutUsView: React.FC<AboutUsViewProps> = ({
   currentUser,
   onNavigateCategory,
   onOpenUpload,
-  onOpenEditProfile
+  onOpenEditProfile,
+  onFounderAuthenticated
 }) => {
   // Always load and lock to Founder Afshaan Shaikh's profile
   const [founder, setFounder] = useState<UserProfile>(GalleryService.getFounderProfile());
@@ -84,13 +86,41 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
     return () => window.removeEventListener('atelier_founder_profile_updated', handleFounderUpdated);
   }, [currentUser]);
 
-  // Founder edit authorization check
-  const isFounderLoggedIn =
-    currentUser.id === DEFAULT_USER.id ||
-    currentUser.handle === DEFAULT_USER.handle ||
-    currentUser.handle === '@afshaanshaikh' ||
-    currentUser.name.toLowerCase().includes('afshaan') ||
-    currentUser.id === 'guest'; // Allow founder to edit from sanctuary view without session friction
+  // Strict founder edit authorization check — only Sanctuary Creator Afshaan Shaikh can edit
+  const isFounderLoggedIn = isFounderUser(currentUser);
+
+  // Founder passcode unlock modal state
+  const [showFounderModal, setShowFounderModal] = useState(false);
+  const [passcodeInput, setPasscodeInput] = useState('');
+  const [passcodeError, setPasscodeError] = useState<string | null>(null);
+  const [isUnlocking, setIsUnlocking] = useState(false);
+
+  const handleUnlockFounder = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasscodeError(null);
+    setIsUnlocking(true);
+    try {
+      const res = GalleryService.loginAsFounder(passcodeInput);
+      if (res.success && res.user) {
+        setFounder(res.user);
+        onFounderAuthenticated?.(res.user);
+        setShowFounderModal(false);
+        setPasscodeInput('');
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ['#c9a875', '#dfbd87', '#ffffff']
+        });
+      } else {
+        setPasscodeError(res.message || 'Incorrect passcode. Access restricted exclusively to Sanctuary Creator Afshaan Shaikh.');
+      }
+    } catch {
+      setPasscodeError('Authentication error. Access denied.');
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
 
   const INQUIRY_LABELS: Record<string, string> = {
     'art-acquisition': 'Fine Art Acquisition & Licensing',
@@ -264,17 +294,34 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                   </div>
                 </div>
 
-                {/* Edit Photo Quick Button (Visible only when Afshaan is logged in) */}
-                {isFounderLoggedIn && onOpenEditProfile && (
+                {/* Edit Photo Quick Button (Visible ONLY when verified Afshaan Shaikh is logged in) */}
+                {isFounderLoggedIn && onOpenEditProfile ? (
                   <div className="mt-3 text-center">
                     <button
                       type="button"
                       id="about-change-photo-btn"
                       onClick={() => onOpenEditProfile(founder)}
-                      className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#c9a875]/10 hover:bg-[#c9a875]/20 border border-[#c9a875]/40 text-[#dfbd87] hover:text-white text-xs font-mono-code font-semibold transition-all cursor-pointer hover:scale-105 active:scale-95"
+                      className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#c9a875]/10 hover:bg-[#c9a875]/20 border border-[#c9a875]/40 text-[#dfbd87] hover:text-white text-xs font-mono-code font-semibold transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm"
                     >
                       <Camera className="w-3.5 h-3.5 text-[#c9a875]" />
                       <span>Edit My Picture & Name</span>
+                    </button>
+                  </div>
+                ) : (
+                  /* Discreet Creator Atelier Access for Afshaan Shaikh if browsing unauthenticated */
+                  <div className="mt-3 text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPasscodeInput('');
+                        setPasscodeError(null);
+                        setShowFounderModal(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.03] hover:bg-[#c9a875]/10 border border-white/10 hover:border-[#c9a875]/40 text-neutral-400 hover:text-[#dfbd87] text-[11px] font-mono-code transition-all cursor-pointer"
+                      title="Sanctuary Creator Access (Afshaan Shaikh Only)"
+                    >
+                      <Lock className="w-3 h-3 text-[#c9a875]" />
+                      <span>Creator Atelier Access</span>
                     </button>
                   </div>
                 )}
@@ -722,6 +769,71 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
 
         </div>
       </section>
+
+      {/* ─── Founder Passcode Verification Modal ─── */}
+      {showFounderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-2xl bg-gradient-to-b from-[#11131a] to-[#07090e] border border-[#c9a875]/50 shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_30px_rgba(201,168,117,0.2)] p-6 sm:p-8 space-y-6">
+            <button
+              onClick={() => setShowFounderModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer text-sm"
+            >
+              ✕
+            </button>
+
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-full bg-[#c9a875]/10 border border-[#c9a875] flex items-center justify-center text-[#dfbd87] mx-auto shadow-[0_0_20px_rgba(201,168,117,0.25)]">
+                <Lock className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-serif-display text-white">
+                Creator Atelier Verification
+              </h3>
+              <p className="text-xs text-neutral-400 font-sans leading-relaxed max-w-xs mx-auto">
+                Only Sanctuary Founder <span className="text-[#dfbd87] font-semibold">Afshaan Shaikh</span> is authorized to modify visionary details and portrait.
+              </p>
+            </div>
+
+            <form onSubmit={handleUnlockFounder} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-mono-code uppercase tracking-wider text-neutral-300 mb-1.5">
+                  Founder Passcode / Key
+                </label>
+                <input
+                  type="password"
+                  value={passcodeInput}
+                  onChange={(e) => setPasscodeInput(e.target.value)}
+                  placeholder="Enter creator passcode..."
+                  autoFocus
+                  className="w-full px-4 py-2.5 rounded-xl bg-black/60 border border-[#c9a875]/40 focus:border-[#dfbd87] focus:ring-1 focus:ring-[#dfbd87] text-white text-sm font-mono-code outline-none transition-all placeholder:text-neutral-600"
+                />
+              </div>
+
+              {passcodeError && (
+                <div className="p-3 rounded-lg bg-red-950/40 border border-red-500/40 text-red-300 text-xs font-mono-code leading-tight">
+                  {passcodeError}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowFounderModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-white/10 text-xs font-mono-code text-neutral-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUnlocking || !passcodeInput.trim()}
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#c9a875] to-[#dfbd87] hover:from-[#dfbd87] hover:to-[#f0d4a3] text-black font-semibold text-xs font-mono-code transition-all shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer"
+                >
+                  {isUnlocking ? 'Verifying...' : 'Unlock Controls'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

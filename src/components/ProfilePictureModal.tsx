@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { DEFAULT_USER } from '../data/initialData';
-import { GalleryService } from '../services/api';
+import { GalleryService, isFounderUser } from '../services/api';
 import { uploadMediaToSupabase, upsertProfileToSupabase } from '../services/supabaseClient';
 import { Avatar } from './Avatar';
 
@@ -153,15 +153,22 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
 
     try {
       const cleanName = name.trim() || effectiveUser.name || 'Artist';
-      const isFounder =
+      const isTargetingFounder =
+        targetUser?.id === DEFAULT_USER.id ||
+        targetUser?.id === 'user-my-atelier' ||
+        targetUser?.handle === DEFAULT_USER.handle ||
+        targetUser?.handle === '@afshaanshaikh' ||
         effectiveUser.id === DEFAULT_USER.id ||
-        effectiveUser.handle === DEFAULT_USER.handle ||
-        effectiveUser.handle === '@afshaanshaikh' ||
-        effectiveUser.name?.toLowerCase().includes('afshaan') ||
-        name.toLowerCase().includes('afshaan') ||
-        handle.toLowerCase() === 'afshaanshaikh' ||
-        targetUser?.id === DEFAULT_USER.id;
+        effectiveUser.id === 'user-my-atelier';
 
+      // STRICT CHECK: If targeting the founder, the current user MUST be verified as the founder!
+      if (isTargetingFounder && !isFounderUser(currentUser)) {
+        alert('Access Denied: Only Sanctuary Creator Afshaan Shaikh has permission to edit visionary details.');
+        setIsSaving(false);
+        return;
+      }
+
+      const isFounder = isFounderUser(currentUser) && isTargetingFounder;
       const cleanHandle = isFounder ? 'afshaanshaikh' : (handle.trim().replace(/^@/, '') || effectiveUser.handle.replace(/^@/, '') || 'artist');
       const finalAvatar = avatar.trim() || DEFAULT_USER.avatar;
 
@@ -175,8 +182,8 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
       };
 
       if (isFounder) {
-        // Direct database update to Supabase for the founder
-        await GalleryService.updateFounderProfile(updatedUser);
+        // Direct database update to Supabase for the founder with invoker check
+        await GalleryService.updateFounderProfile(updatedUser, currentUser);
       } else {
         GalleryService.saveCurrentUser(updatedUser);
         await upsertProfileToSupabase(updatedUser);

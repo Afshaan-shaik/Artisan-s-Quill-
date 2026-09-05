@@ -36,8 +36,27 @@ const READING_QUEUE_KEY = 'atelier_reading_queue_v1';
 const CREDENTIALS_STORAGE_KEY = 'atelier_noir_credentials_v1';
 
 /** Email of the sanctuary founder — requires verified credentials or OAuth */
-const FOUNDER_EMAIL = 'afshaan100@gmail.com';
-const FOUNDER_PASSCODES = ['atelier2026', 'sanctuary2026', 'afshaan2026', 'sanctuary@2026', 'atelier@2026'];
+export const FOUNDER_EMAIL = 'afshaan100@gmail.com';
+export const FOUNDER_PASSCODES = ['atelier2026', 'sanctuary2026', 'afshaan2026', 'sanctuary@2026', 'atelier@2026'];
+
+/**
+ * Strict verification check to determine if a user session is authentically the sanctuary creator (Afshaan Shaikh).
+ * Guests, unauthenticated visitors, and newly registered or other artist accounts are strictly rejected.
+ */
+export function isFounderUser(user?: UserProfile | null): boolean {
+  if (!user || !user.id || user.id === 'guest') return false;
+
+  const email = (user.email || '').trim().toLowerCase();
+  const handle = (user.handle || '').trim().toLowerCase().replace(/^@/, '');
+  const id = (user.id || '').trim();
+
+  // Strict match against authentic founder identity
+  const isFounderEmail = email === FOUNDER_EMAIL;
+  const isFounderHandle = handle === 'afshaanshaikh' || handle === 'afshaan.creator';
+  const isFounderId = id === 'user-my-atelier' || id === DEFAULT_USER.id;
+
+  return isFounderEmail || isFounderHandle || isFounderId;
+}
 
 function isDisallowed(text: string | undefined | null): boolean {
   if (!text) return false;
@@ -316,21 +335,14 @@ export class GalleryService {
     const userId = typeof userOrId === 'string' ? userOrId : userOrId.id;
     const userHandle = typeof userOrId === 'string' ? userOrId : userOrId.handle;
 
-    const isUserFounder =
-      userId === DEFAULT_USER.id ||
-      userId === 'user-my-atelier' ||
-      userHandle === DEFAULT_USER.handle ||
-      userHandle === '@afshaanshaikh' ||
-      userHandle === '@afshaan.creator' ||
-      userHandle === 'afshaanshaikh';
+    const isUserFounder = isFounderUser(typeof userOrId === 'string' ? ({ id: userOrId, handle: userOrId } as any) : userOrId);
 
     const isArtFounder =
       artwork.artist.id === DEFAULT_USER.id ||
       artwork.artist.id === 'user-my-atelier' ||
       artwork.artist.handle === DEFAULT_USER.handle ||
       artwork.artist.handle === '@afshaanshaikh' ||
-      artwork.artist.handle === '@afshaan.creator' ||
-      artwork.artist.name?.toLowerCase().includes('afshaan');
+      artwork.artist.handle === '@afshaan.creator';
 
     if (isUserFounder && isArtFounder) return true;
 
@@ -819,7 +831,10 @@ export class GalleryService {
    * Directly updates the sanctuary founder's profile and avatar in Supabase database,
    * local vault storage, in-memory defaults, and notifies all open views.
    */
-  static async updateFounderProfile(profileData: Partial<UserProfile>): Promise<UserProfile> {
+  static async updateFounderProfile(profileData: Partial<UserProfile>, invokingUser?: UserProfile | null): Promise<UserProfile> {
+    if (invokingUser && !isFounderUser(invokingUser)) {
+      throw new Error('Unauthorized: Only sanctuary creator Afshaan Shaikh can modify founder profile details.');
+    }
     const currentFounder = this.getFounderProfile();
     const updatedFounder: UserProfile = {
       ...currentFounder,
@@ -925,11 +940,7 @@ export class GalleryService {
         }
       }
 
-      const isFounder =
-        user.id === DEFAULT_USER.id ||
-        user.handle === DEFAULT_USER.handle ||
-        user.handle === '@afshaanshaikh' ||
-        user.name?.toLowerCase().includes('afshaan');
+      const isFounder = isFounderUser(user);
 
       if (isFounder) {
         DEFAULT_USER.avatar = user.avatar || DEFAULT_USER.avatar;
@@ -1144,6 +1155,26 @@ export class GalleryService {
       success: false,
       message: `No registered artist account found for "${identifier}". Please verify your credentials or create a profile.`
     };
+  }
+
+  static verifyFounderPasscode(passcode: string): boolean {
+    const cleanPass = (passcode || '').trim();
+    if (!cleanPass) return false;
+    const creds = this.getStoredCredentials();
+    const customFounderPass = creds[FOUNDER_EMAIL] || creds['@afshaanshaikh'];
+    return (
+      FOUNDER_PASSCODES.includes(cleanPass) ||
+      Boolean(customFounderPass && cleanPass === customFounderPass)
+    );
+  }
+
+  static loginAsFounder(passcode: string): { success: boolean; user?: UserProfile; message?: string } {
+    if (!this.verifyFounderPasscode(passcode)) {
+      return { success: false, message: 'Invalid founder passcode. Access restricted exclusively to Afshaan Shaikh.' };
+    }
+    const founder = this.getFounderProfile();
+    this.saveCurrentUser(founder);
+    return { success: true, user: founder };
   }
 
   // ─── Reading Queue (Poem Playlist) ─────────────────────────────────────────

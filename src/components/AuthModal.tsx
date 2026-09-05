@@ -280,6 +280,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     const cleanHandle = handle.trim().startsWith('@') ? handle.trim() : `@${handle.trim()}`;
+    const handleWithoutAt = cleanHandle.replace(/^@/, '').toLowerCase();
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Protect Sanctuary Founder identity from being claimed in open signup
+    if (
+      handleWithoutAt === 'afshaanshaikh' ||
+      handleWithoutAt === 'afshaan.creator' ||
+      cleanEmail === 'afshaan100@gmail.com'
+    ) {
+      setSignupError('The handle @afshaanshaikh and founder email are reserved exclusively for Sanctuary Founder Afshaan Shaikh. Please switch to "Sign In" instead.');
+      return;
+    }
     
     // Check if handle is already registered locally
     const existing = GalleryService.getAllUserProfiles().find(
