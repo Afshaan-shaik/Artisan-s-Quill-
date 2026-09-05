@@ -212,7 +212,7 @@ export function buildUserProfileFromGoogleData(googleData: {
     id: isFounder ? 'user-my-atelier' : `user-${googleData.uid || 'google-' + Date.now()}`,
     name: isFounder ? 'Afshaan Shaikh' : name,
     handle: isFounder ? '@afshaanshaikh' : handle,
-    avatar: avatar || (isFounder ? '/curatorial-masterpiece.svg' : 'https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=400&q=80'),
+    avatar: avatar || (isFounder ? 'https://uskuzbtvbhfqlxvbbrvw.supabase.co/storage/v1/object/public/avatars/profiles/avatars-1787666173961-z4kf7n.jpeg' : 'https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=400&q=80'),
     coverImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1400&q=80',
     bio: isFounder
       ? 'Artist, poet, coder, and software developer. Crafting at the confluence of expressive fine art, lyrical verse, and algorithmic software architecture.'

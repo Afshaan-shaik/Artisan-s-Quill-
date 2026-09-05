@@ -99,7 +99,63 @@ export default function App() {
   });
 
   // Navigation & Filtering State
-  const [activeView, setActiveView] = useState<'feed' | 'cosmos' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults'>('feed');
+  const getValidViewFromUrl = (): 'feed' | 'cosmos' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults' => {
+    if (typeof window === 'undefined') return 'feed';
+    const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+    const params = new URLSearchParams(window.location.search);
+    const paramView = params.get('view') || params.get('tab');
+    const path = window.location.pathname.replace(/^\//, '').toLowerCase();
+
+    const target = hash || paramView || path;
+    const validViews = ['feed', 'cosmos', 'exhibitions', 'saved', 'about', 'recycle-bin', 'community', 'vaults'];
+    if (validViews.includes(target)) {
+      return target as any;
+    }
+    return 'feed';
+  };
+
+  const [activeView, setActiveView] = useState<'feed' | 'cosmos' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults'>(() => {
+    return getValidViewFromUrl();
+  });
+
+  const handleSelectView = (view: 'feed' | 'cosmos' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults') => {
+    setActiveView(view);
+    if (typeof window !== 'undefined') {
+      if (view === 'feed') {
+        if (window.location.hash) {
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      } else {
+        window.location.hash = view;
+      }
+    }
+  };
+
+  // Bidirectional URL sync: listen to hashchange, popstate, window focus, and tab visibility switching
+  useEffect(() => {
+    const handleLocationSync = () => {
+      const target = getValidViewFromUrl();
+      setActiveView(target);
+    };
+
+    window.addEventListener('hashchange', handleLocationSync);
+    window.addEventListener('popstate', handleLocationSync);
+    window.addEventListener('focus', handleLocationSync);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        handleLocationSync();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('hashchange', handleLocationSync);
+      window.removeEventListener('popstate', handleLocationSync);
+      window.removeEventListener('focus', handleLocationSync);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
   const [feedFilter, setFeedFilter] = useState<'curated' | 'popular' | 'latest'>('curated');
   const [dateRangeFilter, setDateRangeFilter] = useState<{ start?: string; end?: string; }>({});
 
@@ -439,7 +495,7 @@ export default function App() {
   
   const handleSelectExhibition = (exhibitionId: string) => {
     setSelectedExhibitionId(exhibitionId);
-    setActiveView('feed');
+    handleSelectView('feed');
     setSelectedCategory('all');
   };
 
@@ -556,19 +612,19 @@ export default function App() {
         selectedCategory={selectedCategory}
         onSelectCategory={(cat) => {
           setSelectedCategory(cat);
-          setActiveView('feed');
+          handleSelectView('feed');
         }}
         searchQuery={searchQuery}
         onSearchChange={(q) => {
           setSearchQuery(q);
           if (q && activeView !== 'feed' && activeView !== 'saved') {
-            setActiveView('feed');
+            handleSelectView('feed');
           }
         }}
         dateRange={dateRangeFilter}
         onDateRangeChange={setDateRangeFilter}
         activeView={activeView}
-        onSelectView={setActiveView}
+        onSelectView={handleSelectView}
         onOpenUpload={handleOpenUpload}
         onOpenInkStudio={() => setIsInkStudioOpen(true)}
         onOpenBardModal={() => handleOpenBardWithPoem()}
@@ -644,7 +700,7 @@ export default function App() {
             currentUser={currentUser}
             onNavigateCategory={(category) => {
               setSelectedCategory(category);
-              setActiveView('feed');
+              handleSelectView('feed');
             }}
             onOpenUpload={() => handleOpenUpload('painting')}
             onOpenEditProfile={() => setIsProfilePictureModalOpen(true)}
@@ -656,7 +712,7 @@ export default function App() {
             artworks={realtimeArtworks}
             onSelectArtwork={handleOpenArtwork}
             onOpenUpload={handleOpenUpload}
-            onSwitchToGallery={() => setActiveView('feed')}
+            onSwitchToGallery={() => handleSelectView('feed')}
           />
         )}
 
@@ -675,7 +731,7 @@ export default function App() {
             {/* 3D Constellation Cosmos Gateway Banner Card */}
             <div
               id="feed-cosmos-banner-card"
-              onClick={() => setActiveView('cosmos')}
+              onClick={() => handleSelectView('cosmos')}
               className="relative overflow-hidden rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-[#090b14]/95 via-[#121524]/90 to-[#090b14]/95 border border-[#c9a875]/40 hover:border-[#c9a875] shadow-xl hover:shadow-[0_0_30px_rgba(201,168,117,0.25)] transition-all duration-300 cursor-pointer group select-none"
               title="Click to view the 3D constellation of data or art data"
             >
@@ -954,7 +1010,7 @@ export default function App() {
           <div className="flex items-center">
             <button
               id="footer-developed-by-btn"
-              onClick={() => setActiveView('about')}
+              onClick={() => handleSelectView('about')}
               className="hover:text-white text-[#dfbd87] transition-colors cursor-pointer group flex items-center gap-1.5"
               title="About Developer & Artist Afshaan Shaikh"
             >
@@ -1049,6 +1105,7 @@ export default function App() {
         currentUser={currentUser}
         onSuccess={(updated) => {
           setCurrentUser(updated);
+          GalleryService.syncFounderProfile().catch(() => {});
           refreshArtworks();
           triggerNotification('Profile image and details updated.', 'success');
         }}

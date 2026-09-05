@@ -11,6 +11,7 @@ import {
   fetchMarginReflectionsFromSupabase,
   addMarginReflectionToSupabase,
   fetchProfilesFromSupabase,
+  fetchFounderProfileFromSupabase,
   upsertProfileToSupabase,
   fetchExhibitionsFromSupabase,
   saveExhibitionToSupabase,
@@ -771,6 +772,7 @@ export class GalleryService {
             ...DEFAULT_USER,
             ...parsed,
             name: parsed.name || DEFAULT_USER.name,
+            avatar: parsed.avatar || DEFAULT_USER.avatar,
             discipline: parsed.discipline || DEFAULT_USER.discipline,
             email: parsed.email || DEFAULT_USER.email,
             phone: parsed.phone || DEFAULT_USER.phone
@@ -781,6 +783,25 @@ export class GalleryService {
       // Fallback
     }
     return DEFAULT_USER;
+  }
+
+  /**
+   * Synchronizes founder profile from permanent Supabase database.
+   * Ensures all visitors, across all tabs, links, and devices, see founder's authentic profile picture.
+   */
+  static async syncFounderProfile(): Promise<UserProfile> {
+    try {
+      const remote = await fetchFounderProfileFromSupabase();
+      if (remote && remote.avatar) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(FOUNDER_STORAGE_KEY, JSON.stringify(remote));
+        }
+        return remote;
+      }
+    } catch {
+      // Fallback
+    }
+    return this.getFounderProfile();
   }
 
   static isGuestSession(): boolean {

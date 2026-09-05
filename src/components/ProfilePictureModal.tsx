@@ -15,6 +15,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { UserProfile } from '../types';
+import { DEFAULT_USER } from '../data/initialData';
 import { GalleryService } from '../services/api';
 import { uploadMediaToSupabase } from '../services/supabaseClient';
 import { Avatar } from './Avatar';
@@ -82,7 +83,7 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
     if (isOpen) {
       setName(currentUser.name || 'Artist');
       setHandle((currentUser.handle || '@artist').replace(/^@/, ''));
-      setAvatar(currentUser.avatar || '/curatorial-masterpiece.svg');
+      setAvatar(currentUser.avatar || DEFAULT_USER.avatar);
       setDiscipline(currentUser.discipline || 'Visual Artist & Poet');
       setUrlInput('');
       setSavedSuccess(false);
@@ -143,7 +144,7 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
       ...currentUser,
       name: cleanName,
       handle: `@${cleanHandle}`,
-      avatar: avatar.trim() || '/curatorial-masterpiece.svg',
+      avatar: avatar.trim() || DEFAULT_USER.avatar,
       discipline: discipline.trim() || currentUser.discipline || 'Visual Artist & Poet'
     };
 

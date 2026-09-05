@@ -63,7 +63,15 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
   const [lastInquiry, setLastInquiry] = useState<Inquiry | null>(null);
 
   useEffect(() => {
+    // 1. Initial cached or default profile
     setFounder(GalleryService.getFounderProfile());
+
+    // 2. Live fetch from permanent Supabase database so ANY visitor sees real photo
+    GalleryService.syncFounderProfile().then((liveFounder) => {
+      if (liveFounder && liveFounder.avatar) {
+        setFounder(liveFounder);
+      }
+    });
   }, [currentUser]);
 
   // Strict check: only Afshaan Shaikh can edit About Us information
@@ -206,9 +214,12 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                 {/* Gold Museum Frame Border */}
                 <div className="relative aspect-[3/4] rounded-xl overflow-hidden border-2 border-[#c9a875]/60 group-hover:border-[#dfbd87] transition-all duration-300 shadow-[0_0_35px_rgba(201,168,117,0.25)] bg-[#0a0c12]">
                   <img
-                    src={founder.avatar || '/curatorial-masterpiece.svg'}
+                    src={founder.avatar || DEFAULT_USER.avatar}
                     alt="Afshaan Shaikh — Artist, Poet, Coder, Software Developer"
                     className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = DEFAULT_USER.avatar;
+                    }}
                   />
                   {/* Subtle Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#06070a] via-transparent to-transparent opacity-80" />

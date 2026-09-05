@@ -547,6 +547,52 @@ export async function fetchProfilesFromSupabase(): Promise<UserProfile[]> {
   }
 }
 
+/**
+ * Fetches the permanent live Founder profile (Afshaan Shaikh) directly from Supabase Postgres.
+ * Enables visitors on any browser/tab/link to see the real profile picture without requiring authentication.
+ */
+export async function fetchFounderProfileFromSupabase(): Promise<UserProfile | null> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .or('id.eq.user-my-atelier,handle.eq.@afshaanshaikh')
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    return {
+      id: data.id || DEFAULT_USER.id,
+      name: data.name || DEFAULT_USER.name,
+      handle: data.handle || DEFAULT_USER.handle,
+      avatar: data.avatar_url || DEFAULT_USER.avatar,
+      coverImage: data.cover_url || DEFAULT_USER.coverImage,
+      bio: data.bio || DEFAULT_USER.bio,
+      discipline: data.discipline || DEFAULT_USER.discipline,
+      location: data.location || DEFAULT_USER.location,
+      favoriteQuote: data.quote_text
+        ? { text: data.quote_text, author: data.quote_author || data.name || 'Afshaan Shaikh' }
+        : DEFAULT_USER.favoriteQuote,
+      website: data.website || DEFAULT_USER.website,
+      instagram: data.instagram || DEFAULT_USER.instagram,
+      twitter: data.twitter || DEFAULT_USER.twitter,
+      email: data.email || DEFAULT_USER.email,
+      phone: data.phone || DEFAULT_USER.phone,
+      verified: true,
+      artworksCount: data.artworks_count || DEFAULT_USER.artworksCount,
+      followersCount: data.followers_count || DEFAULT_USER.followersCount,
+      followingCount: data.following_count || DEFAULT_USER.followingCount,
+      badges: Array.isArray(data.badges) ? data.badges : DEFAULT_USER.badges
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function upsertProfileToSupabase(profile: UserProfile): Promise<boolean> {
   const supabase = getSupabaseClient();
   if (!supabase) return false;
