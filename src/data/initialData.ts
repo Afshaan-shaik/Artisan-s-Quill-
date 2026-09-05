@@ -21,7 +21,7 @@ export const DEFAULT_USER: UserProfile = {
   id: 'user-my-atelier',
   name: 'Afshaan Shaikh',
   handle: '@afshaanshaikh',
-  avatar: 'https://uskuzbtvbhfqlxvbbrvw.supabase.co/storage/v1/object/public/avatars/profiles/avatars-1787666173961-z4kf7n.jpeg',
+  avatar: 'https://uskuzbtvbhfqlxvbbrvw.supabase.co/storage/v1/object/public/avatars/profiles/avatars-1788606890329-suv7gl.jpeg',
   coverImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1400&q=80',
   bio: 'Artist, poet, coder, and software developer. Crafting at the confluence of expressive fine art, lyrical verse, and algorithmic software architecture.',
   discipline: 'Artist | Poet | Coder | Software Developer',

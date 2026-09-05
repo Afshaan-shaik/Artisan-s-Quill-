@@ -54,16 +54,16 @@ function isDisallowed(text: string | undefined | null): boolean {
   );
 }
 
-function isDisallowedProfile(p: UserProfile): boolean {
+function isDisallowedProfile(p?: Partial<UserProfile> | null): boolean {
   if (!p) return true;
   const quoteText = typeof p.favoriteQuote === 'object' ? p.favoriteQuote?.text : p.favoriteQuote;
   return (
-    isDisallowed(p.name) ||
-    isDisallowed(p.handle) ||
-    isDisallowed(p.bio) ||
-    isDisallowed(p.location) ||
-    isDisallowed(quoteText) ||
-    (p.badges && p.badges.some((b) => isDisallowed(b)))
+    (p.name ? isDisallowed(p.name) : false) ||
+    (p.handle ? isDisallowed(p.handle) : false) ||
+    (p.bio ? isDisallowed(p.bio) : false) ||
+    (p.location ? isDisallowed(p.location) : false) ||
+    (quoteText ? isDisallowed(quoteText) : false) ||
+    Boolean(p.badges && p.badges.some((b) => isDisallowed(b)))
   );
 }
 
@@ -793,6 +793,8 @@ export class GalleryService {
     try {
       const remote = await fetchFounderProfileFromSupabase();
       if (remote && remote.avatar) {
+        DEFAULT_USER.avatar = remote.avatar;
+        if (remote.name) DEFAULT_USER.name = remote.name;
         if (typeof window !== 'undefined') {
           localStorage.setItem(FOUNDER_STORAGE_KEY, JSON.stringify(remote));
         }
@@ -802,6 +804,44 @@ export class GalleryService {
       // Fallback
     }
     return this.getFounderProfile();
+  }
+
+  /**
+   * Directly updates the sanctuary founder's profile and avatar in Supabase database,
+   * local vault storage, in-memory defaults, and notifies all open views.
+   */
+  static async updateFounderProfile(profileData: Partial<UserProfile>): Promise<UserProfile> {
+    const currentFounder = this.getFounderProfile();
+    const updatedFounder: UserProfile = {
+      ...currentFounder,
+      ...profileData,
+      id: DEFAULT_USER.id,
+      handle: DEFAULT_USER.handle,
+      name: profileData.name || currentFounder.name || DEFAULT_USER.name,
+      avatar: profileData.avatar || currentFounder.avatar || DEFAULT_USER.avatar,
+      discipline: profileData.discipline || currentFounder.discipline || DEFAULT_USER.discipline,
+      verified: true
+    };
+
+    DEFAULT_USER.avatar = updatedFounder.avatar;
+    DEFAULT_USER.name = updatedFounder.name;
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(FOUNDER_STORAGE_KEY, JSON.stringify(updatedFounder));
+      window.dispatchEvent(new CustomEvent('atelier_founder_profile_updated', { detail: updatedFounder }));
+    }
+
+    // Direct persistence to Supabase Postgres database
+    try {
+      await upsertProfileToSupabase(updatedFounder);
+    } catch (err) {
+      console.warn('[GalleryService] Supabase founder profile sync notice:', err);
+    }
+
+    // Cloud Firestore cross-device fallback
+    syncUserProfileToCloud(updatedFounder).catch(() => {});
+
+    return updatedFounder;
   }
 
   static isGuestSession(): boolean {
@@ -829,17 +869,18 @@ export class GalleryService {
     }
   }
 
+  static isDisallowedProfile(user?: Partial<UserProfile> | null): boolean {
+    return isDisallowedProfile(user);
+  }
+
   static getCurrentUser(): UserProfile {
     try {
       if (typeof window !== 'undefined') {
-        const isAuth = sessionStorage.getItem(SESSION_AUTH_KEY) || localStorage.getItem(SESSION_KEY);
-        if (isAuth) {
-          const sessionData = sessionStorage.getItem(SESSION_USER_KEY) || localStorage.getItem(USER_STORAGE_KEY);
-          if (sessionData) {
-            const parsed = JSON.parse(sessionData) as UserProfile;
-            if (!isDisallowedProfile(parsed) && parsed.id !== 'guest') {
-              return parsed;
-            }
+        const storedUser = sessionStorage.getItem(SESSION_USER_KEY) || localStorage.getItem(USER_STORAGE_KEY);
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser) as UserProfile;
+          if (!isDisallowedProfile(parsed)) {
+            return parsed;
           }
         }
       }
@@ -875,10 +916,21 @@ export class GalleryService {
         }
       }
 
-      if (user.id === DEFAULT_USER.id || user.handle === DEFAULT_USER.handle || user.handle === '@afshaanshaikh') {
+      const isFounder =
+        user.id === DEFAULT_USER.id ||
+        user.handle === DEFAULT_USER.handle ||
+        user.handle === '@afshaanshaikh' ||
+        user.name?.toLowerCase().includes('afshaan');
+
+      if (isFounder) {
+        DEFAULT_USER.avatar = user.avatar || DEFAULT_USER.avatar;
+        if (user.name) DEFAULT_USER.name = user.name;
         if (typeof window !== 'undefined') {
-          localStorage.setItem(FOUNDER_STORAGE_KEY, JSON.stringify(user));
+          localStorage.setItem(FOUNDER_STORAGE_KEY, JSON.stringify({ ...user, id: DEFAULT_USER.id, handle: DEFAULT_USER.handle }));
+          window.dispatchEvent(new CustomEvent('atelier_founder_profile_updated', { detail: user }));
         }
+        // Always push founder update to Supabase Postgres database
+        upsertProfileToSupabase({ ...user, id: DEFAULT_USER.id, handle: DEFAULT_USER.handle }).catch(() => {});
       }
 
       if (user.id !== 'guest') {

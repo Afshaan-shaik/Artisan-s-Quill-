@@ -21,8 +21,9 @@ import {
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { GalleryService } from '../services/api';
+import { DEFAULT_USER } from '../data/initialData';
 import { syncUserProfileToCloud } from '../services/firebase';
-import { uploadMediaToSupabase } from '../services/supabaseClient';
+import { uploadMediaToSupabase, upsertProfileToSupabase } from '../services/supabaseClient';
 import { Avatar } from './Avatar';
 
 interface AddProfileModalProps {
@@ -345,15 +346,33 @@ export const AddProfileModal: React.FC<AddProfileModalProps> = ({
 
     let resultUser: UserProfile;
 
+    const isFounder =
+      currentUser.id === DEFAULT_USER.id ||
+      currentUser.handle === DEFAULT_USER.handle ||
+      currentUser.handle === '@afshaanshaikh' ||
+      currentUser.name?.toLowerCase().includes('afshaan') ||
+      name.toLowerCase().includes('afshaan') ||
+      cleanHandle.toLowerCase() === 'afshaanshaikh';
+
     if (saveMode === 'new_persona' || isCreateMode) {
       resultUser = GalleryService.createUserProfile(profilePayload);
     } else {
       resultUser = {
         ...currentUser,
-        ...profilePayload
+        ...profilePayload,
+        id: isFounder ? DEFAULT_USER.id : currentUser.id,
+        handle: isFounder ? DEFAULT_USER.handle : `@${cleanHandle}`
       } as UserProfile;
-      GalleryService.saveCurrentUser(resultUser);
+
+      if (isFounder) {
+        GalleryService.updateFounderProfile(resultUser).catch(() => {});
+      } else {
+        GalleryService.saveCurrentUser(resultUser);
+      }
     }
+
+    // Direct persistence to Supabase Postgres database
+    upsertProfileToSupabase(resultUser).catch(() => {});
 
     // Cloud Firestore persistent cross-deployment database push
     syncUserProfileToCloud(resultUser).catch(() => {});

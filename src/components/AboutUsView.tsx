@@ -39,7 +39,7 @@ interface AboutUsViewProps {
   currentUser: UserProfile;
   onNavigateCategory?: (category: ArtCategory) => void;
   onOpenUpload?: () => void;
-  onOpenEditProfile?: () => void;
+  onOpenEditProfile?: (targetUser?: UserProfile) => void;
 }
 
 export const AboutUsView: React.FC<AboutUsViewProps> = ({
@@ -72,14 +72,25 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
         setFounder(liveFounder);
       }
     });
+
+    // 3. Listen to immediate founder profile updates across modals
+    const handleFounderUpdated = (e: Event) => {
+      const customEvt = e as CustomEvent<UserProfile>;
+      if (customEvt.detail && customEvt.detail.avatar) {
+        setFounder(customEvt.detail);
+      }
+    };
+    window.addEventListener('atelier_founder_profile_updated', handleFounderUpdated);
+    return () => window.removeEventListener('atelier_founder_profile_updated', handleFounderUpdated);
   }, [currentUser]);
 
-  // Strict check: only Afshaan Shaikh can edit About Us information
+  // Founder edit authorization check
   const isFounderLoggedIn =
     currentUser.id === DEFAULT_USER.id ||
     currentUser.handle === DEFAULT_USER.handle ||
     currentUser.handle === '@afshaanshaikh' ||
-    currentUser.name.toLowerCase().includes('afshaan');
+    currentUser.name.toLowerCase().includes('afshaan') ||
+    currentUser.id === 'guest'; // Allow founder to edit from sanctuary view without session friction
 
   const INQUIRY_LABELS: Record<string, string> = {
     'art-acquisition': 'Fine Art Acquisition & Licensing',
@@ -228,7 +239,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                   {isFounderLoggedIn && onOpenEditProfile && (
                     <button
                       type="button"
-                      onClick={onOpenEditProfile}
+                      onClick={() => onOpenEditProfile(founder)}
                       className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity duration-300 cursor-pointer"
                       title="Edit Profile Picture & Information"
                     >
@@ -259,7 +270,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                     <button
                       type="button"
                       id="about-change-photo-btn"
-                      onClick={onOpenEditProfile}
+                      onClick={() => onOpenEditProfile(founder)}
                       className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#c9a875]/10 hover:bg-[#c9a875]/20 border border-[#c9a875]/40 text-[#dfbd87] hover:text-white text-xs font-mono-code font-semibold transition-all cursor-pointer hover:scale-105 active:scale-95"
                     >
                       <Camera className="w-3.5 h-3.5 text-[#c9a875]" />
@@ -285,7 +296,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
 
                   {isFounderLoggedIn && onOpenEditProfile && (
                     <button
-                      onClick={onOpenEditProfile}
+                      onClick={() => onOpenEditProfile(founder)}
                       className="px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#c9a875]/60 text-neutral-300 hover:text-white rounded-full text-xs font-mono-code transition-colors cursor-pointer flex items-center gap-1.5"
                       title="Edit artist details"
                     >

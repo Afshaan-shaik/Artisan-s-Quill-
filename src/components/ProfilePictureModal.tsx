@@ -17,13 +17,14 @@ import {
 import { UserProfile } from '../types';
 import { DEFAULT_USER } from '../data/initialData';
 import { GalleryService } from '../services/api';
-import { uploadMediaToSupabase } from '../services/supabaseClient';
+import { uploadMediaToSupabase, upsertProfileToSupabase } from '../services/supabaseClient';
 import { Avatar } from './Avatar';
 
 interface ProfilePictureModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: UserProfile;
+  targetUser?: UserProfile | null;
   onSuccess: (updatedUser: UserProfile) => void;
 }
 
@@ -64,32 +65,38 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
   isOpen,
   onClose,
   currentUser,
+  targetUser,
   onSuccess
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'upload' | 'url' | 'presets'>('upload');
   
+  const effectiveUser = targetUser || currentUser;
+
   // State
-  const [name, setName] = useState(currentUser.name || 'Artist');
-  const [handle, setHandle] = useState((currentUser.handle || '@artist').replace(/^@/, ''));
-  const [avatar, setAvatar] = useState(currentUser.avatar || '/curatorial-masterpiece.svg');
+  const [name, setName] = useState(effectiveUser.name || 'Artist');
+  const [handle, setHandle] = useState((effectiveUser.handle || '@artist').replace(/^@/, ''));
+  const [avatar, setAvatar] = useState(effectiveUser.avatar || DEFAULT_USER.avatar);
   const [urlInput, setUrlInput] = useState('');
-  const [discipline, setDiscipline] = useState(currentUser.discipline || 'Visual Artist & Poet');
+  const [discipline, setDiscipline] = useState(effectiveUser.discipline || 'Visual Artist & Poet');
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setName(currentUser.name || 'Artist');
-      setHandle((currentUser.handle || '@artist').replace(/^@/, ''));
-      setAvatar(currentUser.avatar || DEFAULT_USER.avatar);
-      setDiscipline(currentUser.discipline || 'Visual Artist & Poet');
+      const active = targetUser || currentUser;
+      setName(active.name || 'Artist');
+      setHandle((active.handle || '@artist').replace(/^@/, ''));
+      setAvatar(active.avatar || DEFAULT_USER.avatar);
+      setDiscipline(active.discipline || 'Visual Artist & Poet');
       setUrlInput('');
       setSavedSuccess(false);
       setIsUploading(false);
+      setIsSaving(false);
     }
-  }, [isOpen, currentUser]);
+  }, [isOpen, currentUser, targetUser]);
 
   if (!isOpen) return null;
 
@@ -135,26 +142,57 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
     setAvatar(urlInput.trim());
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanName = name.trim() || currentUser.name || 'Artist';
-    const cleanHandle = handle.trim().replace(/^@/, '') || currentUser.handle.replace(/^@/, '') || 'artist';
+    if (isUploading) {
+      alert('Please wait for image upload to complete.');
+      return;
+    }
 
-    const updatedUser: UserProfile = {
-      ...currentUser,
-      name: cleanName,
-      handle: `@${cleanHandle}`,
-      avatar: avatar.trim() || DEFAULT_USER.avatar,
-      discipline: discipline.trim() || currentUser.discipline || 'Visual Artist & Poet'
-    };
+    setIsSaving(true);
 
-    GalleryService.saveCurrentUser(updatedUser);
-    onSuccess(updatedUser);
-    setSavedSuccess(true);
-    setTimeout(() => {
-      setSavedSuccess(false);
-      onClose();
-    }, 600);
+    try {
+      const cleanName = name.trim() || effectiveUser.name || 'Artist';
+      const isFounder =
+        effectiveUser.id === DEFAULT_USER.id ||
+        effectiveUser.handle === DEFAULT_USER.handle ||
+        effectiveUser.handle === '@afshaanshaikh' ||
+        effectiveUser.name?.toLowerCase().includes('afshaan') ||
+        name.toLowerCase().includes('afshaan') ||
+        handle.toLowerCase() === 'afshaanshaikh' ||
+        targetUser?.id === DEFAULT_USER.id;
+
+      const cleanHandle = isFounder ? 'afshaanshaikh' : (handle.trim().replace(/^@/, '') || effectiveUser.handle.replace(/^@/, '') || 'artist');
+      const finalAvatar = avatar.trim() || DEFAULT_USER.avatar;
+
+      const updatedUser: UserProfile = {
+        ...effectiveUser,
+        id: isFounder ? DEFAULT_USER.id : effectiveUser.id,
+        name: cleanName,
+        handle: `@${cleanHandle}`,
+        avatar: finalAvatar,
+        discipline: discipline.trim() || effectiveUser.discipline || 'Visual Artist & Poet'
+      };
+
+      if (isFounder) {
+        // Direct database update to Supabase for the founder
+        await GalleryService.updateFounderProfile(updatedUser);
+      } else {
+        GalleryService.saveCurrentUser(updatedUser);
+        await upsertProfileToSupabase(updatedUser);
+      }
+
+      onSuccess(updatedUser);
+      setSavedSuccess(true);
+      setTimeout(() => {
+        setSavedSuccess(false);
+        onClose();
+      }, 600);
+    } catch (err) {
+      console.warn('[ProfilePictureModal] Save failed:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -469,13 +507,18 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
               <button
                 type="submit"
                 id="save-profile-picture-btn"
-                disabled={isUploading}
+                disabled={isUploading || isSaving}
                 className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#c9a875] to-[#dfbd87] hover:from-[#dfbd87] hover:to-[#e8cf9f] text-black font-bold text-xs uppercase tracking-widest rounded-lg shadow-[0_0_20px_rgba(201,168,117,0.4)] transition-all cursor-pointer hover:scale-105 active:scale-95 disabled:opacity-50"
               >
                 {savedSuccess ? (
                   <>
                     <CheckCircle2 className="w-4 h-4 text-black" />
-                    <span>Saved!</span>
+                    <span>Saved to Database!</span>
+                  </>
+                ) : isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 text-black animate-spin" />
+                    <span>Updating Cloud...</span>
                   </>
                 ) : (
                   <>

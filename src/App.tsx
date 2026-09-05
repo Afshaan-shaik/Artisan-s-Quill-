@@ -23,6 +23,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { Artwork, ArtCategory, UserProfile, Exhibition } from './types';
+import { DEFAULT_USER } from './data/initialData';
 import { GalleryService } from './services/api';
 import { useRealtimeGallery } from './hooks/useRealtimeGallery';
 import { useGalleryStore } from './store/useGalleryStore';
@@ -171,6 +172,7 @@ export default function App() {
   const [artworkToEdit, setArtworkToEdit] = useState<Artwork | null>(null);
   const [artworkToShare, setArtworkToShare] = useState<Artwork | null>(null);
   const [isProfilePictureModalOpen, setIsProfilePictureModalOpen] = useState(false);
+  const [profileToEdit, setProfileToEdit] = useState<UserProfile | null>(null);
   const [isAddProfileModalOpen, setIsAddProfileModalOpen] = useState(false);
   const [addProfileModalInitialTab, setAddProfileModalInitialTab] = useState<'details' | 'avatar' | 'quote' | 'social'>('details');
   const [isAddProfileCreateMode, setIsAddProfileCreateMode] = useState(false);
@@ -703,7 +705,10 @@ export default function App() {
               handleSelectView('feed');
             }}
             onOpenUpload={() => handleOpenUpload('painting')}
-            onOpenEditProfile={() => setIsProfilePictureModalOpen(true)}
+            onOpenEditProfile={(target) => {
+              setProfileToEdit(target || GalleryService.getFounderProfile());
+              setIsProfilePictureModalOpen(true);
+            }}
           />
         )}
 
@@ -1101,13 +1106,27 @@ export default function App() {
 
       <ProfilePictureModal
         isOpen={isProfilePictureModalOpen}
-        onClose={() => setIsProfilePictureModalOpen(false)}
+        onClose={() => {
+          setIsProfilePictureModalOpen(false);
+          setProfileToEdit(null);
+        }}
         currentUser={currentUser}
-        onSuccess={(updated) => {
-          setCurrentUser(updated);
-          GalleryService.syncFounderProfile().catch(() => {});
+        targetUser={profileToEdit}
+        onSuccess={async (updated) => {
+          const isFounder =
+            updated.id === DEFAULT_USER.id ||
+            updated.handle === DEFAULT_USER.handle ||
+            updated.handle === '@afshaanshaikh' ||
+            updated.name?.toLowerCase().includes('afshaan');
+
+          if (isFounder) {
+            await GalleryService.syncFounderProfile().catch(() => {});
+          } else {
+            setCurrentUser(updated);
+          }
+          setProfileToEdit(null);
           refreshArtworks();
-          triggerNotification('Profile image and details updated.', 'success');
+          triggerNotification('Profile picture and details updated in Supabase.', 'success');
         }}
       />
 
