@@ -34,6 +34,8 @@ const SESSION_USER_KEY = 'atelier_tab_session_user_v1';
 const SESSION_AUTH_KEY = 'atelier_tab_session_authenticated_v1';
 const READING_QUEUE_KEY = 'atelier_reading_queue_v1';
 const CREDENTIALS_STORAGE_KEY = 'atelier_noir_credentials_v1';
+/** Tracks artwork IDs created in this browser — enables guest/artist edit+delete of own works */
+const AUTHORED_ARTWORKS_KEY = 'atelier_authored_artworks_v1';
 
 /** Email of the sanctuary founder — requires verified credentials or OAuth */
 export const FOUNDER_EMAIL = 'afshaan100@gmail.com';
@@ -56,6 +58,38 @@ export function isFounderUser(user?: UserProfile | null): boolean {
   const isFounderId = id === 'user-my-atelier' || id === DEFAULT_USER.id;
 
   return isFounderEmail || isFounderHandle || isFounderId;
+}
+
+/**
+ * Records an artwork ID as authored by this browser session.
+ * Called immediately after createArtwork so the creator can always edit/delete it.
+ */
+export function recordClientAuthoredArtwork(artworkId: string): void {
+  try {
+    const raw = localStorage.getItem(AUTHORED_ARTWORKS_KEY);
+    const ids: string[] = raw ? JSON.parse(raw) : [];
+    if (!ids.includes(artworkId)) {
+      ids.push(artworkId);
+      localStorage.setItem(AUTHORED_ARTWORKS_KEY, JSON.stringify(ids));
+    }
+  } catch {
+    // Silently ignore storage errors
+  }
+}
+
+/**
+ * Returns true if this browser session authored the given artwork (by ID).
+ * Provides authorship provenance for guests and cross-session edge cases.
+ */
+export function isClientAuthor(artworkId: string): boolean {
+  try {
+    const raw = localStorage.getItem(AUTHORED_ARTWORKS_KEY);
+    if (!raw) return false;
+    const ids: string[] = JSON.parse(raw);
+    return ids.includes(artworkId);
+  } catch {
+    return false;
+  }
 }
 
 function isDisallowed(text: string | undefined | null): boolean {
@@ -346,6 +380,9 @@ export class GalleryService {
 
     if (isUserFounder && isArtFounder) return true;
 
+    // Allow management if this browser session authored the artwork (guests included)
+    if (isClientAuthor(artwork.id)) return true;
+
     return (
       artwork.artist.id === userId ||
       artwork.artist.handle === userHandle ||
@@ -373,7 +410,7 @@ export class GalleryService {
     }
 
     // Strict Curatorial Protection: foundational masterworks cannot be deleted
-    if (INITIAL_ARTWORKS.some((init) => init.id === id) || id === 'spotlight-masterpiece-1' || id === 'afshaan-poetry-1') {
+    if (INITIAL_ARTWORKS.some((init) => init.id === id) || id === 'spotlight-masterpiece-1' || id === 'afshaan-poetry-1' || id === 'coffee-poem-1' || id === 'coffee-poem-2' || id === 'coffee-poem-3') {
       return {
         success: false,
         message: 'Curatorial Sanctuary Protection: Foundational sanctuary masterworks are preserved and cannot be deleted.'
@@ -434,7 +471,7 @@ export class GalleryService {
       return { success: false, message: 'Artwork not found.' };
     }
 
-    if (INITIAL_ARTWORKS.some((init) => init.id === id) || id === 'spotlight-masterpiece-1' || id === 'afshaan-poetry-1') {
+    if (INITIAL_ARTWORKS.some((init) => init.id === id) || id === 'spotlight-masterpiece-1' || id === 'afshaan-poetry-1' || id === 'coffee-poem-1' || id === 'coffee-poem-2' || id === 'coffee-poem-3') {
       return {
         success: false,
         message: 'Curatorial Sanctuary Protection: Permanent collection masterworks are preserved and cannot be purged.'
@@ -495,8 +532,8 @@ export class GalleryService {
     const currentUser = this.getCurrentUser();
 
     const isGuest = currentUser.id === 'guest';
-    const artistName = artworkData.artist?.name || (isGuest ? 'Guest Artist' : currentUser.name);
-    const artistHandle = artworkData.artist?.handle || (isGuest ? `@guest_${Date.now().toString(36).substring(2, 6)}` : currentUser.handle);
+    const artistName = artworkData.artist?.name || (isGuest ? 'Guest Scribe' : currentUser.name);
+    const artistHandle = artworkData.artist?.handle || (isGuest ? `@scribe_${Date.now().toString(36).substring(2, 6)}` : currentUser.handle);
     const artistAvatar = artworkData.artist?.avatar || (isGuest ? '/curatorial-masterpiece.svg' : currentUser.avatar);
 
     const newArtwork: Artwork = {
@@ -543,6 +580,9 @@ export class GalleryService {
 
     // Broadcast globally across edge WebSocket channels
     realtimeBroker.broadcastArtwork(newArtwork);
+
+    // Record client-side authorship so the creator can edit/delete from this browser
+    recordClientAuthoredArtwork(newArtwork.id);
 
     return newArtwork;
   }

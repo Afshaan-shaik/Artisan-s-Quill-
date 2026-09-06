@@ -55,6 +55,8 @@ import { AddToMoodBoardModal } from './components/AddToMoodBoardModal';
 import { CinemaModePlayer } from './components/CinemaModePlayer';
 import { ReadingQueueView } from './components/ReadingQueueView';
 import { FluidInkPoetryStudioModal } from './components/FluidInkPoetryStudioModal';
+import PoetrySanctuaryView from './components/PoetrySanctuaryView';
+import CustomPoemModal, { type PoemFormData } from './components/CustomPoemModal';
 import { AIPoeticBardModal } from './components/AIPoeticBardModal';
 import { ConstellationStarMapModal } from './components/ConstellationStarMapModal';
 import { ConstellationCosmosView } from './components/ConstellationCosmosView';
@@ -199,6 +201,10 @@ export default function App() {
     stanzas: string[];
     subtitle?: string;
   } | null>(null);
+
+  // ── Poetry Sanctuary: Write / Edit modal state ──────────────────────
+  const [isPoemModalOpen, setIsPoemModalOpen] = useState(false);
+  const [poemToEdit, setPoemToEdit] = useState<Artwork | null>(null);
 
   const handleOpenBardWithPoem = (poem?: { title: string; author: string; authorHandle?: string; content: string }) => {
     if (poem) {
@@ -555,6 +561,99 @@ export default function App() {
     triggerNotification(res.message, 'success');
   };
 
+  // ── Poetry Sanctuary handlers ─────────────────────────────────────────
+
+  const handleWritePoem = () => {
+    setPoemToEdit(null);
+    setIsPoemModalOpen(true);
+  };
+
+  const handleEditPoem = (poem: Artwork) => {
+    if (!GalleryService.canUserManageArtwork(poem, currentUser)) {
+      triggerNotification(`Only the author can edit "${poem.title}".`, 'error');
+      return;
+    }
+    setPoemToEdit(poem);
+    setIsPoemModalOpen(true);
+  };
+
+  const handleDeletePoem = (poem: Artwork) => {
+    const res = GalleryService.deleteArtwork(poem.id, currentUser);
+    if (!res.success) {
+      triggerNotification(res.message, 'error');
+      return;
+    }
+    refreshArtworks();
+    triggerNotification(`"${poem.title}" has been removed from the sanctuary.`, 'success');
+  };
+
+  const handlePoemSubmit = (data: PoemFormData) => {
+    const stanzas = data.stanzasText.split(/\n{2,}/).map((s) => s.trim()).filter(Boolean);
+    const authorName = data.authorName.trim() || currentUser.name || 'Anonymous Poet';
+    const authorHandle = data.authorHandle.trim() || currentUser.handle || `@poet_${Date.now().toString(36).slice(-4)}`;
+
+    if (poemToEdit) {
+      // Edit existing poem
+      const updated: Partial<Artwork> = {
+        title: data.title,
+        artist: { ...poemToEdit.artist, name: authorName, handle: authorHandle },
+        poetryContent: {
+          ...(poemToEdit.poetryContent as any),
+          stanzas,
+          alignment: data.alignment,
+          dedication: data.dedication,
+          poemNumber: data.poemNumber,
+          stainVariant: data.stainVariant,
+          paperTone: data.paperTone,
+          excerpt: stanzas[0]?.slice(0, 120),
+        },
+      };
+      const res = GalleryService.updateArtwork(poemToEdit.id, updated, currentUser);
+      if (res.error) {
+        triggerNotification(res.error, 'error');
+        return;
+      }
+      triggerNotification(`"${data.title}" updated in the sanctuary.`, 'success');
+    } else {
+      // Create new poem
+      GalleryService.createArtwork({
+        title: data.title,
+        category: 'poetry',
+        mediaUrl: '',
+        medium: 'Lyrical Free Verse',
+        year: new Date().getFullYear(),
+        description: '',
+        tags: ['Poetry', 'Parchment'],
+        artist: {
+          id: currentUser.id !== 'guest' ? currentUser.id : `guest-${Date.now().toString(36)}`,
+          name: authorName,
+          handle: authorHandle,
+          avatar: currentUser.avatar || '/curatorial-masterpiece.svg',
+          verified: false,
+          location: '',
+        },
+        poetryContent: {
+          stanzas,
+          theme: 'vellum',
+          fontStyle: 'cormorant',
+          alignment: data.alignment,
+          readingTimeMinutes: Math.max(1, Math.ceil(stanzas.join(' ').split(' ').length / 160)),
+          authorSignature: `— ${authorName}`,
+          dedication: data.dedication,
+          poemNumber: data.poemNumber,
+          stainVariant: data.stainVariant,
+          paperTone: data.paperTone,
+          excerpt: stanzas[0]?.slice(0, 120),
+        },
+      });
+      triggerNotification(`"${data.title}" has been published to the sanctuary.`, 'success');
+    }
+
+    setIsPoemModalOpen(false);
+    setPoemToEdit(null);
+    refreshArtworks();
+  };
+
   const handleRestoreArtwork = (id: string) => {
     const res = GalleryService.restoreArtwork(id, currentUser);
     if (!res.success) {
@@ -884,18 +983,28 @@ export default function App() {
               </div>
             </div>
 
-            {/* Masonry Grid */}
-            <MasonryGrid
-              artworks={artworks}
-              onSelectArtwork={handleOpenArtwork}
-              onToggleLike={handleToggleLike}
-              onToggleSave={handleToggleSave}
-              onSelectArtist={handleSelectArtist}
-              onShareArtwork={(art) => setArtworkToShare(art)}
-              selectedCategory={selectedCategory}
-              onOpenUpload={handleOpenUpload}
-              onOpenBardModal={handleOpenBardWithPoem}
-            />
+            {/* Masonry Grid / Poetry Sanctuary */}
+            {selectedCategory === 'poetry' ? (
+              <PoetrySanctuaryView
+                poems={artworks}
+                onWritePoem={handleWritePoem}
+                onEditPoem={handleEditPoem}
+                onDeletePoem={handleDeletePoem}
+                canManage={(poem) => GalleryService.canUserManageArtwork(poem, currentUser)}
+              />
+            ) : (
+              <MasonryGrid
+                artworks={artworks}
+                onSelectArtwork={handleOpenArtwork}
+                onToggleLike={handleToggleLike}
+                onToggleSave={handleToggleSave}
+                onSelectArtist={handleSelectArtist}
+                onShareArtwork={(art) => setArtworkToShare(art)}
+                selectedCategory={selectedCategory}
+                onOpenUpload={handleOpenUpload}
+                onOpenBardModal={handleOpenBardWithPoem}
+              />
+            )}
           </>
         )}
 
@@ -1260,6 +1369,25 @@ export default function App() {
           onClose={() => setIsCinemaModeOpen(false)}
         />
       )}
+
+      {/* ── Poetry Sanctuary: Write / Edit Poem Modal ── */}
+      <CustomPoemModal
+        isOpen={isPoemModalOpen}
+        onClose={() => { setIsPoemModalOpen(false); setPoemToEdit(null); }}
+        onSubmit={handlePoemSubmit}
+        isEditing={!!poemToEdit}
+        initialData={poemToEdit ? {
+          title: poemToEdit.title,
+          authorName: poemToEdit.artist.name,
+          authorHandle: poemToEdit.artist.handle,
+          stanzasText: poemToEdit.poetryContent?.stanzas.join('\n\n') || '',
+          dedication: poemToEdit.poetryContent?.dedication || '',
+          poemNumber: poemToEdit.poetryContent?.poemNumber || '',
+          stainVariant: poemToEdit.poetryContent?.stainVariant || 0,
+          paperTone: poemToEdit.poetryContent?.paperTone || '#EDE0C8',
+          alignment: poemToEdit.poetryContent?.alignment || 'left',
+        } : undefined}
+      />
     </div>
   </ErrorBoundary>
 );

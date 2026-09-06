@@ -56,6 +56,16 @@ export interface PoetryData {
   authorSignature?: string;
   dedicatedCardAccent?: string;
   subtitle?: string;
+  /** Dedication line displayed below the last stanza (e.g. "— for the nights that would not end") */
+  dedication?: string;
+  /** Roman numeral or custom identifier shown above the title (e.g. "I.", "IV.") */
+  poemNumber?: string;
+  /** Coffee stain visual variant: 1 = corner rings, 2 = saucer imprint, 3 = margin spill, 0/undefined = clean */
+  stainVariant?: number;
+  /** Parchment paper background tone hex (e.g. "#EDE0C8", "#DFC8A5") */
+  paperTone?: string;
+  /** Short excerpt for card preview (if absent, first ~100 chars of stanza[0] are used) */
+  excerpt?: string;
 }
 
 export interface VideoData {

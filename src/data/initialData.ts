@@ -163,6 +163,144 @@ export const CURRENT_USER: UserProfile = DEFAULT_USER;
 
 export const INITIAL_ARTWORKS: Artwork[] = [
   {
+    id: 'coffee-poem-1',
+    title: 'Late Kettle',
+    artist: {
+      id: 'user-my-atelier',
+      name: 'Afshaan Shaikh',
+      handle: '@afshaanshaikh',
+      avatar: '/curatorial-masterpiece.svg',
+      verified: true,
+      location: 'Atelier Studio • Global Digital Sanctuary'
+    },
+    category: 'poetry',
+    mediaUrl: '',
+    medium: 'Lyrical Free Verse',
+    year: 2026,
+    description: 'A quiet meditation on the lateness of things — the kettle that boils after the guest has gone, the sentence you compose after the conversation ends.',
+    curatorNote: 'Artisan Quill Founder Poem — Coffee-Stained Parchment Series, Poem I.',
+    tags: ['Poetry', 'Nocturne', 'Solitude', 'Coffee Stained', 'Parchment'],
+    likesCount: 0,
+    viewsCount: 1,
+    savesCount: 0,
+    createdAt: '2026-09-01T22:00:00Z',
+    aspectRatio: 'tall',
+    colorPalette: ['#261F18', '#DFC8A5', '#8B6331', '#4A3728'],
+    isLiked: false,
+    isSaved: false,
+    featured: true,
+    poetryContent: {
+      stanzas: [
+        'The kettle boils for no one now,\na thin white column, patient, spent.\nI keep refilling what has gone\nbecause the habit has not left.',
+        'Outside, the lane is dark and wet\nwith something close to permanence.\nThe cup I set for you grows cold\nin the particular silence of the late.',
+        'I have not moved the second chair.\nI will not, yet — not tonight.\nLet the steam rise. Let the window fog.\nSome vigils are their own goodbye.'
+      ],
+      theme: 'vellum',
+      fontStyle: 'cormorant',
+      alignment: 'left',
+      readingTimeMinutes: 2,
+      authorSignature: '— Afshaan Shaikh, 2026',
+      subtitle: 'from the Coffee-Stained Parchment Series',
+      dedication: '— for anyone still at the table',
+      poemNumber: 'I.',
+      stainVariant: 1,
+      paperTone: '#EDE0C8',
+      excerpt: 'The kettle boils for no one now, a thin white column, patient, spent.'
+    }
+  },
+  {
+    id: 'coffee-poem-2',
+    title: 'Marginalia',
+    artist: {
+      id: 'user-my-atelier',
+      name: 'Afshaan Shaikh',
+      handle: '@afshaanshaikh',
+      avatar: '/curatorial-masterpiece.svg',
+      verified: true,
+      location: 'Atelier Studio • Global Digital Sanctuary'
+    },
+    category: 'poetry',
+    mediaUrl: '',
+    medium: 'Lyrical Free Verse',
+    year: 2026,
+    description: 'On the practice of writing in the margins — of books, of meetings, of days that asked too much.',
+    curatorNote: 'Artisan Quill Founder Poem — Coffee-Stained Parchment Series, Poem II.',
+    tags: ['Poetry', 'Marginalia', 'Writing', 'Coffee Stained', 'Parchment'],
+    likesCount: 0,
+    viewsCount: 1,
+    savesCount: 0,
+    createdAt: '2026-09-02T23:15:00Z',
+    aspectRatio: 'tall',
+    colorPalette: ['#1C1510', '#D4B896', '#7A5830', '#3E2E20'],
+    isLiked: false,
+    isSaved: false,
+    featured: true,
+    poetryContent: {
+      stanzas: [
+        'I have always written in the margins,\nthat narrow corridor between the printed\nand the felt — a country of small addenda\nwhere the real argument lives.',
+        'Here: a question mark beside a certainty.\nThere: a word you underlined in pencil,\nso soft the text still shows through\nlike a bruise that healed before it finished.',
+        'We annotate what we cannot answer.\nWe asterisk the passages that break us\nand close the book and carry them\ninto everything we say to strangers.'
+      ],
+      theme: 'obsidian',
+      fontStyle: 'cormorant',
+      alignment: 'left',
+      readingTimeMinutes: 2,
+      authorSignature: '— Afshaan Shaikh, 2026',
+      subtitle: 'from the Coffee-Stained Parchment Series',
+      dedication: '— for the reader who left notes in every margin',
+      poemNumber: 'II.',
+      stainVariant: 2,
+      paperTone: '#DFC8A5',
+      excerpt: 'I have always written in the margins, that narrow corridor between the printed and the felt.'
+    }
+  },
+  {
+    id: 'coffee-poem-3',
+    title: 'Second Cup',
+    artist: {
+      id: 'user-my-atelier',
+      name: 'Afshaan Shaikh',
+      handle: '@afshaanshaikh',
+      avatar: '/curatorial-masterpiece.svg',
+      verified: true,
+      location: 'Atelier Studio • Global Digital Sanctuary'
+    },
+    category: 'poetry',
+    mediaUrl: '',
+    medium: 'Lyrical Free Verse',
+    year: 2026,
+    description: 'The second cup is always the honest one — poured not from want but from the inability to end the morning.',
+    curatorNote: 'Artisan Quill Founder Poem — Coffee-Stained Parchment Series, Poem III.',
+    tags: ['Poetry', 'Morning', 'Rituals', 'Coffee Stained', 'Parchment'],
+    likesCount: 0,
+    viewsCount: 1,
+    savesCount: 0,
+    createdAt: '2026-09-03T07:30:00Z',
+    aspectRatio: 'tall',
+    colorPalette: ['#241C15', '#C9A875', '#6B4F30', '#3A2B1E'],
+    isLiked: false,
+    isSaved: false,
+    featured: true,
+    poetryContent: {
+      stanzas: [
+        'The second cup is always the honest one:\npoured not from want but from the refusal\nto let the morning end before\nwe understood what it was trying to say.',
+        'The first is urgency, the alarm still ringing\nsomewhere inside the chest.\nThe second is the hand that stops the clock,\nthat says: not yet — there is still this light.',
+        'I sit with both hands curved around the heat\nand read last night still cooling in the room.\nOutside, the world assembles itself again.\nI let it. I am not done with the quiet.'
+      ],
+      theme: 'vellum',
+      fontStyle: 'cormorant',
+      alignment: 'left',
+      readingTimeMinutes: 2,
+      authorSignature: '— Afshaan Shaikh, 2026',
+      subtitle: 'from the Coffee-Stained Parchment Series',
+      dedication: '— for the mornings that asked to be extended',
+      poemNumber: 'III.',
+      stainVariant: 3,
+      paperTone: '#EDE0C8',
+      excerpt: 'The second cup is always the honest one: poured not from want but from the refusal to let the morning end.'
+    }
+  },
+  {
     id: 'art-1787665037985-nnxxg',
     title: 'I Suppose',
     artist: {
