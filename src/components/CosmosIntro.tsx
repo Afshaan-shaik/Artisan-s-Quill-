@@ -43,7 +43,6 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
   const nodeLayerRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number>(0);
   const [isDismissed, setIsDismissed] = useState(false);
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [bottomDelaySec, setBottomDelaySec] = useState(5.4);
 
   const dismiss = useCallback((targetHash?: string) => {
@@ -65,16 +64,12 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (isVideoModalOpen) {
-          setIsVideoModalOpen(false);
-        } else {
-          dismiss();
-        }
+        dismiss();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [dismiss, isVideoModalOpen]);
+  }, [dismiss]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -499,24 +494,6 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
           box-shadow: 0 6px 22px rgba(201,162,76,0.28);
         }
 
-        .cosmos-watch-link {
-          font-family: 'IBM Plex Mono', monospace;
-          font-size: 0.75rem;
-          letter-spacing: 0.03em;
-          color: #8b8fa3;
-          background: none;
-          border: none;
-          border-bottom: 1px solid rgba(242,237,224,0.12);
-          padding-bottom: 2px;
-          cursor: pointer;
-          transition: color 0.2s ease, border-color 0.2s ease;
-        }
-
-        .cosmos-watch-link:hover {
-          color: #f2ede0;
-          border-color: #c9a24c;
-        }
-
         .cosmos-skip {
           position: absolute;
           top: 26px;
@@ -533,81 +510,6 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
         }
 
         .cosmos-skip:hover {
-          color: #f2ede0;
-        }
-
-        /* Video Modal */
-        .cosmos-video-modal {
-          position: fixed;
-          inset: 0;
-          background: rgba(3,4,7,0.85);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 20000;
-          opacity: 0;
-          visibility: hidden;
-          transition: opacity 0.35s ease, visibility 0.35s ease;
-          font-family: 'Literata', Georgia, serif;
-        }
-
-        .cosmos-video-modal.open {
-          opacity: 1;
-          visibility: visible;
-        }
-
-        .cosmos-video-box {
-          width: min(560px, 86vw);
-          background: #0b0e1a;
-          border: 1px solid rgba(242,237,224,0.12);
-          padding: 4px;
-        }
-
-        .cosmos-video-frame {
-          aspect-ratio: 16/9;
-          background: radial-gradient(circle at 50% 40%, rgba(90,103,184,0.18), #08090f 70%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-          color: #8b8fa3;
-          font-size: 0.85rem;
-          padding: 20px;
-        }
-
-        .cosmos-play-ring {
-          width: 56px;
-          height: 56px;
-          border: 1px solid #c9a24c;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto 16px;
-          color: #c9a24c;
-          font-size: 1.2rem;
-        }
-
-        .cosmos-video-box .cosmos-caption {
-          padding: 14px 16px 4px;
-          font-size: 0.8rem;
-          color: #8b8fa3;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .cosmos-close-video {
-          background: none;
-          border: none;
-          color: #8b8fa3;
-          cursor: pointer;
-          font-family: 'IBM Plex Mono', monospace;
-          font-size: 0.75rem;
-          transition: color 0.2s ease;
-        }
-
-        .cosmos-close-video:hover {
           color: #f2ede0;
         }
 
@@ -664,43 +566,6 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
           >
             Enter the Atelier
           </button>
-          <button
-            className="cosmos-watch-link"
-            id="watchLink"
-            onClick={() => setIsVideoModalOpen(true)}
-          >
-            WATCH THE 20-SECOND TOUR
-          </button>
-        </div>
-      </div>
-
-      {/* Video Modal */}
-      <div
-        className={`cosmos-video-modal ${isVideoModalOpen ? "open" : ""}`}
-        id="videoModal"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) setIsVideoModalOpen(false);
-        }}
-      >
-        <div className="cosmos-video-box">
-          <div className="cosmos-video-frame">
-            <div>
-              <div className="cosmos-play-ring">▶</div>
-              Your walkthrough video will play here.
-              <br />
-              Explore paintings, poetry scrolls, 3D cosmos &amp; music sanctuary.
-            </div>
-          </div>
-          <div className="cosmos-caption">
-            <span>ATELIER WALKTHROUGH — 0:20</span>
-            <button
-              className="cosmos-close-video"
-              id="closeVideo"
-              onClick={() => setIsVideoModalOpen(false)}
-            >
-              CLOSE
-            </button>
-          </div>
         </div>
       </div>
     </>
