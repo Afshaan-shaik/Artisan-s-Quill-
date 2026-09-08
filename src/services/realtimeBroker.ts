@@ -1,4 +1,4 @@
-import { Artwork, Comment, MarginReflection } from '../types';
+import { Artwork, Comment, MarginReflection, UserProfile } from '../types';
 import { subscribeToCloudArtworks, subscribeToCloudComments, syncArtworkToCloud, syncArtworkLikeToCloud, syncCommentToCloud } from './firebase';
 import {
   getSupabaseClient,
@@ -7,7 +7,8 @@ import {
   saveArtworkToSupabase,
   updateArtworkInSupabase,
   addCommentToSupabase,
-  addMarginReflectionToSupabase
+  addMarginReflectionToSupabase,
+  upsertProfileToSupabase
 } from './supabaseClient';
 
 export type RealtimeEvent =
@@ -17,7 +18,8 @@ export type RealtimeEvent =
   | { type: 'LIKE_UPDATED'; payload: { artworkId: string; likesCount: number } }
   | { type: 'SAVE_UPDATED'; payload: { artworkId: string; savesCount: number } }
   | { type: 'COMMENT_ADDED'; payload: { artworkId: string; comment: Comment } }
-  | { type: 'MARGIN_ADDED'; payload: { artworkId: string; reflection: MarginReflection } };
+  | { type: 'MARGIN_ADDED'; payload: { artworkId: string; reflection: MarginReflection } }
+  | { type: 'PROFILE_UPDATED'; payload: UserProfile };
 
 type RealtimeListener = (event: RealtimeEvent) => void;
 
@@ -174,6 +176,38 @@ class RealtimeBroker {
               }
             }
           )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'profiles' },
+            (payload) => {
+              const row = payload.new as any;
+              if (row && row.id) {
+                const quoteText = row.quote_text ? { text: row.quote_text, author: row.quote_author || row.name } : undefined;
+                const profile: UserProfile = {
+                  id: row.id,
+                  name: row.name,
+                  handle: row.handle,
+                  avatar: row.avatar_url || '/curatorial-masterpiece.svg',
+                  coverImage: row.cover_url,
+                  bio: row.bio || '',
+                  discipline: row.discipline || 'Visual Artist & Poet',
+                  location: row.location || 'Global Atelier',
+                  favoriteQuote: quoteText,
+                  website: row.website,
+                  instagram: row.instagram,
+                  twitter: row.twitter,
+                  email: row.email,
+                  phone: row.phone,
+                  verified: row.verified ?? false,
+                  artworksCount: row.artworks_count || 0,
+                  followersCount: row.followers_count || 0,
+                  followingCount: row.following_count || 0,
+                  badges: Array.isArray(row.badges) ? row.badges : ['Verified Artist']
+                };
+                this.emit({ type: 'PROFILE_UPDATED', payload: profile }, false);
+              }
+            }
+          )
           .subscribe();
       }
     } catch (err) {
@@ -283,6 +317,11 @@ class RealtimeBroker {
   public broadcastMargin(artworkId: string, reflection: MarginReflection) {
     this.emit({ type: 'MARGIN_ADDED', payload: { artworkId, reflection } }, true);
     addMarginReflectionToSupabase(reflection).catch(() => {});
+  }
+
+  public broadcastProfile(profile: UserProfile) {
+    this.emit({ type: 'PROFILE_UPDATED', payload: profile }, true);
+    upsertProfileToSupabase(profile).catch(() => {});
   }
 }
 

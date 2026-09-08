@@ -379,6 +379,9 @@ export default function App() {
               .catch(() => {});
           }
         }).catch(() => {});
+      } else {
+        const activeProfile = GalleryService.getCurrentUser();
+        setCurrentUser(activeProfile);
       }
 
       refreshArtworks();
@@ -425,9 +428,26 @@ export default function App() {
       GalleryService.mergeCloudComments(cloudComments);
     });
 
+    const unsubscribeRealtime = realtimeBroker.subscribe((event) => {
+      if (event.type === 'PROFILE_UPDATED') {
+        const updatedProfile = event.payload;
+        const current = GalleryService.getCurrentUser();
+        const isCurrentMatch =
+          current.id === updatedProfile.id ||
+          (current.handle && updatedProfile.handle && current.handle.toLowerCase() === updatedProfile.handle.toLowerCase()) ||
+          (isFounderUser(current) && isFounderUser(updatedProfile));
+
+        if (isCurrentMatch) {
+          setCurrentUser(updatedProfile);
+        }
+        refreshArtworks();
+      }
+    });
+
     return () => {
       unsubscribeComments();
       unsubscribeSupabaseAuth();
+      unsubscribeRealtime();
     };
   }, []);
 
@@ -1248,6 +1268,7 @@ export default function App() {
 
           if (isFounder) {
             await GalleryService.syncFounderProfile().catch(() => {});
+            setCurrentUser(GalleryService.getCurrentUser());
           } else {
             setCurrentUser(updated);
           }

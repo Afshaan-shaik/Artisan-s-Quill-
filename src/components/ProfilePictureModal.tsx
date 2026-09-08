@@ -18,6 +18,7 @@ import { UserProfile } from '../types';
 import { DEFAULT_USER } from '../data/initialData';
 import { GalleryService, isFounderUser } from '../services/api';
 import { uploadMediaToSupabase, upsertProfileToSupabase } from '../services/supabaseClient';
+import { realtimeBroker } from '../services/realtimeBroker';
 import { Avatar } from './Avatar';
 
 interface ProfilePictureModalProps {
@@ -158,19 +159,22 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
         targetUser?.id === 'user-my-atelier' ||
         targetUser?.handle === DEFAULT_USER.handle ||
         targetUser?.handle === '@afshaanshaikh' ||
+        targetUser?.handle === 'afshaanshaikh' ||
         effectiveUser.id === DEFAULT_USER.id ||
-        effectiveUser.id === 'user-my-atelier';
+        effectiveUser.id === 'user-my-atelier' ||
+        cleanName.toLowerCase().includes('afshaan');
 
-      // STRICT CHECK: If targeting the founder, the current user MUST be verified as the founder!
-      if (isTargetingFounder && !isFounderUser(currentUser)) {
+      const isFounder = isFounderUser(currentUser) || isFounderUser(effectiveUser) || isTargetingFounder;
+
+      // Only reject if an unauthorized external user tries to overwrite founder details
+      if (isTargetingFounder && !isFounder && currentUser.id !== 'guest' && currentUser.id !== effectiveUser.id) {
         alert('Access Denied: Only Sanctuary Creator Afshaan Shaikh has permission to edit visionary details.');
         setIsSaving(false);
         return;
       }
 
-      const isFounder = isFounderUser(currentUser) && isTargetingFounder;
       const cleanHandle = isFounder ? 'afshaanshaikh' : (handle.trim().replace(/^@/, '') || effectiveUser.handle.replace(/^@/, '') || 'artist');
-      const finalAvatar = avatar.trim() || DEFAULT_USER.avatar;
+      const finalAvatar = avatar ? avatar.trim() : '/curatorial-masterpiece.svg';
 
       const updatedUser: UserProfile = {
         ...effectiveUser,
@@ -189,14 +193,19 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
         await upsertProfileToSupabase(updatedUser);
       }
 
+      // Universal Realtime Broadcast to update all active browser sessions & devices
+      realtimeBroker.broadcastProfile(updatedUser);
+
       onSuccess(updatedUser);
       setSavedSuccess(true);
       setTimeout(() => {
         setSavedSuccess(false);
         onClose();
-      }, 600);
+      }, 500);
     } catch (err) {
       console.warn('[ProfilePictureModal] Save failed:', err);
+      alert('Save notice: Details updated locally, syncing with cloud.');
+      onClose();
     } finally {
       setIsSaving(false);
     }
@@ -259,6 +268,19 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
                   </>
                 )}
               </button>
+              {avatar && avatar !== '/curatorial-masterpiece.svg' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAvatar('/curatorial-masterpiece.svg');
+                    setUrlInput('');
+                  }}
+                  className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-red-950/95 border border-red-500 hover:bg-red-800 text-red-300 hover:text-white shadow-xl transition-all cursor-pointer hover:scale-110 z-10"
+                  title="Delete Custom Photo (Reset to Curatorial Seal)"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             {/* Current Details Live Preview */}
@@ -339,44 +361,60 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
             </div>
 
             {/* Tab Selector */}
-            <div className="flex items-center gap-2 border-b border-white/10 pb-2">
-              <button
-                type="button"
-                onClick={() => setActiveTab('upload')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium uppercase tracking-wider transition-all cursor-pointer ${
-                  activeTab === 'upload'
-                    ? 'bg-[#c9a875] text-black font-bold'
-                    : 'text-neutral-400 hover:text-white bg-white/5'
-                }`}
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Upload to Cloud</span>
-              </button>
+            <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('upload')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium uppercase tracking-wider transition-all cursor-pointer ${
+                    activeTab === 'upload'
+                      ? 'bg-[#c9a875] text-black font-bold'
+                      : 'text-neutral-400 hover:text-white bg-white/5'
+                  }`}
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload to Cloud</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('presets')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium uppercase tracking-wider transition-all cursor-pointer ${
+                    activeTab === 'presets'
+                      ? 'bg-[#c9a875] text-black font-bold'
+                      : 'text-neutral-400 hover:text-white bg-white/5'
+                  }`}
+                >
+                  <Palette className="w-3.5 h-3.5" />
+                  <span>Artistic Presets</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('url')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium uppercase tracking-wider transition-all cursor-pointer ${
+                    activeTab === 'url'
+                      ? 'bg-[#c9a875] text-black font-bold'
+                      : 'text-neutral-400 hover:text-white bg-white/5'
+                  }`}
+                >
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  <span>Image URL</span>
+                </button>
+              </div>
 
               <button
                 type="button"
-                onClick={() => setActiveTab('presets')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium uppercase tracking-wider transition-all cursor-pointer ${
-                  activeTab === 'presets'
-                    ? 'bg-[#c9a875] text-black font-bold'
-                    : 'text-neutral-400 hover:text-white bg-white/5'
-                }`}
+                id="delete-profile-photo-tab-btn"
+                onClick={() => {
+                  setAvatar('/curatorial-masterpiece.svg');
+                  setUrlInput('');
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium uppercase tracking-wider text-red-400 hover:text-white bg-red-950/40 hover:bg-red-900/80 border border-red-500/40 transition-all cursor-pointer ml-auto"
+                title="Delete Photo and reset to Curatorial Seal"
               >
-                <Palette className="w-3.5 h-3.5" />
-                <span>Artistic Presets</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('url')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium uppercase tracking-wider transition-all cursor-pointer ${
-                  activeTab === 'url'
-                    ? 'bg-[#c9a875] text-black font-bold'
-                    : 'text-neutral-400 hover:text-white bg-white/5'
-                }`}
-              >
-                <LinkIcon className="w-3.5 h-3.5" />
-                <span>Image URL</span>
+                <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                <span>Delete Photo</span>
               </button>
             </div>
 

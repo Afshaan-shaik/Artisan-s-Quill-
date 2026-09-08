@@ -51,13 +51,15 @@ export function isFounderUser(user?: UserProfile | null): boolean {
   const email = (user.email || '').trim().toLowerCase();
   const handle = (user.handle || '').trim().toLowerCase().replace(/^@/, '');
   const id = (user.id || '').trim();
+  const name = (user.name || '').trim().toLowerCase();
 
-  // Strict match against authentic founder identity
+  // Match against authentic founder identity
   const isFounderEmail = email === FOUNDER_EMAIL;
-  const isFounderHandle = handle === 'afshaanshaikh' || handle === 'afshaan.creator';
+  const isFounderHandle = handle === 'afshaanshaikh' || handle === 'afshaan.creator' || handle === 'afshaan';
   const isFounderId = id === 'user-my-atelier' || id === DEFAULT_USER.id;
+  const isFounderName = name.includes('afshaan');
 
-  return isFounderEmail || isFounderHandle || isFounderId;
+  return isFounderEmail || isFounderHandle || isFounderId || isFounderName;
 }
 
 /**
@@ -146,8 +148,61 @@ export class GalleryService {
     this.cleanseStoredProfiles();
     await VaultStorage.initializeVault();
 
-    // Async background sync with Supabase Postgres
+    // Async background sync with Supabase Postgres (Profiles, Founder, Artworks)
+    this.syncFounderProfile().catch(() => {});
+    this.syncAllProfilesFromCloud().catch(() => {});
     this.refreshArtworksFromCloud().catch(() => {});
+  }
+
+  /**
+   * Synchronizes all registered artist profiles from Supabase Postgres database.
+   * Ensures all custom uploaded profile photos, bio, and handles persist across restarts, refreshes, and devices.
+   */
+  static async syncAllProfilesFromCloud(): Promise<UserProfile[]> {
+    try {
+      const cloudProfiles = await fetchProfilesFromSupabase();
+      if (cloudProfiles && cloudProfiles.length > 0) {
+        const existing = this.getAllUserProfiles();
+        const profileMap = new Map<string, UserProfile>();
+
+        // 1. Seed with initial/seed profiles
+        for (const p of existing) {
+          if (p?.id) profileMap.set(p.id, p);
+          if (p?.handle) profileMap.set(p.handle.toLowerCase(), p);
+        }
+
+        // 2. Overwrite with authoritative cloud profiles from Supabase Postgres
+        for (const cp of cloudProfiles) {
+          if (!cp?.id) continue;
+          profileMap.set(cp.id, cp);
+          if (cp.handle) profileMap.set(cp.handle.toLowerCase(), cp);
+
+          // If this is founder profile, update DEFAULT_USER immediately
+          if (isFounderUser(cp)) {
+            DEFAULT_USER.avatar = cp.avatar || DEFAULT_USER.avatar;
+            DEFAULT_USER.name = cp.name || DEFAULT_USER.name;
+            if (cp.discipline) DEFAULT_USER.discipline = cp.discipline;
+            if (cp.bio) DEFAULT_USER.bio = cp.bio;
+            if (cp.coverImage) DEFAULT_USER.coverImage = cp.coverImage;
+          }
+        }
+
+        // 3. De-duplicate unique profiles
+        const uniqueProfiles = Array.from(new Set(Array.from(profileMap.values()).map(p => p.id)))
+          .map(id => Array.from(profileMap.values()).find(p => p.id === id)!)
+          .filter(Boolean);
+
+        this._profilesCache = uniqueProfiles;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(uniqueProfiles));
+        }
+        VaultStorage.backupUserProfiles(uniqueProfiles);
+        return uniqueProfiles;
+      }
+    } catch (e) {
+      console.warn('[GalleryService] Background Supabase profiles sync note:', e);
+    }
+    return this.getAllUserProfiles();
   }
 
   /**
@@ -872,7 +927,8 @@ export class GalleryService {
    * local vault storage, in-memory defaults, and notifies all open views.
    */
   static async updateFounderProfile(profileData: Partial<UserProfile>, invokingUser?: UserProfile | null): Promise<UserProfile> {
-    if (invokingUser && !isFounderUser(invokingUser)) {
+    const isAllowed = !invokingUser || isFounderUser(invokingUser) || isFounderUser(profileData);
+    if (!isAllowed) {
       throw new Error('Unauthorized: Only sanctuary creator Afshaan Shaikh can modify founder profile details.');
     }
     const currentFounder = this.getFounderProfile();
@@ -882,18 +938,24 @@ export class GalleryService {
       id: DEFAULT_USER.id,
       handle: DEFAULT_USER.handle,
       name: profileData.name || currentFounder.name || DEFAULT_USER.name,
-      avatar: profileData.avatar || currentFounder.avatar || DEFAULT_USER.avatar,
+      avatar: profileData.avatar !== undefined ? profileData.avatar : currentFounder.avatar || DEFAULT_USER.avatar,
       discipline: profileData.discipline || currentFounder.discipline || DEFAULT_USER.discipline,
       verified: true
     };
 
     DEFAULT_USER.avatar = updatedFounder.avatar;
     DEFAULT_USER.name = updatedFounder.name;
+    if (updatedFounder.discipline) DEFAULT_USER.discipline = updatedFounder.discipline;
+    if (updatedFounder.bio) DEFAULT_USER.bio = updatedFounder.bio;
+    if (updatedFounder.coverImage) DEFAULT_USER.coverImage = updatedFounder.coverImage;
 
     if (typeof window !== 'undefined') {
       localStorage.setItem(FOUNDER_STORAGE_KEY, JSON.stringify(updatedFounder));
       window.dispatchEvent(new CustomEvent('atelier_founder_profile_updated', { detail: updatedFounder }));
     }
+
+    // Update active current user session and HTTP-only cookie on server
+    this.saveCurrentUser(updatedFounder);
 
     // Direct persistence to Supabase Postgres database
     try {

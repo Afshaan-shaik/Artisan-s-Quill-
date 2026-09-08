@@ -17,19 +17,22 @@ import {
   Image as ImageIcon,
   ShieldCheck,
   RefreshCw,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { GalleryService, isFounderUser } from '../services/api';
 import { DEFAULT_USER } from '../data/initialData';
 import { syncUserProfileToCloud } from '../services/firebase';
 import { uploadMediaToSupabase, upsertProfileToSupabase } from '../services/supabaseClient';
+import { realtimeBroker } from '../services/realtimeBroker';
 import { Avatar } from './Avatar';
 
 interface AddProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: UserProfile;
+  targetUser?: UserProfile | null;
   onSuccess: (updatedUser: UserProfile) => void;
   isCreateMode?: boolean;
   initialTab?: 'details' | 'avatar' | 'quote' | 'social';
@@ -137,51 +140,53 @@ export const AddProfileModal: React.FC<AddProfileModalProps> = ({
   isOpen,
   onClose,
   currentUser,
+  targetUser,
   onSuccess,
   isCreateMode = false,
   initialTab = 'details'
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const effectiveInitialUser = targetUser || currentUser;
 
   // Form State
-  const [name, setName] = useState(isCreateMode ? '' : currentUser.name);
-  const [handle, setHandle] = useState(isCreateMode ? '' : currentUser.handle.replace(/^@/, ''));
+  const [name, setName] = useState(isCreateMode ? '' : effectiveInitialUser.name);
+  const [handle, setHandle] = useState(isCreateMode ? '' : effectiveInitialUser.handle.replace(/^@/, ''));
   const [avatar, setAvatar] = useState(
     isCreateMode
       ? '/curatorial-masterpiece.svg'
-      : currentUser.avatar || '/curatorial-masterpiece.svg'
+      : effectiveInitialUser.avatar || '/curatorial-masterpiece.svg'
   );
   const [coverImage, setCoverImage] = useState(
-    currentUser.coverImage || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1400&q=80'
+    effectiveInitialUser.coverImage || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1400&q=80'
   );
-  const [discipline, setDiscipline] = useState(isCreateMode ? 'Visual Arts & Creative Writing' : currentUser.discipline || 'Visual Arts & Creative Writing');
-  const [location, setLocation] = useState(isCreateMode ? 'Studio Atelier' : currentUser.location || 'Studio Atelier');
-  const [bio, setBio] = useState(isCreateMode ? '' : currentUser.bio || '');
+  const [discipline, setDiscipline] = useState(isCreateMode ? 'Visual Arts & Creative Writing' : effectiveInitialUser.discipline || 'Visual Arts & Creative Writing');
+  const [location, setLocation] = useState(isCreateMode ? 'Studio Atelier' : effectiveInitialUser.location || 'Studio Atelier');
+  const [bio, setBio] = useState(isCreateMode ? '' : effectiveInitialUser.bio || '');
 
   // Favourite Quote
   const initialQuoteText =
-    typeof currentUser.favoriteQuote === 'object'
-      ? currentUser.favoriteQuote?.text
-      : typeof currentUser.favoriteQuote === 'string'
-      ? currentUser.favoriteQuote
+    typeof effectiveInitialUser.favoriteQuote === 'object'
+      ? effectiveInitialUser.favoriteQuote?.text
+      : typeof effectiveInitialUser.favoriteQuote === 'string'
+      ? effectiveInitialUser.favoriteQuote
       : 'Art washes away from the soul the dust of everyday life.';
   const initialQuoteAuthor =
-    typeof currentUser.favoriteQuote === 'object' ? currentUser.favoriteQuote?.author || 'Pablo Picasso' : 'Pablo Picasso';
+    typeof effectiveInitialUser.favoriteQuote === 'object' ? effectiveInitialUser.favoriteQuote?.author || 'Pablo Picasso' : 'Pablo Picasso';
 
   const [quoteText, setQuoteText] = useState(isCreateMode ? '' : initialQuoteText);
   const [quoteAuthor, setQuoteAuthor] = useState(isCreateMode ? '' : initialQuoteAuthor);
 
   // Socials
-  const [website, setWebsite] = useState(isCreateMode ? '' : currentUser.website || '');
-  const [instagram, setInstagram] = useState(isCreateMode ? '' : currentUser.instagram || '');
-  const [twitter, setTwitter] = useState(isCreateMode ? '' : currentUser.twitter || '');
-  const [email, setEmail] = useState(isCreateMode ? '' : currentUser.email || '');
-  const [phone, setPhone] = useState(isCreateMode ? '' : currentUser.phone || '');
+  const [website, setWebsite] = useState(isCreateMode ? '' : effectiveInitialUser.website || '');
+  const [instagram, setInstagram] = useState(isCreateMode ? '' : effectiveInitialUser.instagram || '');
+  const [twitter, setTwitter] = useState(isCreateMode ? '' : effectiveInitialUser.twitter || '');
+  const [email, setEmail] = useState(isCreateMode ? '' : effectiveInitialUser.email || '');
+  const [phone, setPhone] = useState(isCreateMode ? '' : effectiveInitialUser.phone || '');
 
   // Badges
   const [badges, setBadges] = useState<string[]>(
-    isCreateMode ? ['Resident Creator', 'Verified Studio'] : currentUser.badges || ['Resident Creator']
+    isCreateMode ? ['Resident Creator', 'Verified Studio'] : effectiveInitialUser.badges || ['Resident Creator']
   );
 
   const [activeSubTab, setActiveSubTab] = useState<'details' | 'avatar' | 'quote' | 'social'>(initialTab);
@@ -208,6 +213,7 @@ export const AddProfileModal: React.FC<AddProfileModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      const activeTarget = targetUser || currentUser;
       setActiveSubTab(initialTab || 'details');
       if (isCreateMode) {
         setName('');
@@ -227,38 +233,38 @@ export const AddProfileModal: React.FC<AddProfileModalProps> = ({
         setBadges(['Resident Creator', 'Verified Studio']);
         setSaveMode('new_persona');
       } else {
-        setName(currentUser.name || '');
-        setHandle((currentUser.handle || '').replace(/^@/, ''));
-        setAvatar(currentUser.avatar || '/curatorial-masterpiece.svg');
+        setName(activeTarget.name || '');
+        setHandle((activeTarget.handle || '').replace(/^@/, ''));
+        setAvatar(activeTarget.avatar || '/curatorial-masterpiece.svg');
         setCoverImage(
-          currentUser.coverImage ||
+          activeTarget.coverImage ||
             'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1400&q=80'
         );
-        setDiscipline(currentUser.discipline || 'Visual Arts & Creative Writing');
-        setLocation(currentUser.location || 'Studio Atelier');
-        setBio(currentUser.bio || '');
+        setDiscipline(activeTarget.discipline || 'Visual Arts & Creative Writing');
+        setLocation(activeTarget.location || 'Studio Atelier');
+        setBio(activeTarget.bio || '');
         const qText =
-          typeof currentUser.favoriteQuote === 'object'
-            ? currentUser.favoriteQuote?.text
-            : typeof currentUser.favoriteQuote === 'string'
-            ? currentUser.favoriteQuote
+          typeof activeTarget.favoriteQuote === 'object'
+            ? activeTarget.favoriteQuote?.text
+            : typeof activeTarget.favoriteQuote === 'string'
+            ? activeTarget.favoriteQuote
             : 'Art washes away from the soul the dust of everyday life.';
         const qAuthor =
-          typeof currentUser.favoriteQuote === 'object'
-            ? currentUser.favoriteQuote?.author || 'Pablo Picasso'
+          typeof activeTarget.favoriteQuote === 'object'
+            ? activeTarget.favoriteQuote?.author || 'Pablo Picasso'
             : 'Pablo Picasso';
         setQuoteText(qText);
         setQuoteAuthor(qAuthor);
-        setWebsite(currentUser.website || '');
-        setInstagram(currentUser.instagram || '');
-        setTwitter(currentUser.twitter || '');
-        setEmail(currentUser.email || '');
-        setPhone(currentUser.phone || '');
-        setBadges(currentUser.badges || ['Resident Creator']);
+        setWebsite(activeTarget.website || '');
+        setInstagram(activeTarget.instagram || '');
+        setTwitter(activeTarget.twitter || '');
+        setEmail(activeTarget.email || '');
+        setPhone(activeTarget.phone || '');
+        setBadges(activeTarget.badges || ['Resident Creator']);
         setSaveMode('update');
       }
     }
-  }, [isOpen, isCreateMode, currentUser, initialTab]);
+  }, [isOpen, isCreateMode, currentUser, targetUser, initialTab]);
 
   if (!isOpen) return null;
 
@@ -346,7 +352,8 @@ export const AddProfileModal: React.FC<AddProfileModalProps> = ({
 
     let resultUser: UserProfile;
 
-    const isFounder = isFounderUser(currentUser);
+    const effective = targetUser || currentUser;
+    const isFounder = isFounderUser(effective) || isFounderUser(currentUser);
     const handleWithoutAt = cleanHandle.toLowerCase();
 
     // Prevent unauthorized users from claiming the founder's handle or identity
@@ -359,9 +366,9 @@ export const AddProfileModal: React.FC<AddProfileModalProps> = ({
       resultUser = GalleryService.createUserProfile(profilePayload);
     } else {
       resultUser = {
-        ...currentUser,
+        ...effective,
         ...profilePayload,
-        id: isFounder ? DEFAULT_USER.id : currentUser.id,
+        id: isFounder ? DEFAULT_USER.id : effective.id,
         handle: isFounder ? DEFAULT_USER.handle : `@${cleanHandle}`
       } as UserProfile;
 
@@ -373,10 +380,15 @@ export const AddProfileModal: React.FC<AddProfileModalProps> = ({
     }
 
     // Direct persistence to Supabase Postgres database
-    upsertProfileToSupabase(resultUser).catch(() => {});
+    upsertProfileToSupabase(resultUser).catch((err) => {
+      console.warn('[AddProfileModal] Supabase upsert error:', err);
+    });
 
     // Cloud Firestore persistent cross-deployment database push
     syncUserProfileToCloud(resultUser).catch(() => {});
+
+    // Broadcast across all open tabs, devices, and sessions
+    realtimeBroker.broadcastProfile(resultUser);
 
     onSuccess(resultUser);
     onClose();

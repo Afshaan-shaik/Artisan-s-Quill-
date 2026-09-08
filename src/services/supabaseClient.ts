@@ -559,7 +559,8 @@ export async function fetchFounderProfileFromSupabase(): Promise<UserProfile | n
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .or('id.eq.user-my-atelier,handle.eq.@afshaanshaikh')
+      .or('id.eq.user-my-atelier,handle.eq.@afshaanshaikh,handle.eq.afshaanshaikh')
+      .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -588,7 +589,8 @@ export async function fetchFounderProfileFromSupabase(): Promise<UserProfile | n
       followingCount: data.following_count || DEFAULT_USER.followingCount,
       badges: Array.isArray(data.badges) ? data.badges : DEFAULT_USER.badges
     };
-  } catch {
+  } catch (err) {
+    console.warn('[Supabase] Fetch founder profile error:', err);
     return null;
   }
 }
@@ -605,18 +607,18 @@ export async function upsertProfileToSupabase(profile: UserProfile): Promise<boo
       id: profile.id,
       name: profile.name,
       handle: profile.handle,
-      avatar_url: profile.avatar,
-      cover_url: profile.coverImage,
-      bio: profile.bio,
-      discipline: profile.discipline,
-      location: profile.location,
-      quote_text: quoteText,
-      quote_author: quoteAuthor,
-      website: profile.website,
-      instagram: profile.instagram,
-      twitter: profile.twitter,
-      email: profile.email,
-      phone: profile.phone,
+      avatar_url: profile.avatar || '/curatorial-masterpiece.svg',
+      cover_url: profile.coverImage || null,
+      bio: profile.bio || '',
+      discipline: profile.discipline || 'Visual Artist & Poet',
+      location: profile.location || 'Global Atelier',
+      quote_text: quoteText || null,
+      quote_author: quoteAuthor || null,
+      website: profile.website || '',
+      instagram: profile.instagram || '',
+      twitter: profile.twitter || '',
+      email: profile.email || '',
+      phone: profile.phone || '',
       verified: profile.verified ?? false,
       artworks_count: profile.artworksCount || 0,
       followers_count: profile.followersCount || 0,
@@ -625,8 +627,14 @@ export async function upsertProfileToSupabase(profile: UserProfile): Promise<boo
       updated_at: new Date().toISOString()
     }, { onConflict: 'id' });
 
-    return !error;
-  } catch {
+    if (error) {
+      console.warn('[Supabase] Upsert profile error:', error.message);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('[Supabase] Upsert profile exception:', err);
     return false;
   }
 }

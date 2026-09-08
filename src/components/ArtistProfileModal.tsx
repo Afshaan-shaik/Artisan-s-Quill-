@@ -32,7 +32,8 @@ import {
 } from 'lucide-react';
 import { UserProfile, Artwork, Collection } from '../types';
 import { PoetryCard } from './PoetryCard';
-import { GalleryService } from '../services/api';
+import { GalleryService, isFounderUser } from '../services/api';
+import { DEFAULT_USER } from '../data/initialData';
 import { AddProfileModal } from './AddProfileModal';
 import { ProfilePictureModal } from './ProfilePictureModal';
 import { Avatar } from './Avatar';
@@ -78,11 +79,13 @@ export const ArtistProfileModal: React.FC<ArtistProfileModalProps> = ({
   const [isPictureModalOpen, setIsPictureModalOpen] = useState(false);
   const [isCreateNewPersonaMode, setIsCreateNewPersonaMode] = useState(false);
   const [allProfiles, setAllProfiles] = useState<UserProfile[]>([]);
+  const [localUpdatedArtist, setLocalUpdatedArtist] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     if (artistId) {
       setCollections(GalleryService.getUserCollections(artistId));
       setAllProfiles(GalleryService.getAllUserProfiles());
+      setLocalUpdatedArtist(null);
     }
   }, [artistId]);
 
@@ -125,11 +128,21 @@ export const ArtistProfileModal: React.FC<ArtistProfileModalProps> = ({
 
   if (!artistId) return null;
 
-  const isCurrentUser = currentUser.id === artistId || currentUser.handle === artistId;
+  const isCurrentUser =
+    currentUser.id === artistId ||
+    currentUser.handle === artistId ||
+    (isFounderUser(currentUser) && (
+      artistId === DEFAULT_USER.id ||
+      artistId === 'user-my-atelier' ||
+      artistId === 'founder-afshaan' ||
+      artistId.toLowerCase().includes('afshaan')
+    ));
   const foundProfile = allProfiles.find((p) => p.id === artistId || p.handle === artistId);
 
   const artist: UserProfile =
-    isCurrentUser
+    (localUpdatedArtist && (localUpdatedArtist.id === artistId || localUpdatedArtist.handle === artistId || isCurrentUser))
+      ? localUpdatedArtist
+      : isCurrentUser
       ? currentUser
       : foundProfile
       ? foundProfile
@@ -164,6 +177,7 @@ export const ArtistProfileModal: React.FC<ArtistProfileModalProps> = ({
   };
 
   const handleProfileSuccess = (updatedUser: UserProfile) => {
+    setLocalUpdatedArtist(updatedUser);
     if (onUpdateProfile) {
       onUpdateProfile(updatedUser);
     }
@@ -950,6 +964,7 @@ export const ArtistProfileModal: React.FC<ArtistProfileModalProps> = ({
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
         currentUser={currentUser}
+        targetUser={artist}
         onSuccess={handleProfileSuccess}
         isCreateMode={isCreateNewPersonaMode}
         initialTab={profileModalInitialTab}
@@ -960,6 +975,7 @@ export const ArtistProfileModal: React.FC<ArtistProfileModalProps> = ({
         isOpen={isPictureModalOpen}
         onClose={() => setIsPictureModalOpen(false)}
         currentUser={currentUser}
+        targetUser={artist}
         onSuccess={(updated) => {
           handleProfileSuccess(updated);
         }}
