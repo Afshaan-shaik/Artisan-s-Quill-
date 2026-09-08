@@ -63,6 +63,7 @@ import { ConstellationCosmosView } from './components/ConstellationCosmosView';
 import { Collector3DVaultModal } from './components/Collector3DVaultModal';
 import { PoeticScrollModal } from './components/PoeticScrollModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import IntroWrapper from './components/IntroWrapper';
 import { subscribeToCloudArtworks, subscribeToCloudComments, signOutFirebaseUser } from './services/firebase';
 import { getActiveSupabaseUser, signOutSupabase, onSupabaseAuthStateChange } from './services/supabaseClient';
 
@@ -712,6 +713,10 @@ export default function App() {
   };
 
   return (
+    <IntroWrapper
+      onOpenBard={() => handleOpenBardWithPoem()}
+      onOpenInkStudio={() => setIsInkStudioOpen(true)}
+    >
     <ErrorBoundary>
       <div className="min-h-screen w-full bg-gradient-to-br from-[#050608] via-[#0f111a] to-[#050608] text-neutral-200 flex flex-col font-sans selection:bg-[#c9a875]/30 selection:text-[#f8f5eb] relative overflow-x-hidden">
       {/* Global Ambient Canvas Texture */}
@@ -1411,6 +1416,7 @@ export default function App() {
       />
     </div>
   </ErrorBoundary>
+  </IntroWrapper>
 );
 }
 
