@@ -1,506 +1,708 @@
-﻿/**
+/**
  * CosmosIntro.tsx
- * Full-screen 3D constellation intro for The Artisan's Quill.
- * Uses Three.js to render an animated star-field with 8 feature nodes.
- * Navigation is hash-based (this project's SPA router).
+ * 3D Cosmos Constellation Introduction for The Artisan''s Quill.
+ * Exact 1-to-1 fidelity with the provided Cosmos Intro HTML demo:
+ * - Precise typography: Fraunces, Literata, IBM Plex Mono
+ * - Void/deep/gold/nebula theme with radial atmosphere gradients
+ * - Three.js camera dolly (z=22 -> 4) with soft circular canvas particle starfields
+ * - Sequential golden sprite nodes & dynamic line interpolation
+ * - Screen-projected node pills with golden glowing dots and fade-edges
+ * - Bottom action row with "Enter the Atelier" button and "WATCH THE 20-SECOND TOUR"
+ * - 20-second walkthrough video preview modal with close & backdrop click
+ * - Smooth 0.9s ease dismiss transition on Enter / Skip / Escape / Node click
  */
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 
-/* ─────────────────────────────── Node definitions ─────────────────────────── */
-
-interface Node {
-  id: string;
-  label: string;
-  icon: string;
-  description: string;
-  color: number;
-  position: [number, number, number];
-  hash: string;
-}
-
-const NODES: Node[] = [
-  {
-    id: "paintings",
-    label: "Paintings & Drawings",
-    icon: "🎨",
-    description: "Classical fine art — oils, watercolours, and pencil studies",
-    color: 0xc9a875,
-    position: [-3.5, 2, -1],
-    hash: "#feed",
-  },
-  {
-    id: "digital",
-    label: "Digital Media & Loops",
-    icon: "✦",
-    description: "Motion loops, digital illustrations, and GIF animations",
-    color: 0x7eb8f7,
-    position: [3.5, 2.2, -1.5],
-    hash: "#feed",
-  },
-  {
-    id: "poetry",
-    label: "Poetry Cards",
-    icon: "📜",
-    description: "Verses, prose poems, and literary art cards",
-    color: 0xd4a8e0,
-    position: [-3.8, -1.5, 0.5],
-    hash: "#feed",
-  },
-  {
-    id: "cosmos",
-    label: "3D Cosmos",
-    icon: "🌌",
-    description: "Interactive 3-D star map of artworks",
-    color: 0x5ddcff,
-    position: [0, 3, -2],
-    hash: "#cosmos",
-  },
-  {
-    id: "exhibitions",
-    label: "Curated Exhibitions",
-    icon: "🏛️",
-    description: "Themed shows and collaborative galleries",
-    color: 0xf7c97e,
-    position: [4, -1, -0.5],
-    hash: "#exhibitions",
-  },
-  {
-    id: "bard",
-    label: "Bard Symphony",
-    icon: "🎵",
-    description: "AI-voiced readings and poetic audio experiences",
-    color: 0x9ef7ae,
-    position: [0, -3, -1],
-    hash: "__bard__",
-  },
-  {
-    id: "ink-studio",
-    label: "Ink Studio & Upload",
-    icon: "🖋️",
-    description: "Create, write, and publish your own works",
-    color: 0xffa07a,
-    position: [-2.5, 0, 1.5],
-    hash: "__ink__",
-  },
-  {
-    id: "saved",
-    label: "Saved Vault",
-    icon: "🔒",
-    description: "Your private collection of saved artworks",
-    color: 0xc0c0e0,
-    position: [2.5, -0.5, 2],
-    hash: "#saved",
-  },
-];
-
-/* ─────────────────────────────── Types ─────────────────────────────────────── */
-
-export interface CosmosIntroProps {
+interface CosmosIntroProps {
   onEnter: () => void;
   onAction?: (action: "__bard__" | "__ink__") => void;
 }
 
-/* ═══════════════════════════════ Component ═══════════════════════════════════ */
+interface ConstellationNode {
+  id: string;
+  label: string;
+  pos: [number, number, number];
+  hash: string;
+}
+
+const NODES: ConstellationNode[] = [
+  { id: "paintings",   label: "Paintings & Drawings",         pos: [-9,  2,  -8], hash: "#feed" },
+  { id: "digital",     label: "Digital Media & Motion Loops", pos: [-6, -6, -13], hash: "#feed" },
+  { id: "poetry",      label: "Poetry Cards",                 pos: [ 9,  4, -10], hash: "#feed" },
+  { id: "cosmos",      label: "3D Cosmos — Starmap",          pos: [ 6, -5, -17], hash: "#cosmos" },
+  { id: "exhibitions", label: "Curated Exhibitions",          pos: [-3, -1,  -6], hash: "#exhibitions" },
+  { id: "bard",        label: "Bard Symphony",                pos: [ 3,  6, -15], hash: "__bard__" },
+  { id: "ink",         label: "Ink Studio & Upload",          pos: [-8, -4, -19], hash: "__ink__" },
+  { id: "saved",       label: "Saved Vault",                  pos: [ 8, -1,  -6], hash: "#saved" },
+];
 
 export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
-  const mountRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const nodeLayerRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number>(0);
+  const [isDismissed, setIsDismissed] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [bottomDelaySec, setBottomDelaySec] = useState(5.4);
 
-  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [nodePositions, setNodePositions] = useState<
-    Array<{ id: string; x: number; y: number; visible: boolean }>
-  >([]);
-  const [titleVisible, setTitleVisible] = useState(false);
-  const [subtitleVisible, setSubtitleVisible] = useState(false);
-  const [enterVisible, setEnterVisible] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
-
-  const projectToScreen = useCallback(
-    (
-      pos3d: THREE.Vector3,
-      camera: THREE.PerspectiveCamera,
-      width: number,
-      height: number
-    ) => {
-      const v = pos3d.clone().project(camera);
-      return {
-        x: ((v.x + 1) / 2) * width,
-        y: ((-v.y + 1) / 2) * height,
-        visible: v.z < 1,
-      };
-    },
-    []
-  );
+  const dismiss = useCallback((targetHash?: string) => {
+    setIsDismissed(true);
+    setTimeout(() => {
+      onEnter();
+      if (targetHash) {
+        if (targetHash === "__bard__") {
+          onAction?.("__bard__");
+        } else if (targetHash === "__ink__") {
+          onAction?.("__ink__");
+        } else {
+          window.location.hash = targetHash.replace(/^#/, "");
+        }
+      }
+    }, 900);
+  }, [onEnter, onAction]);
 
   useEffect(() => {
-    const container = mountRef.current;
-    if (!container) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (isVideoModalOpen) {
+          setIsVideoModalOpen(false);
+        } else {
+          dismiss();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [dismiss, isVideoModalOpen]);
 
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const nodeLayer = nodeLayerRef.current;
+    if (!canvas || !nodeLayer) return;
+
+    let isDisposed = false;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x000510, 0.04);
+    const camera = new THREE.PerspectiveCamera(
+      60,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      200
+    );
+    const camStartZ = reduced ? 4 : 22;
+    const camEndZ = 4;
+    camera.position.set(0, 0, camStartZ);
+    camera.lookAt(0, 0, -6);
 
-    const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
-    camera.position.set(0, 0, 8);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      alpha: true,
+      antialias: true,
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000510, 1);
-    container.appendChild(renderer.domElement);
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
-    const starCount = 2800;
-    const starPositions = new Float32Array(starCount * 3);
-    const starColors = new Float32Array(starCount * 3);
-    for (let i = 0; i < starCount; i++) {
-      starPositions[i * 3] = (Math.random() - 0.5) * 80;
-      starPositions[i * 3 + 1] = (Math.random() - 0.5) * 80;
-      starPositions[i * 3 + 2] = (Math.random() - 0.5) * 80;
-      const warm = Math.random();
-      starColors[i * 3] = 0.7 + warm * 0.3;
-      starColors[i * 3 + 1] = 0.6 + warm * 0.2;
-      starColors[i * 3 + 2] = 0.9 - warm * 0.4;
+    const world = new THREE.Group();
+    scene.add(world);
+
+    // Soft circular particle texture
+    function makeDot(color: string) {
+      const c = document.createElement("canvas");
+      c.width = c.height = 64;
+      const ctx = c.getContext("2d");
+      if (ctx) {
+        const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        g.addColorStop(0, color);
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 64, 64);
+      }
+      return new THREE.CanvasTexture(c);
     }
-    const starGeo = new THREE.BufferGeometry();
-    starGeo.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
-    starGeo.setAttribute("color", new THREE.BufferAttribute(starColors, 3));
-    const starMat = new THREE.PointsMaterial({
-      size: 0.06,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.8,
-      sizeAttenuation: true,
-    });
-    const particles = new THREE.Points(starGeo, starMat);
-    scene.add(particles);
+    const starTex = makeDot("rgba(242,237,224,1)");
+    const goldTex = makeDot("rgba(201,162,76,1)");
 
-    const starMeshes: THREE.Mesh[] = NODES.map((node) => {
-      const geo = new THREE.SphereGeometry(0.12, 16, 16);
-      const mat = new THREE.MeshStandardMaterial({
-        color: node.color,
-        emissive: node.color,
-        emissiveIntensity: 1.5,
-        roughness: 0.2,
-        metalness: 0.8,
-      });
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(...node.position);
-      mesh.userData = { nodeId: node.id };
-      scene.add(mesh);
-
-      const glowGeo = new THREE.SphereGeometry(0.22, 16, 16);
-      const glowMat = new THREE.MeshBasicMaterial({
-        color: node.color,
+    function starField(count: number, rMin: number, rMax: number, size: number, opacity: number) {
+      const positions = new Float32Array(count * 3);
+      const colors = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const r = rMin + Math.random() * (rMax - rMin);
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(Math.random() * 2 - 1);
+        positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+        positions[i * 3 + 2] = -Math.abs(r * Math.cos(phi)) - 4;
+        const tint = Math.random();
+        const c = tint > 0.88 ? [0.79, 0.64, 0.30] : [0.95, 0.93, 0.88];
+        colors[i * 3] = c[0];
+        colors[i * 3 + 1] = c[1];
+        colors[i * 3 + 2] = c[2];
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      const mat = new THREE.PointsMaterial({
+        size,
+        map: starTex,
+        vertexColors: true,
         transparent: true,
-        opacity: 0.12,
-        side: THREE.BackSide,
+        opacity: 0,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true,
       });
-      mesh.add(new THREE.Mesh(glowGeo, glowMat));
-      return mesh;
-    });
+      const pts = new THREE.Points(geo, mat);
+      pts.userData.targetOpacity = opacity;
+      world.add(pts);
+      return pts;
+    }
 
-    const connectionPairs = [
-      [0, 3], [1, 3], [2, 5], [3, 4], [3, 6], [4, 7], [5, 6], [6, 7],
-    ];
-    const connections: THREE.Line[] = connectionPairs.map(([a, b]) => {
-      const pts = [
-        new THREE.Vector3(...NODES[a].position),
-        new THREE.Vector3(...NODES[b].position),
-      ];
-      const geo = new THREE.BufferGeometry().setFromPoints(pts);
-      const mat = new THREE.LineBasicMaterial({
-        color: 0xc9a875,
+    const farStars = starField(2400, 20, 90, 0.55, 0.55);
+    const nearDust = starField(500, 6, 30, 1.3, 0.85);
+
+    const nodeMeshes: Array<{ sprite: THREE.Sprite; pos: THREE.Vector3; activeAt: number }> = [];
+    const lineMeshes: Array<{ line: THREE.Line; from: THREE.Vector3; to: THREE.Vector3; activeAt: number } | null> = [];
+    const labelEls: HTMLDivElement[] = [];
+
+    // Clear any previous child labels
+    nodeLayer.innerHTML = "";
+
+    NODES.forEach((n, i) => {
+      const mat = new THREE.SpriteMaterial({
+        map: goldTex,
         transparent: true,
-        opacity: 0.18,
+        opacity: 0,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
       });
-      const line = new THREE.Line(geo, mat);
-      scene.add(line);
-      return line;
+      const sprite = new THREE.Sprite(mat);
+      sprite.position.set(...n.pos);
+      sprite.scale.set(0.001, 0.001, 1);
+      world.add(sprite);
+      nodeMeshes.push({ sprite, pos: new THREE.Vector3(...n.pos), activeAt: 0 });
+
+      if (i > 0) {
+        const prev = NODES[i - 1].pos;
+        const geo = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(...prev),
+          new THREE.Vector3(...prev),
+        ]);
+        const lmat = new THREE.LineBasicMaterial({
+          color: 0xc9a24c,
+          transparent: true,
+          opacity: 0,
+        });
+        const line = new THREE.Line(geo, lmat);
+        world.add(line);
+        lineMeshes.push({
+          line,
+          from: new THREE.Vector3(...prev),
+          to: new THREE.Vector3(...n.pos),
+          activeAt: 0,
+        });
+      } else {
+        lineMeshes.push(null);
+      }
+
+      const el = document.createElement("div");
+      el.className = "cosmos-node-label";
+      el.innerHTML = '<span class="cosmos-dot"></span>' + n.label;
+      el.onclick = () => dismiss(n.hash);
+      nodeLayer.appendChild(el);
+      labelEls.push(el);
     });
 
-    scene.add(new THREE.AmbientLight(0x1a1a2e, 2));
-    const pLight = new THREE.PointLight(0xc9a875, 2, 20);
-    pLight.position.set(0, 2, 4);
-    scene.add(pLight);
+    const nodeStagger = reduced ? 40 : 380;
+    const nodeStart = reduced ? 200 : 1900;
+    NODES.forEach((_, i) => {
+      nodeMeshes[i].activeAt = nodeStart + i * nodeStagger;
+      const lm = lineMeshes[i];
+      if (lm) lm.activeAt = nodeStart + i * nodeStagger;
+    });
 
-    const clock = new THREE.Clock();
+    const bottomDelay = nodeStart + NODES.length * nodeStagger + (reduced ? 100 : 500);
+    setBottomDelaySec(bottomDelay / 1000);
 
-    let mouseX = 0;
-    let mouseY = 0;
+    function ease(t: number) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    const mouse = { x: 0, y: 0 };
     const onMouseMove = (e: MouseEvent) => {
-      mouseX = (e.clientX / container.clientWidth - 0.5) * 2;
-      mouseY = (e.clientY / container.clientHeight - 0.5) * 2;
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = (e.clientY / window.innerHeight) * 2 - 1;
     };
     window.addEventListener("mousemove", onMouseMove);
 
     const onResize = () => {
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      camera.aspect = w / h;
+      camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      renderer.setSize(window.innerWidth, window.innerHeight);
     };
     window.addEventListener("resize", onResize);
 
-    const animate = () => {
+    const clock = new THREE.Clock();
+    const start = performance.now();
+    const camDuration = reduced ? 1 : 4200;
+
+    function animate() {
+      if (isDisposed) return;
       animFrameRef.current = requestAnimationFrame(animate);
-      const t = clock.getElapsedTime();
 
-      camera.position.x += (mouseX * 0.8 - camera.position.x) * 0.02;
-      camera.position.y += (-mouseY * 0.5 - camera.position.y) * 0.02;
-      camera.lookAt(0, 0, 0);
+      const now = performance.now();
+      const elapsed = now - start;
+      const dt = clock.getDelta();
 
-      particles.rotation.y = t * 0.01;
-      particles.rotation.x = t * 0.004;
-
-      starMeshes.forEach((mesh, i) => {
-        const s = 1 + Math.sin(t * 1.5 + i * 0.8) * 0.15;
-        mesh.scale.setScalar(s);
-        (mesh.material as THREE.MeshStandardMaterial).emissiveIntensity =
-          1.2 + Math.sin(t * 2 + i) * 0.5;
+      // Starfield fade-in
+      [farStars, nearDust].forEach((p) => {
+        const target = p.userData.targetOpacity;
+        p.material.opacity = Math.min(target, p.material.opacity + dt * 0.6);
       });
 
-      connections.forEach((line, i) => {
-        (line.material as THREE.LineBasicMaterial).opacity =
-          0.12 + Math.sin(t * 0.8 + i * 0.5) * 0.08;
+      // Camera dolly
+      const camT = Math.min(1, elapsed / camDuration);
+      camera.position.z = camStartZ + (camEndZ - camStartZ) * ease(camT);
+
+      // Gentle mouse parallax + ambient rotation
+      if (!reduced) {
+        world.rotation.y += dt * 0.02;
+        camera.position.x += (mouse.x * 1.1 - camera.position.x) * dt * 1.2;
+        camera.position.y += (-mouse.y * 0.7 - camera.position.y) * dt * 1.2;
+      }
+      camera.lookAt(0, 0, -6);
+
+      // Node + line reveals
+      nodeMeshes.forEach((n, i) => {
+        if (elapsed >= n.activeAt) {
+          const p = Math.min(1, (elapsed - n.activeAt) / 500);
+          const e = ease(p);
+          n.sprite.material.opacity = e * 0.95;
+          const s = 0.35 + e * 0.55;
+          n.sprite.scale.set(s, s, 1);
+
+          const lm = lineMeshes[i];
+          if (lm) {
+            const lp = Math.min(1, (elapsed - lm.activeAt) / 500);
+            const le = ease(lp);
+            lm.line.material.opacity = le * 0.45;
+            const cur = lm.from.clone().lerp(lm.to, le);
+            const posAttr = lm.line.geometry.attributes.position;
+            posAttr.setXYZ(1, cur.x, cur.y, cur.z);
+            posAttr.needsUpdate = true;
+          }
+
+          // Project to screen for label
+          const wp = n.sprite.getWorldPosition(new THREE.Vector3());
+          const v = wp.clone().project(camera);
+          const sx = (v.x * 0.5 + 0.5) * window.innerWidth;
+          const sy = (-v.y * 0.5 + 0.5) * window.innerHeight;
+          const el = labelEls[i];
+          if (el) {
+            el.style.left = sx + "px";
+            el.style.top = sy + "px";
+
+            let labelOpacity = e;
+            if (sy < window.innerHeight * 0.26 || sy > window.innerHeight * 0.86) {
+              labelOpacity *= 0.12;
+            }
+            if (v.z > 1 || v.z < -1) labelOpacity = 0;
+            el.style.opacity = labelOpacity.toString();
+          }
+        }
       });
 
       renderer.render(scene, camera);
-
-      const w2 = container.clientWidth;
-      const h2 = container.clientHeight;
-      const positions = NODES.map((node) => ({
-        id: node.id,
-        ...projectToScreen(new THREE.Vector3(...node.position), camera, w2, h2),
-      }));
-      setNodePositions(positions);
-    };
+    }
     animate();
 
-    setTimeout(() => setTitleVisible(true), 400);
-    setTimeout(() => setSubtitleVisible(true), 900);
-    setTimeout(() => setEnterVisible(true), 1500);
-
     return () => {
+      isDisposed = true;
       cancelAnimationFrame(animFrameRef.current);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("resize", onResize);
       renderer.dispose();
-      if (renderer.domElement.parentNode) {
-        renderer.domElement.parentNode.removeChild(renderer.domElement);
-      }
+      scene.clear();
     };
-  }, [projectToScreen]);
-
-  const handleEnter = useCallback(() => {
-    setIsExiting(true);
-    setTimeout(onEnter, 800);
-  }, [onEnter]);
-
-  const handleNodeClick = useCallback(
-    (node: Node) => {
-      if (node.hash === "__bard__" || node.hash === "__ink__") {
-        setIsExiting(true);
-        setTimeout(() => {
-          onEnter();
-          onAction?.(node.hash as "__bard__" | "__ink__");
-        }, 800);
-      } else {
-        setIsExiting(true);
-        setTimeout(() => {
-          onEnter();
-          window.location.hash = node.hash.replace(/^#/, "");
-        }, 800);
-      }
-    },
-    [onEnter, onAction]
-  );
-
-  const hexColor = (c: number) => `#${c.toString(16).padStart(6, "0")}`;
+  }, [dismiss]);
 
   return (
-    <div
-      className={`fixed inset-0 z-[9999] overflow-hidden transition-opacity duration-700 ${
-        isExiting ? "opacity-0 pointer-events-none" : "opacity-100"
-      }`}
-      style={{
-        background:
-          "radial-gradient(ellipse at center, #000c1f 0%, #000510 60%, #000205 100%)",
-      }}
-    >
-      {/* Three.js canvas mount */}
-      <div ref={mountRef} className="absolute inset-0" />
+    <>
+      <style>{`
+        .cosmos-intro-root {
+          --void: #05060a;
+          --deep: #0b0e1a;
+          --star: #f2ede0;
+          --gold: #c9a24c;
+          --nebula: #5a67b8;
+          --slate: #8b8fa3;
+          --line: rgba(242,237,224,0.12);
+        }
 
-      {/* Vignette overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
+        .cosmos-intro-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 10000;
           background:
-            "radial-gradient(ellipse at center, transparent 40%, rgba(0,2,8,0.85) 100%)",
-        }}
-      />
+            radial-gradient(ellipse 70% 55% at 50% 25%, rgba(90,103,184,0.22), transparent 60%),
+            radial-gradient(circle at 82% 82%, rgba(201,162,76,0.10), transparent 55%),
+            #05060a;
+          transition: opacity 0.9s ease, visibility 0.9s ease;
+          font-family: 'Literata', Georgia, serif;
+          color: #f2ede0;
+          overflow: hidden;
+        }
 
-      {/* ── 2-D Node Labels overlay ── */}
-      <div className="absolute inset-0 pointer-events-none">
-        {nodePositions.map((pos) => {
-          const node = NODES.find((n) => n.id === pos.id)!;
-          const isHov = hoveredNode === pos.id;
-          return (
-            <div
-              key={pos.id}
-              className="absolute pointer-events-auto cursor-pointer"
-              style={{ left: pos.x, top: pos.y, transform: "translate(-50%,-50%)" }}
-              onMouseEnter={() => setHoveredNode(pos.id)}
-              onMouseLeave={() => setHoveredNode(null)}
-              onClick={() => handleNodeClick(node)}
-            >
-              <div className="w-8 h-8 rounded-full" />
-              <div
-                className={`absolute left-1/2 -translate-x-1/2 bottom-10 transition-all duration-300 ${
-                  isHov
-                    ? "opacity-100 translate-y-0 scale-100"
-                    : "opacity-0 translate-y-2 scale-95 pointer-events-none"
-                }`}
-              >
-                <div
-                  className="whitespace-nowrap rounded-xl border px-4 py-3 text-left shadow-2xl backdrop-blur-xl"
-                  style={{
-                    background: "rgba(5,8,20,0.92)",
-                    borderColor: hexColor(node.color) + "55",
-                    boxShadow: `0 0 24px 4px ${hexColor(node.color)}33`,
-                  }}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg">{node.icon}</span>
-                    <span
-                      className="text-sm font-semibold tracking-wide"
-                      style={{ color: hexColor(node.color) }}
-                    >
-                      {node.label}
-                    </span>
-                  </div>
-                  <p className="text-xs text-neutral-400 max-w-[200px] leading-relaxed">
-                    {node.description}
-                  </p>
-                  <p
-                    className="text-[10px] mt-1.5 font-mono tracking-widest uppercase"
-                    style={{ color: hexColor(node.color) + "99" }}
-                  >
-                    Click to explore →
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+        .cosmos-intro-overlay.dismissed {
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+        }
 
-      {/* ── Hero text ── */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
-        <div
-          className={`text-center transition-all duration-1000 ${
-            titleVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          }`}
+        .cosmos-canvas {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          display: block;
+        }
+
+        .cosmos-node-layer {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+
+        .cosmos-node-label {
+          position: absolute;
+          transform: translate(-50%, -50%);
+          opacity: 0;
+          transition: opacity 0.25s linear, border-color 0.2s ease, background 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 0.72rem;
+          letter-spacing: 0.02em;
+          color: #f2ede0;
+          background: rgba(5,6,10,0.55);
+          border: 1px solid rgba(242,237,224,0.12);
+          padding: 6px 12px 6px 8px;
+          border-radius: 3px;
+          white-space: nowrap;
+          backdrop-filter: blur(2px);
+          pointer-events: auto;
+          cursor: pointer;
+          user-select: none;
+        }
+
+        .cosmos-node-label:hover {
+          border-color: #c9a24c;
+          background: rgba(11,14,26,0.85);
+          box-shadow: 0 0 14px rgba(201,162,76,0.35);
+        }
+
+        .cosmos-node-label .cosmos-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #c9a24c;
+          box-shadow: 0 0 8px 2px rgba(201,162,76,0.7);
+          flex-shrink: 0;
+        }
+
+        .cosmos-content-layer {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-start;
+          text-align: center;
+          padding-top: 9vh;
+          pointer-events: none;
+        }
+
+        .cosmos-content-layer > * {
+          pointer-events: auto;
+        }
+
+        .cosmos-eyebrow {
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 0.68rem;
+          letter-spacing: 0.14em;
+          color: #c9a24c;
+          opacity: 0;
+          animation: cosmos-rise 0.8s ease forwards;
+          margin-bottom: 18px;
+        }
+
+        .cosmos-intro-title {
+          font-family: 'Fraunces', Georgia, serif;
+          font-style: italic;
+          font-weight: 500;
+          font-size: clamp(2rem, 5.4vw, 3.6rem);
+          margin: 0 0 16px;
+          letter-spacing: 0.005em;
+          color: #f2ede0;
+          opacity: 0;
+          transform: translateY(10px);
+          animation: cosmos-rise 0.9s ease forwards;
+        }
+
+        .cosmos-tagline {
+          color: #8b8fa3;
+          max-width: 46ch;
+          font-size: 1.02rem;
+          line-height: 1.7;
+          margin: 0;
+          opacity: 0;
+          transform: translateY(10px);
+          animation: cosmos-rise 0.9s ease forwards;
+        }
+
+        @keyframes cosmos-rise {
+          to {
+            opacity: 1;
+            transform: none;
+          }
+        }
+
+        .cosmos-bottom-row {
+          position: absolute;
+          bottom: 6vh;
+          left: 0;
+          right: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 20px;
+          opacity: 0;
+          animation: cosmos-rise 0.8s ease forwards;
+        }
+
+        .cosmos-enter-btn {
+          font-family: 'Literata', Georgia, serif;
+          font-size: 0.95rem;
+          color: #1a1408;
+          background: #c9a24c;
+          border: none;
+          padding: 14px 36px;
+          cursor: pointer;
+          letter-spacing: 0.02em;
+          transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .cosmos-enter-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 22px rgba(201,162,76,0.28);
+        }
+
+        .cosmos-watch-link {
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 0.75rem;
+          letter-spacing: 0.03em;
+          color: #8b8fa3;
+          background: none;
+          border: none;
+          border-bottom: 1px solid rgba(242,237,224,0.12);
+          padding-bottom: 2px;
+          cursor: pointer;
+          transition: color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .cosmos-watch-link:hover {
+          color: #f2ede0;
+          border-color: #c9a24c;
+        }
+
+        .cosmos-skip {
+          position: absolute;
+          top: 26px;
+          right: 30px;
+          z-index: 5;
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 0.7rem;
+          letter-spacing: 0.04em;
+          color: #8b8fa3;
+          background: none;
+          border: none;
+          cursor: pointer;
+          transition: color 0.2s ease;
+        }
+
+        .cosmos-skip:hover {
+          color: #f2ede0;
+        }
+
+        /* Video Modal */
+        .cosmos-video-modal {
+          position: fixed;
+          inset: 0;
+          background: rgba(3,4,7,0.85);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 20000;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.35s ease, visibility 0.35s ease;
+          font-family: 'Literata', Georgia, serif;
+        }
+
+        .cosmos-video-modal.open {
+          opacity: 1;
+          visibility: visible;
+        }
+
+        .cosmos-video-box {
+          width: min(560px, 86vw);
+          background: #0b0e1a;
+          border: 1px solid rgba(242,237,224,0.12);
+          padding: 4px;
+        }
+
+        .cosmos-video-frame {
+          aspect-ratio: 16/9;
+          background: radial-gradient(circle at 50% 40%, rgba(90,103,184,0.18), #08090f 70%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          color: #8b8fa3;
+          font-size: 0.85rem;
+          padding: 20px;
+        }
+
+        .cosmos-play-ring {
+          width: 56px;
+          height: 56px;
+          border: 1px solid #c9a24c;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 16px;
+          color: #c9a24c;
+          font-size: 1.2rem;
+        }
+
+        .cosmos-video-box .cosmos-caption {
+          padding: 14px 16px 4px;
+          font-size: 0.8rem;
+          color: #8b8fa3;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .cosmos-close-video {
+          background: none;
+          border: none;
+          color: #8b8fa3;
+          cursor: pointer;
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 0.75rem;
+          transition: color 0.2s ease;
+        }
+
+        .cosmos-close-video:hover {
+          color: #f2ede0;
+        }
+
+        @media (max-width: 640px) {
+          .cosmos-node-label {
+            font-size: 0.62rem;
+            padding: 5px 10px 5px 7px;
+          }
+          .cosmos-content-layer {
+            padding-top: 7vh;
+          }
+        }
+      `}</style>
+
+      {/* 3D Cosmos Intro Overlay */}
+      <div
+        className={`cosmos-intro-root cosmos-intro-overlay ${isDismissed ? "dismissed" : ""}`}
+        id="intro"
+      >
+        <button
+          className="cosmos-skip"
+          id="skipBtn"
+          onClick={() => dismiss()}
+          aria-label="Skip Introduction"
         >
-          <p
-            className="text-xs tracking-[0.45em] uppercase mb-3"
-            style={{ color: "#c9a87599", fontFamily: "var(--font-mono)" }}
-          >
-            Welcome to
-          </p>
-          <h1
-            className="text-5xl sm:text-7xl font-bold leading-none mb-2"
-            style={{
-              fontFamily: "var(--font-display)",
-              background:
-                "linear-gradient(135deg, #c9a875 0%, #f0d9a8 50%, #c9a875 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              filter: "drop-shadow(0 0 24px rgba(201,168,117,0.5))",
-            }}
-          >
+          SKIP
+        </button>
+
+        <canvas ref={canvasRef} className="cosmos-canvas" id="cosmos-canvas" />
+        <div ref={nodeLayerRef} className="cosmos-node-layer" id="nodeLayer" />
+
+        <div className="cosmos-content-layer">
+          <div className="cosmos-eyebrow" style={{ animationDelay: "0.5s" }}>
+            A LIVING CONSTELLATION
+          </div>
+          <h1 className="cosmos-intro-title" style={{ animationDelay: "0.75s" }}>
             The Artisan's Quill
           </h1>
-          <p
-            className="text-sm tracking-[0.3em] uppercase mt-2"
-            style={{ color: "#c9a87566", fontFamily: "var(--font-mono)" }}
-          >
-            Digital Art & Poetry Sanctuary
+          <p className="cosmos-tagline" style={{ animationDelay: "1.05s" }}>
+            Every painting, poem, and motion loop lives here as a star.
+            Step in, and watch the gallery take shape around you.
           </p>
         </div>
 
         <div
-          className={`mt-8 text-center transition-all duration-1000 delay-200 ${
-            subtitleVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-          }`}
-        >
-          <p
-            className="text-neutral-400 max-w-md text-sm leading-relaxed mx-auto"
-            style={{
-              fontFamily: "var(--font-cormorant)",
-              fontStyle: "italic",
-              fontSize: "1.05rem",
-            }}
-          >
-            A living constellation of paintings, poetry, motion &amp; music —<br />
-            explore the stars to discover each realm.
-          </p>
-        </div>
-
-        <div
-          className={`mt-12 pointer-events-auto transition-all duration-1000 delay-300 ${
-            enterVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-          }`}
+          className="cosmos-bottom-row"
+          id="bottomRow"
+          style={{ animationDelay: `${bottomDelaySec}s` }}
         >
           <button
-            onClick={handleEnter}
-            className="group relative px-10 py-4 rounded-full text-sm tracking-[0.25em] uppercase font-semibold overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
-            style={{
-              fontFamily: "var(--font-mono)",
-              background:
-                "linear-gradient(135deg, rgba(201,168,117,0.15) 0%, rgba(201,168,117,0.08) 100%)",
-              border: "1px solid rgba(201,168,117,0.4)",
-              color: "#c9a875",
-              boxShadow:
-                "0 0 30px rgba(201,168,117,0.2), inset 0 1px 0 rgba(201,168,117,0.1)",
-            }}
+            className="cosmos-enter-btn"
+            id="enterBtn"
+            onClick={() => dismiss()}
           >
-            <span className="relative z-10">Enter the Gallery</span>
-            <div
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(201,168,117,0.25) 0%, rgba(201,168,117,0.12) 100%)",
-              }}
-            />
+            Enter the Atelier
           </button>
-
-          <p
-            className="text-center text-xs mt-5 tracking-widest"
-            style={{ color: "#c9a87544", fontFamily: "var(--font-mono)" }}
+          <button
+            className="cosmos-watch-link"
+            id="watchLink"
+            onClick={() => setIsVideoModalOpen(true)}
           >
-            or hover the stars to explore a realm
-          </p>
+            WATCH THE 20-SECOND TOUR
+          </button>
         </div>
       </div>
 
-      {/* Corner decorative elements */}
+      {/* Video Modal */}
       <div
-        className="absolute top-6 left-8 text-[10px] tracking-[0.4em] uppercase pointer-events-none"
-        style={{ color: "#c9a87533", fontFamily: "var(--font-mono)" }}
+        className={`cosmos-video-modal ${isVideoModalOpen ? "open" : ""}`}
+        id="videoModal"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setIsVideoModalOpen(false);
+        }}
       >
-        ✦ Est. MMXXV ✦
+        <div className="cosmos-video-box">
+          <div className="cosmos-video-frame">
+            <div>
+              <div className="cosmos-play-ring">▶</div>
+              Your walkthrough video will play here.
+              <br />
+              Explore paintings, poetry scrolls, 3D cosmos &amp; music sanctuary.
+            </div>
+          </div>
+          <div className="cosmos-caption">
+            <span>ATELIER WALKTHROUGH — 0:20</span>
+            <button
+              className="cosmos-close-video"
+              id="closeVideo"
+              onClick={() => setIsVideoModalOpen(false)}
+            >
+              CLOSE
+            </button>
+          </div>
+        </div>
       </div>
-      <div
-        className="absolute bottom-6 right-8 text-[10px] tracking-[0.4em] uppercase pointer-events-none"
-        style={{ color: "#c9a87533", fontFamily: "var(--font-mono)" }}
-      >
-        ✦ 8 realms within ✦
-      </div>
-    </div>
+    </>
   );
 }
