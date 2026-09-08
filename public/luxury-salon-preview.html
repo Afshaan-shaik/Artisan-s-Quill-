@@ -1,0 +1,960 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Artisan's Quill — Ultra-Rare Spacious Salon Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Literata:ital,opsz,wght@0,7..72,300;0,7..72,400;0,7..72,500;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --void: #050608;
+      --deep: #090b12;
+      --card-bg: #07090e;
+      --gold: #c9a875;
+      --gold-light: #dfbd87;
+      --gold-dim: rgba(201, 168, 117, 0.22);
+      --gold-glow: rgba(201, 168, 117, 0.12);
+      --star: #f2ede0;
+      --slate: #8b8fa3;
+      --line: rgba(242, 237, 224, 0.08);
+      --line-gold: rgba(201, 168, 117, 0.25);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--void);
+      color: var(--star);
+      font-family: 'Literata', Georgia, serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(ellipse 80% 40% at 50% -10%, rgba(201, 168, 117, 0.07), transparent 75%),
+        radial-gradient(circle at 90% 40%, rgba(90, 103, 184, 0.05), transparent 60%),
+        radial-gradient(circle at 10% 80%, rgba(201, 168, 117, 0.04), transparent 50%);
+      background-attachment: fixed;
+    }
+
+    /* ─── Top Verification Banner ─── */
+    .prototype-banner {
+      background: linear-gradient(90deg, #090c15 0%, #161a29 50%, #090c15 100%);
+      border-bottom: 1px solid var(--line-gold);
+      padding: 10px 24px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .prototype-banner .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(201, 168, 117, 0.15);
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line-gold);
+      font-weight: 600;
+    }
+    .prototype-banner .pulse-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 8px #34d399;
+      animation: blink 2s infinite ease-in-out;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* ─── Floating Curatorial Masthead ─── */
+    .masthead {
+      position: sticky;
+      top: 37px;
+      z-index: 900;
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      background: rgba(5, 6, 9, 0.85);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      transition: all 0.3s ease;
+    }
+    .masthead-inner {
+      max-width: 1740px;
+      margin: 0 auto;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+    }
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(201, 168, 117, 0.25) 0%, rgba(201, 168, 117, 0.05) 100%);
+      border: 1px solid var(--line-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold);
+      font-size: 1.25rem;
+      box-shadow: 0 0 20px rgba(201, 168, 117, 0.15);
+    }
+    .brand-titles {
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.25rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      color: #fff;
+    }
+    .brand-subtitle {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-top: 2px;
+    }
+
+    /* Minimalist Search */
+    .search-box {
+      flex: 1;
+      max-width: 420px;
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      padding: 10px 18px 10px 42px;
+      color: #fff;
+      font-family: 'Literata', serif;
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    .search-input:focus {
+      background: rgba(11, 14, 26, 0.95);
+      border-color: var(--gold);
+      box-shadow: 0 0 25px rgba(201, 168, 117, 0.25);
+    }
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--slate);
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+
+    /* Navigation Actions */
+    .actions-suite {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .btn-atelier {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      padding: 9px 20px;
+      border-radius: 4px;
+      border: 1px solid var(--line-gold);
+      background: linear-gradient(135deg, rgba(201, 168, 117, 0.15) 0%, rgba(201, 168, 117, 0.05) 100%);
+      color: var(--gold-light);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-atelier:hover {
+      background: var(--gold);
+      color: #120e06;
+      box-shadow: 0 0 22px rgba(201, 168, 117, 0.4);
+      transform: translateY(-1px);
+    }
+    .btn-atelier.gold-solid {
+      background: var(--gold);
+      color: #120e06;
+      border-color: var(--gold);
+    }
+    .btn-atelier.gold-solid:hover {
+      background: #dfbd87;
+      box-shadow: 0 0 26px rgba(201, 168, 117, 0.5);
+    }
+
+    /* Curatorial Salon Navigation Strip */
+    .curatorial-strip {
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(3, 4, 7, 0.95);
+      padding: 10px 40px;
+    }
+    .curatorial-strip-inner {
+      max-width: 1740px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .salon-tabs {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+    .salon-tab {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--slate);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 0;
+      position: relative;
+      transition: color 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .salon-tab:hover {
+      color: var(--star);
+    }
+    .salon-tab.active {
+      color: var(--gold);
+      font-weight: 600;
+    }
+    .salon-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gold);
+      box-shadow: 0 0 10px var(--gold);
+    }
+
+    /* ─── Main Gallery Wing (Spacious Rhythm) ─── */
+    .gallery-wing {
+      max-width: 1740px;
+      margin: 0 auto;
+      padding: 70px 40px 120px;
+    }
+
+    /* ─── Haute-Couture Vernissage (Curatorial Spotlight) ─── */
+    .vernissage-frame {
+      position: relative;
+      border-radius: 18px;
+      padding: 8px;
+      background: linear-gradient(135deg, rgba(201, 168, 117, 0.25) 0%, rgba(255, 255, 255, 0.04) 50%, rgba(201, 168, 117, 0.15) 100%);
+      box-shadow: 0 30px 80px -15px rgba(0, 0, 0, 0.9), 0 0 50px -10px rgba(201, 168, 117, 0.15);
+      margin-bottom: 90px;
+    }
+    .vernissage-inner {
+      border-radius: 12px;
+      background: #06080d;
+      border: 1px solid rgba(201, 168, 117, 0.3);
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      overflow: hidden;
+      min-height: 520px;
+    }
+    @media (max-width: 1024px) {
+      .vernissage-inner { grid-template-columns: 1fr; }
+    }
+    .vernissage-canvas-area {
+      position: relative;
+      background: #030407;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow: hidden;
+    }
+    .vernissage-canvas-area video,
+    .vernissage-canvas-area img {
+      width: 100%;
+      height: 100%;
+      max-height: 560px;
+      object-fit: cover;
+      border-radius: 8px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .vernissage-plaque {
+      padding: 56px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      background: radial-gradient(circle at 100% 0%, rgba(201, 168, 117, 0.06), transparent 60%);
+    }
+    .plaque-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    .accession-code {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+    .exhibition-index {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      color: var(--slate);
+    }
+    .artwork-title-large {
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-weight: 500;
+      font-size: clamp(2rem, 3.2vw, 3rem);
+      line-height: 1.15;
+      color: #fff;
+      margin-bottom: 14px;
+    }
+    .artist-byline-capsule {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .artist-monogram {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #110e08;
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(201, 168, 117, 0.4);
+    }
+    .artist-meta {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: #fff;
+    }
+    .artist-meta span {
+      color: var(--gold-light);
+      margin-left: 6px;
+      font-size: 0.75rem;
+    }
+    .curator-critic-note {
+      font-family: 'Literata', serif;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: #a4a9bd;
+      margin-bottom: 32px;
+      border-left: 2px solid var(--line-gold);
+      padding-left: 18px;
+    }
+    .plaque-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 24px;
+    }
+    .medium-spec {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--slate);
+      letter-spacing: 0.06em;
+    }
+
+    /* ─── Salon Controls & Density Switcher ─── */
+    .salon-controls-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 40px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-wrap: wrap;
+    }
+    .salon-headline {
+      font-family: 'Cinzel', serif;
+      font-size: 1.85rem;
+      letter-spacing: 0.06em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .salon-headline-sub {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      color: var(--gold-light);
+      margin-top: 6px;
+    }
+
+    /* Curatorial Column Density Switcher */
+    .density-switcher-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+    }
+    .density-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      color: var(--slate);
+      text-transform: uppercase;
+    }
+    .density-btn-group {
+      display: flex;
+      gap: 4px;
+    }
+    .density-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: none;
+      color: var(--slate);
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .density-btn:hover {
+      color: var(--star);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .density-btn.active {
+      background: var(--gold);
+      color: #120e06;
+      font-weight: 700;
+      border-color: var(--gold);
+      box-shadow: 0 0 16px rgba(201, 168, 117, 0.35);
+    }
+
+    /* ─── Expansive Salon Grid (Passe-Partout Shadowbox) ─── */
+    .salon-grid {
+      display: grid;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* 2 Columns: Grande Exhibition Mode */
+    .salon-grid.cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 48px;
+    }
+    /* 3 Columns: Curatorial Mode (Default) */
+    .salon-grid.cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 38px;
+    }
+    /* 4 Columns: Atelier Archive Mode */
+    .salon-grid.cols-4 {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 28px;
+    }
+
+    @media (max-width: 1100px) {
+      .salon-grid.cols-4,
+      .salon-grid.cols-3 { grid-template-columns: repeat(2, 1fr); gap: 32px; }
+    }
+    @media (max-width: 720px) {
+      .salon-grid.cols-4,
+      .salon-grid.cols-3,
+      .salon-grid.cols-2 { grid-template-columns: 1fr; gap: 32px; }
+      .gallery-wing { padding: 40px 20px 80px; }
+      .masthead-inner { padding: 14px 20px; }
+    }
+
+    /* ─── Passe-Partout Shadowbox Artwork Card ─── */
+    .shadowbox-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .shadowbox-card:hover {
+      border-color: rgba(201, 168, 117, 0.4);
+      box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.9), 0 0 30px rgba(201, 168, 117, 0.18);
+      transform: translateY(-4px);
+    }
+    .shadowbox-matting {
+      background: #030407;
+      border: 1px solid rgba(201, 168, 117, 0.2);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 4 / 3;
+    }
+    .shadowbox-matting.tall { aspect-ratio: 3 / 4; }
+    .shadowbox-matting.wide { aspect-ratio: 16 / 10; }
+    .shadowbox-matting img,
+    .shadowbox-matting video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .shadowbox-card:hover .shadowbox-matting img,
+    .shadowbox-card:hover .shadowbox-matting video {
+      transform: scale(1.04);
+    }
+
+    /* Deckle-Edge Coffee-Stained Poetry Card */
+    .poetry-parchment-matting {
+      background: #ede0c8;
+      color: #2b2219;
+      border-radius: 6px;
+      padding: 34px 28px;
+      min-height: 380px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      position: relative;
+      border: 1px solid #c8b18a;
+      box-shadow: inset 0 0 35px rgba(100, 68, 30, 0.15);
+    }
+    .poetry-number {
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #8c6331;
+      margin-bottom: 8px;
+    }
+    .poetry-card-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1.6rem;
+      font-style: italic;
+      color: #1a130c;
+      margin-bottom: 16px;
+    }
+    .poetry-stanzas {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: #3b2c1f;
+      white-space: pre-line;
+      font-style: italic;
+    }
+    .poetry-author {
+      margin-top: 24px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #7d5c34;
+      border-top: 1px dashed rgba(125, 92, 52, 0.4);
+      padding-top: 10px;
+    }
+
+    /* Museum Caption Plaque */
+    .card-caption-plaque {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .caption-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .caption-accession {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+    .caption-likes {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--slate);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .card-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1.15rem;
+      font-weight: 500;
+      color: #fff;
+      transition: color 0.2s ease;
+    }
+    .shadowbox-card:hover .card-title {
+      color: var(--gold-light);
+    }
+    .card-artist-sub {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--slate);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-artist-sub .dot-sep {
+      color: var(--gold);
+    }
+
+    /* Footer Note */
+    .curator-footer {
+      border-top: 1px solid var(--line);
+      padding: 60px 40px;
+      text-align: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--slate);
+      letter-spacing: 0.14em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Prototype Live Notice -->
+  <div class="prototype-banner">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span class="tag"><span class="pulse-dot"></span> LIVE ARCHITECTURAL PROTOTYPE</span>
+      <span>Spacious Luxury Salon Layout with Curatorial Column Switcher &amp; Museum Matting</span>
+    </div>
+    <div style="color: var(--slate); font-size: 0.68rem;">
+      THE ARTISAN'S QUILL ATELIER • 2026
+    </div>
+  </div>
+
+  <!-- Floating Curatorial Masthead -->
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="brand-group">
+        <div class="brand-icon">✒</div>
+        <div class="brand-titles">
+          <div class="brand-name">The Artisan's Quill</div>
+          <div class="brand-subtitle">Atelier &amp; Private Gallery Vault</div>
+        </div>
+      </div>
+
+      <!-- Center Minimalist Search -->
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" placeholder="Explore paintings, lyric scrolls, motion cinema...">
+      </div>
+
+      <!-- Right Action Suite -->
+      <div class="actions-suite">
+        <button class="btn-atelier">
+          <span>🎵</span> Sanctuary Ambience
+        </button>
+        <button class="btn-atelier">
+          <span>✒</span> Ink Studio
+        </button>
+        <button class="btn-atelier gold-solid">
+          <span>+</span> Upload
+        </button>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 999px;">
+          <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--gold); color: #000; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold;">
+            AS
+          </div>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: #fff;">@afshaanshaikh</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Curatorial Salon Navigation Ribbon -->
+    <div class="curatorial-strip">
+      <div class="curatorial-strip-inner">
+        <div class="salon-tabs">
+          <button class="salon-tab active">✦ All Masterworks</button>
+          <button class="salon-tab">Paintings</button>
+          <button class="salon-tab">Poetry Vault</button>
+          <button class="salon-tab">Motion Cinema</button>
+          <button class="salon-tab">3D Cosmos</button>
+          <button class="salon-tab">Curated Exhibitions</button>
+          <button class="salon-tab">Collector Vault</button>
+        </div>
+
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--gold-light); letter-spacing: 0.16em;">
+          EXHIBITING 12 PERMANENT PIECES
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Exhibition Floor -->
+  <main class="gallery-wing">
+
+    <!-- ── HAUTE-COUTURE VERNISSAGE HERO SPOTLIGHT ── -->
+    <section class="vernissage-frame">
+      <div class="vernissage-inner">
+        <!-- Canvas Display (Video or Painting) -->
+        <div class="vernissage-canvas-area">
+          <video 
+            src="https://uskuzbtvbhfqlxvbbrvw.supabase.co/storage/v1/object/public/artworks/uploads/artworks-1787665014401-qbv149.mp4"
+            autoplay loop muted playsinline
+          ></video>
+        </div>
+
+        <!-- Museum Brass / Marble Plaque -->
+        <div class="vernissage-plaque">
+          <div>
+            <div class="plaque-header">
+              <span class="accession-code">✦ ACCESSION #AQ-2026-001</span>
+              <span class="exhibition-index">VERNISSAGE I / V</span>
+            </div>
+
+            <div class="artist-byline-capsule">
+              <div class="artist-monogram">AS</div>
+              <div class="artist-meta">
+                Afshaan Shaikh <span>@afshaanshaikh</span>
+              </div>
+            </div>
+
+            <h1 class="artwork-title-large">I Suppose</h1>
+
+            <p class="curator-critic-note">
+              "A hypnotic 4K motion loop capturing fluid dynamic textures, golden light refraction, and contemplative stillness. Stands at the frontier of digital cinema and artisan sanctuary craft."
+            </p>
+          </div>
+
+          <div>
+            <div class="plaque-footer">
+              <div class="medium-spec">
+                4K Volumetric Fluid Dynamics &amp; Motion Loop<br>
+                <span>3840 x 2160 Ultra-HD • 2026</span>
+              </div>
+
+              <button class="btn-atelier gold-solid" style="padding: 12px 28px;">
+                View Masterpiece →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SALON CONTROLS & DENSITY SWITCHER ── -->
+    <section class="salon-controls-row">
+      <div>
+        <h2 class="salon-headline">
+          <span>Curated Sanctuary Stream</span>
+        </h2>
+        <div class="salon-headline-sub">
+          GENEROUS WHITESPACE &amp; PASSE-PARTOUT MATTING ACROSS REPOSITORY ARCHIVES
+        </div>
+      </div>
+
+      <!-- Dynamic Column Density Switcher -->
+      <div class="density-switcher-box">
+        <span class="density-label">Display Scale:</span>
+        <div class="density-btn-group">
+          <button class="density-btn" id="btnCols2" onclick="setGridColumns('cols-2')">2-Col Grande</button>
+          <button class="density-btn active" id="btnCols3" onclick="setGridColumns('cols-3')">3-Col Curatorial</button>
+          <button class="density-btn" id="btnCols4" onclick="setGridColumns('cols-4')">4-Col Archive</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── EXPANSIVE PASSE-PARTOUT MASONRY GRID ── -->
+    <section class="salon-grid cols-3" id="salonGrid">
+
+      <!-- Item 1: Noir Reverie Painting -->
+      <div class="shadowbox-card">
+        <div class="shadowbox-matting tall">
+          <img src="/curatorial-masterpiece.svg" alt="The Young Connoisseur (Noir Reverie)">
+        </div>
+        <div class="card-caption-plaque">
+          <div class="caption-top-row">
+            <span class="caption-accession">CAT. #AQ-2026-002</span>
+            <span class="caption-likes">♥ 14</span>
+          </div>
+          <div class="card-title">The Young Connoisseur (Noir Reverie)</div>
+          <div class="card-artist-sub">
+            Afshaan Shaikh <span class="dot-sep">•</span> Digital Fine Art Portraiture
+          </div>
+        </div>
+      </div>
+
+      <!-- Item 2: Coffee Poem I: Late Kettle -->
+      <div class="shadowbox-card">
+        <div class="poetry-parchment-matting">
+          <div class="poetry-number">POEM I.</div>
+          <div class="poetry-card-title">Late Kettle</div>
+          <div class="poetry-stanzas">
+The kettle boils for no one now,
+a thin white column, patient, spent.
+I keep refilling what has gone
+because the habit has not left.
+
+The cup I set for you grows cold
+in the particular silence of the late.
+          </div>
+          <div class="poetry-author">
+            — Afshaan Shaikh, 2026 • Coffee-Stained Parchment Series
+          </div>
+        </div>
+        <div class="card-caption-plaque">
+          <div class="caption-top-row">
+            <span class="caption-accession">CAT. #AQ-POEM-001</span>
+            <span class="caption-likes">♥ 29</span>
+          </div>
+          <div class="card-title">Late Kettle</div>
+          <div class="card-artist-sub">
+            Afshaan Shaikh <span class="dot-sep">•</span> Lyrical Free Verse
+          </div>
+        </div>
+      </div>
+
+      <!-- Item 3: Motion Loop -->
+      <div class="shadowbox-card">
+        <div class="shadowbox-matting wide">
+          <video 
+            src="https://uskuzbtvbhfqlxvbbrvw.supabase.co/storage/v1/object/public/artworks/uploads/artworks-1787665014401-qbv149.mp4"
+            autoplay loop muted playsinline
+          ></video>
+        </div>
+        <div class="card-caption-plaque">
+          <div class="caption-top-row">
+            <span class="caption-accession">CAT. #AQ-2026-003</span>
+            <span class="caption-likes">♥ 42</span>
+          </div>
+          <div class="card-title">Liquid Starlight (Fluid Loop)</div>
+          <div class="card-artist-sub">
+            Afshaan Shaikh <span class="dot-sep">•</span> 4K Volumetric Dynamics
+          </div>
+        </div>
+      </div>
+
+      <!-- Item 4: Coffee Poem II: Marginalia -->
+      <div class="shadowbox-card">
+        <div class="poetry-parchment-matting" style="background: #191410; color: #ede0c8; border-color: rgba(201, 168, 117, 0.3);">
+          <div class="poetry-number" style="color: #c9a875;">POEM II.</div>
+          <div class="poetry-card-title" style="color: #fff;">Marginalia</div>
+          <div class="poetry-stanzas" style="color: #c5baa8;">
+I have always written in the margins,
+that narrow corridor between the printed
+and the felt — a country of small addenda
+where the real argument lives.
+
+We annotate what we cannot answer.
+          </div>
+          <div class="poetry-author" style="color: #c9a875; border-color: rgba(201,168,117,0.3);">
+            — Afshaan Shaikh, 2026 • Obsidian Vellum Series
+          </div>
+        </div>
+        <div class="card-caption-plaque">
+          <div class="caption-top-row">
+            <span class="caption-accession">CAT. #AQ-POEM-002</span>
+            <span class="caption-likes">♥ 38</span>
+          </div>
+          <div class="card-title">Marginalia</div>
+          <div class="card-artist-sub">
+            Afshaan Shaikh <span class="dot-sep">•</span> Obsidian Lyrical Scroll
+          </div>
+        </div>
+      </div>
+
+      <!-- Item 5: Oil Painting Masterpiece -->
+      <div class="shadowbox-card">
+        <div class="shadowbox-matting">
+          <img src="https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80" alt="Mineral Stratum VII">
+        </div>
+        <div class="card-caption-plaque">
+          <div class="caption-top-row">
+            <span class="caption-accession">CAT. #AQ-2026-004</span>
+            <span class="caption-likes">♥ 19</span>
+          </div>
+          <div class="card-title">Mineral Stratum VII</div>
+          <div class="card-artist-sub">
+            Julian Thorne <span class="dot-sep">•</span> Mineral Pigments on Belgian Linen
+          </div>
+        </div>
+      </div>
+
+      <!-- Item 6: Coffee Poem III: The Second Cup -->
+      <div class="shadowbox-card">
+        <div class="poetry-parchment-matting">
+          <div class="poetry-number">POEM III.</div>
+          <div class="poetry-card-title">The Second Cup</div>
+          <div class="poetry-stanzas">
+The second cup is always the honest one:
+poured not from want but from the refusal
+to let the morning end before
+we understood what it was trying to say.
+
+There is still this light.
+          </div>
+          <div class="poetry-author">
+            — Afshaan Shaikh, 2026 • Coffee-Stained Parchment Series
+          </div>
+        </div>
+        <div class="card-caption-plaque">
+          <div class="caption-top-row">
+            <span class="caption-accession">CAT. #AQ-POEM-003</span>
+            <span class="caption-likes">♥ 52</span>
+          </div>
+          <div class="card-title">The Second Cup</div>
+          <div class="card-artist-sub">
+            Afshaan Shaikh <span class="dot-sep">•</span> Lyrical Coffee Scroll
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <footer class="curator-footer">
+    THE ARTISAN'S QUILL • HAUTE-COUTURE LUXURY SALON PROTOTYPE • 2026
+  </footer>
+
+  <script>
+    function setGridColumns(colsClass) {
+      const grid = document.getElementById('salonGrid');
+      grid.classList.remove('cols-2', 'cols-3', 'cols-4');
+      grid.classList.add(colsClass);
+
+      document.querySelectorAll('.density-btn').forEach(btn => btn.classList.remove('active'));
+      if (colsClass === 'cols-2') document.getElementById('btnCols2').classList.add('active');
+      if (colsClass === 'cols-3') document.getElementById('btnCols3').classList.add('active');
+      if (colsClass === 'cols-4') document.getElementById('btnCols4').classList.add('active');
+    }
+  </script>
+</body>
+</html>
