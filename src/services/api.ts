@@ -45,7 +45,7 @@ export const FOUNDER_PASSCODES = ['atelier2026', 'sanctuary2026', 'afshaan2026',
  * Strict verification check to determine if a user session is authentically the sanctuary creator (Afshaan Shaikh).
  * Guests, unauthenticated visitors, and newly registered or other artist accounts are strictly rejected.
  */
-export function isFounderUser(user?: UserProfile | null): boolean {
+export function isFounderUser(user?: Partial<UserProfile> | null): boolean {
   if (!user || !user.id || user.id === 'guest') return false;
 
   const email = (user.email || '').trim().toLowerCase();

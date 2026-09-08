@@ -9,7 +9,22 @@
     --font-display: 'Cinzel', serif;
     --font-mono: 'Space Mono', monospace;
     --font-signature: 'Alex Brush', 'Playfair Display', cursive, Georgia, serif;
+    --font-fraunces: 'Fraunces', Georgia, serif;
+    --font-literata: 'Literata', Georgia, serif;
+    --font-plex-mono: 'IBM Plex Mono', monospace;
   }
+}
+
+.font-fraunces {
+  font-family: var(--font-fraunces);
+}
+
+.font-literata {
+  font-family: var(--font-literata);
+}
+
+.font-plex-mono {
+  font-family: var(--font-plex-mono);
 }
 
 .font-signature {
@@ -410,5 +425,177 @@ body.theme-candlelight {
 
 .parchment-page-appear {
   animation: coffee-fade-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ─── Ultra-Rare Luxury Museum Shadowbox Framing ─── */
+.museum-shadowbox {
+  background: #07090e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.75);
+  transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.museum-shadowbox:hover {
+  border-color: rgba(201, 168, 117, 0.4);
+  box-shadow: 0 28px 65px -10px rgba(0, 0, 0, 0.9), 0 0 30px rgba(201, 168, 117, 0.18);
+  transform: translateY(-4px);
+}
+
+.museum-matting {
+  background: #030407;
+  border: 1px solid rgba(201, 168, 117, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.museum-plaque {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* ─── Ultra-Rare Museum Poetry Matting ─── */
+.poetry-parchment-matting {
+  border-radius: 6px;
+  padding: 30px 24px 22px 24px;
+  min-height: 380px;
+  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  position: relative;
+  transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  text-align: left;
+}
+
+/* Option 1: Default View - Black & Golden Obsidian Vellum */
+.poetry-parchment-matting.theme-obsidian {
+  background: #191410;
+  color: #ede0c8;
+  border: 1px solid rgba(201, 168, 117, 0.3);
+  box-shadow: inset 0 0 45px rgba(0, 0, 0, 0.65), 0 0 20px rgba(201, 168, 117, 0.08);
+}
+.poetry-parchment-matting.theme-obsidian .poetry-number {
+  color: #c9a875;
+  font-family: 'Cinzel', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin-bottom: 8px;
+}
+.poetry-parchment-matting.theme-obsidian .poetry-card-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.6rem;
+  font-style: italic;
+  color: #ffffff;
+  margin-bottom: 16px;
+  line-height: 1.15;
+}
+.poetry-parchment-matting.theme-obsidian .poetry-stanzas {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #c5baa8;
+  white-space: pre-line;
+  font-style: italic;
+}
+.poetry-parchment-matting.theme-obsidian .poetry-author {
+  margin-top: 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #c9a875;
+  border-top: 1px dashed rgba(201, 168, 117, 0.3);
+  padding-top: 10px;
+}
+
+/* Option 2: Paper Aesthetic - Coffee-Stained Parchment */
+.poetry-parchment-matting.theme-parchment {
+  background: #ede0c8;
+  color: #2b2219;
+  border: 1px solid #c8b18a;
+  box-shadow: inset 0 0 35px rgba(100, 68, 30, 0.15);
+}
+.poetry-parchment-matting.theme-parchment .poetry-number {
+  color: #8c6331;
+  font-family: 'Cinzel', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin-bottom: 8px;
+}
+.poetry-parchment-matting.theme-parchment .poetry-card-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.6rem;
+  font-style: italic;
+  color: #1a130c;
+  margin-bottom: 16px;
+  line-height: 1.15;
+}
+.poetry-parchment-matting.theme-parchment .poetry-stanzas {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #3b2c1f;
+  white-space: pre-line;
+  font-style: italic;
+}
+.poetry-parchment-matting.theme-parchment .poetry-author {
+  margin-top: 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7d5c34;
+  border-top: 1px dashed rgba(125, 92, 52, 0.4);
+  padding-top: 10px;
+}
+
+/* ─── Museum Shadowbox Caption Plaque ─── */
+.card-caption-plaque {
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  user-select: none;
+}
+.caption-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.caption-accession {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  color: #c9a875;
+  text-transform: uppercase;
+}
+.caption-likes {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  color: #9499ab;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.card-artist-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: #9499ab;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 3px;
+  margin-top: 1px;
+}
+.card-artist-sub .dot-sep {
+  color: #c9a875;
 }
 

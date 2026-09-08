@@ -281,7 +281,7 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
           if (lm) {
             const lp = Math.min(1, (elapsed - lm.activeAt) / 500);
             const le = ease(lp);
-            lm.line.material.opacity = le * 0.45;
+            (lm.line.material as THREE.LineBasicMaterial).opacity = le * 0.45;
             const cur = lm.from.clone().lerp(lm.to, le);
             const posAttr = lm.line.geometry.attributes.position;
             posAttr.setXYZ(1, cur.x, cur.y, cur.z);

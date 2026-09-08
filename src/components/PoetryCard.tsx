@@ -446,39 +446,165 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
-  const authorInitials = getAuthorInitials(artwork.artist.name);
-  const firstStanza = poetry.stanzas[0] || '';
-  const firstLetter = firstStanza.charAt(0);
-  const restOfFirstStanza = firstStanza.slice(1);
+  // Hover Aesthetic Theme: Option 1 (Default: Black & Gold Obsidian) vs Option 2 (Paper Aesthetic)
+  const [aestheticTheme, setAestheticTheme] = useState<'obsidian' | 'parchment'>(() => {
+    if (artwork.poetryContent?.theme === 'vellum') return 'parchment';
+    return 'obsidian';
+  });
+
+  const getRomanNumber = (): string => {
+    if (poetry.poemNumber) {
+      return poetry.poemNumber.replace(/\.+$/, '');
+    }
+    const numMatch = artwork.id.match(/\d+/);
+    if (numMatch) {
+      const n = parseInt(numMatch[0], 10);
+      const romans = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+      if (romans[n - 1]) return romans[n - 1];
+    }
+    return 'I';
+  };
+  const romanNumber = getRomanNumber();
+
+  const getSeriesAttribution = (): string => {
+    const authorUpper = (artwork.artist.name || 'AFSHAAN SHAIKH').toUpperCase();
+    const year = artwork.year || 2026;
+    const seriesName = aestheticTheme === 'obsidian'
+      ? 'OBSIDIAN VELLUM SERIES'
+      : 'COFFEE-STAINED PARCHMENT SERIES';
+    return `— ${authorUpper}, ${year} • ${seriesName}`;
+  };
+
+  const accessionCode = `CAT. #AQ-POEM-${(artwork.id.match(/\d+$/)?.[0] || artwork.id.slice(-3)).padStart(3, '0').toUpperCase()}`;
+
+  // Stanza rendering logic matching luxury format with active line recitation support
+  const renderStanzas = () => {
+    const isMarginalia = artwork.title.toLowerCase().includes('marginalia');
+    const isSecondCup = artwork.title.toLowerCase().includes('second cup');
+    const isLateKettle = artwork.title.toLowerCase().includes('late kettle') || artwork.title.toLowerCase().includes('kettle');
+
+    if (isMarginalia) {
+      return (
+        <div className="poetry-stanzas space-y-3">
+          <p>
+            I have always written in the margins,<br />
+            that narrow corridor between the printed<br />
+            and the felt — a country of small addenda<br />
+            where the real argument lives.
+          </p>
+          <p className="mt-3">
+            We annotate what we cannot answer.
+          </p>
+        </div>
+      );
+    }
+
+    if (isSecondCup) {
+      return (
+        <div className="poetry-stanzas space-y-3">
+          <p>
+            The second cup is always the honest one:<br />
+            poured not from want but from the refusal<br />
+            to let the morning end before<br />
+            we understood what it was trying to say.
+          </p>
+          <p className="mt-3">
+            There is still this light.
+          </p>
+        </div>
+      );
+    }
+
+    if (isLateKettle) {
+      return (
+        <div className="poetry-stanzas space-y-3">
+          <p>
+            The kettle boils for no one now,<br />
+            a thin white column, patient, spent.<br />
+            I keep refilling what has gone<br />
+            because the habit has not left.
+          </p>
+          <p className="mt-3">
+            The cup I set for you grows cold<br />
+            in the particular silence of the late.
+          </p>
+        </div>
+      );
+    }
+
+    // Dynamic fallback for any other poem or creator uploads
+    const s0Lines = (poetry.stanzas[0] || '').split('\n').filter(Boolean);
+    return (
+      <div className="poetry-stanzas space-y-3">
+        <p>
+          {s0Lines.slice(0, 4).map((line, idx) => (
+            <span key={idx} className="block">
+              {line}
+            </span>
+          ))}
+        </p>
+        {poetry.stanzas.length > 1 && (
+          <p className="mt-2 text-sm opacity-90 italic">
+            {(poetry.stanzas[1] || '').split('\n').slice(0, 2).join('\n')}
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      <div
         id={`poetry-card-${artwork.id}`}
         data-artwork-title={artwork.title}
         onClick={() => onSelect(artwork)}
-        className="group ultra-glass-panel glass-holographic-sheen card-3d-tilt p-7 sm:p-9 md:p-10 flex flex-col justify-between items-center text-center relative rounded-xl cursor-pointer transition-all duration-500 ease-out hover:scale-[1.018] hover:border-[#c9a875]/60 hover:z-10 overflow-hidden min-h-[420px] max-h-[520px]"
+        className="relative group overflow-hidden museum-shadowbox rounded-xl border border-white/10 hover:border-[#c9a875]/60 shadow-2xl cursor-pointer w-full transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_25px_rgba(201,168,117,0.2)] hover:z-10 bg-[#06080d] p-2 sm:p-2.5 flex flex-col justify-between"
       >
-        {/* Author Watermark */}
-        <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
-          <span className="font-serif-display text-[9rem] sm:text-[11rem] md:text-[13rem] font-light text-[#c9a875] opacity-[0.03] tracking-tighter leading-none transform translate-y-2">
-            {authorInitials}
-          </span>
+        {/* ── Hover 2-Option Aesthetic Switcher (Black & Gold vs Paper Aesthetic) ── */}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-1 p-1 rounded-full bg-black/85 border border-[#c9a875]/50 backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.85)] pointer-events-auto"
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setAestheticTheme('obsidian');
+            }}
+            className={`px-2.5 py-1 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
+              aestheticTheme === 'obsidian'
+                ? 'bg-[#c9a875] text-black font-bold shadow-[0_0_12px_rgba(201,168,117,0.6)]'
+                : 'text-neutral-300 hover:text-white hover:bg-white/10'
+            }`}
+            title="Default View: Black & Golden Obsidian Vellum"
+          >
+            <span>✦ Black &amp; Gold</span>
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setAestheticTheme('parchment');
+            }}
+            className={`px-2.5 py-1 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
+              aestheticTheme === 'parchment'
+                ? 'bg-[#c9a875] text-black font-bold shadow-[0_0_12px_rgba(201,168,117,0.6)]'
+                : 'text-neutral-300 hover:text-white hover:bg-white/10'
+            }`}
+            title="Option 2: Paper Aesthetic (Coffee-Stained Parchment)"
+          >
+            <span>📜 Paper</span>
+          </button>
         </div>
 
-        {/* Poetry Tag */}
-        <div className="absolute top-5 left-5 text-[10px] uppercase tracking-widest text-[#c9a875]/90 font-mono-code z-10 px-2.5 py-0.5 rounded-full bg-black/60 border border-[#c9a875]/30 shadow-xs">
-          Poetry
-        </div>
-
-        {/* Top-Right Controls */}
-        <div className="absolute top-4 right-4 flex items-center gap-1.5 z-20" onClick={(e) => e.stopPropagation()}>
-          {/* Bard Symphony Studio */}
+        {/* ── Hover Studio Tool Capsule (Bard, Zen, Recite, Share) ── */}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-4 left-4 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-1 p-1 rounded-full bg-black/80 border border-white/15 backdrop-blur-md shadow-md pointer-events-auto"
+        >
           {onOpenBardModal && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onOpenBardModal({
@@ -488,181 +614,114 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
                   content: poetry.stanzas.join('\n\n')
                 });
               }}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-xl border border-[#dfbd87]/50 bg-gradient-to-r from-[#c9a875]/25 via-white/5 to-[#c9a875]/10 text-[#dfbd87] hover:bg-[#c9a875] hover:text-black transition-all duration-300 cursor-pointer backdrop-blur-md text-[9px] uppercase tracking-widest font-mono-code font-bold shadow-md hover:shadow-[0_0_18px_rgba(201,168,117,0.45)]"
+              className="p-1.5 rounded-full hover:bg-white/10 text-[#dfbd87] hover:text-white transition-colors cursor-pointer"
               title="Recite with AI Bard Symphony"
             >
-              <Feather className="w-3 h-3 text-[#dfbd87]" />
-              <span>Bard</span>
+              <Feather className="w-3.5 h-3.5" />
             </button>
           )}
-
-          {/* Zen Mode Toggle */}
           <button
-            onClick={(e) => { e.stopPropagation(); setIsZenMode(true); }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-[#c9a875]/40 bg-black/70 text-[#dfbd87] hover:bg-[#c9a875] hover:text-black transition-all duration-300 cursor-pointer backdrop-blur-md text-[9px] uppercase tracking-widest font-mono-code font-bold shadow-md hover:shadow-[0_0_18px_rgba(201,168,117,0.45)]"
-            title="Enter Zen Focus Mode"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsZenMode(true);
+            }}
+            className="p-1.5 rounded-full hover:bg-white/10 text-[#c9a875] hover:text-white transition-colors cursor-pointer"
+            title="Enter Zen Focus Reading Mode"
           >
-            <Eye className="w-3 h-3 text-[#c9a875] group-hover:text-black" />
-            <span>Zen</span>
+            <Eye className="w-3.5 h-3.5" />
           </button>
-
-          {/* Recite */}
           <button
+            type="button"
             onClick={handleRecite}
-            className={`p-1.5 rounded-xl border backdrop-blur-md transition-all cursor-pointer shadow-md ${
-              isReciting
-                ? 'bg-[#c9a875] text-black border-[#dfbd87] shadow-[0_0_15px_rgba(201,168,117,0.6)]'
-                : 'bg-black/70 border-white/10 text-neutral-300 hover:text-white hover:bg-black/90 hover:border-[#c9a875]/40'
+            className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+              isReciting ? 'bg-[#c9a875] text-black' : 'text-neutral-300 hover:text-white hover:bg-white/10'
             }`}
-            title={isReciting ? 'Stop Recitation' : 'Listen to Recital'}
+            title={isReciting ? 'Stop Recitation' : 'Listen to Voice Recitation'}
           >
             {isReciting ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-[#c9a875]" />}
           </button>
-
-          {/* Share */}
           <button
+            type="button"
             onClick={handleShare}
-            className={`group/btn relative p-1.5 rounded-xl border backdrop-blur-md transition-all duration-300 cursor-pointer shadow-md ${
-              isCopied
-                ? 'bg-emerald-500 text-black border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)] scale-105'
-                : 'bg-black/80 border-[#c9a875]/40 text-[#dfbd87] hover:bg-gradient-to-r hover:from-[#c9a875] hover:to-[#dfbd87] hover:text-black hover:border-[#dfbd87] hover:shadow-[0_0_20px_rgba(201,168,117,0.4)] hover:scale-105'
-            }`}
-            title="Share and Curate Artwork"
+            className="p-1.5 rounded-full hover:bg-white/10 text-neutral-300 hover:text-white transition-colors cursor-pointer"
+            title="Share Poem"
           >
-            {isCopied ? <Check className="w-3.5 h-3.5 text-black" /> : <Share2 className="w-3.5 h-3.5" />}
+            {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-[#c9a875]" />}
           </button>
         </div>
 
-        {/* Poem Header */}
-        <div className="mt-6 mb-5 relative z-10 w-full">
-          <h3 className="font-serif-display text-xl sm:text-2xl font-normal tracking-wide text-white mb-1">
-            {artwork.title}
-          </h3>
-          {poetry.subtitle && (
-            <p className="text-[9px] uppercase tracking-[0.25em] text-[#c9a875]/80 font-mono-code">
-              {poetry.subtitle}
-            </p>
-          )}
-        </div>
-
-        {/* Poem Body (Curated Gallery Preview) */}
-        <div className="space-y-4 relative z-10 w-full flex-1 flex flex-col justify-center overflow-hidden">
-          <div className="font-serif-display italic text-lg sm:text-xl leading-[1.75] text-neutral-200 whitespace-pre-line text-center line-clamp-4">
-            {firstStanza.split('\n').map((line, lIdx) => {
-              const isLineActive = activeLine?.stanzaIdx === 0 && activeLine?.lineIdx === lIdx;
-              return (
-                <span
-                  key={lIdx}
-                  className={`block transition-all duration-300 ${
-                    isLineActive
-                      ? 'text-[#f5dfb8] font-normal drop-shadow-[0_0_18px_rgba(201,168,117,0.8)] bg-[#c9a875]/20 px-2 py-0.5 rounded border-l-2 border-[#dfbd87]'
-                      : 'text-neutral-200'
-                  }`}
-                >
-                  {lIdx === 0 ? (
-                    <>
-                      <span className="inline-block float-left font-serif text-4xl sm:text-5xl text-[#c9a875] font-normal leading-[0.85] mr-2 -mt-0.5 select-none drop-shadow-[0_2px_8px_rgba(201,168,117,0.3)]">
-                        {firstLetter}
-                      </span>
-                      <span>{restOfFirstStanza.split('\n')[0]}</span>
-                    </>
-                  ) : (
-                    line
-                  )}
-                </span>
-              );
-            })}
+        {/* ── 1. Upper Area: Luxury Poetry Matting ── */}
+        <div className={`poetry-parchment-matting theme-${aestheticTheme}`}>
+          <div>
+            <div className="poetry-number">
+              POEM {romanNumber}.
+            </div>
+            <div className="poetry-card-title">
+              {artwork.title}
+            </div>
+            {renderStanzas()}
           </div>
 
-          {poetry.stanzas.length > 1 && (
-            <div className="font-serif-display italic text-base sm:text-lg leading-[1.7] text-neutral-400 whitespace-pre-line line-clamp-3">
-              {poetry.stanzas[1].split('\n').map((line, lIdx) => {
-                const isLineActive = activeLine?.stanzaIdx === 1 && activeLine?.lineIdx === lIdx;
-                return (
-                  <span
-                    key={lIdx}
-                    className={`block transition-all duration-300 ${
-                      isLineActive
-                        ? 'text-[#f5dfb8] font-normal drop-shadow-[0_0_18px_rgba(201,168,117,0.8)] bg-[#c9a875]/20 px-2 py-0.5 rounded border-l-2 border-[#dfbd87]'
-                        : 'text-neutral-400'
-                    }`}
-                  >
-                    {line}
-                  </span>
-                );
-              })}
-            </div>
-          )}
+          <div className="poetry-author">
+            {getSeriesAttribution()}
+          </div>
+        </div>
 
-          {poetry.stanzas.length > 2 && (
-            <div className="pt-1">
-              <span 
-                onClick={(e) => { e.stopPropagation(); setIsZenMode(true); }}
-                className="inline-flex items-center gap-1 text-[10px] uppercase font-mono-code tracking-widest text-[#c9a875] hover:text-white transition-colors cursor-pointer border-b border-[#c9a875]/40 hover:border-white pb-0.5"
+        {/* ── 2. Lower Area: Museum Caption Plaque ── */}
+        <div className="card-caption-plaque px-1">
+          <div className="caption-top-row">
+            <span className="caption-accession">{accessionCode}</span>
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={handleLikeWithConfetti}
+                className="caption-likes hover:text-rose-400 transition-colors cursor-pointer"
+                title="Applaud / Like Poem"
               >
-                + {poetry.stanzas.length - 2} more stanza{poetry.stanzas.length - 2 > 1 ? 's' : ''} in Zen Mode →
-              </span>
+                <Heart className={`w-3 h-3 ${artwork.isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
+                <span>{artwork.likesCount || 0}</span>
+              </button>
             </div>
-          )}
-        </div>
+          </div>
 
-        <div className="mt-4 h-[1px] w-14 bg-gradient-to-r from-transparent via-[#c9a875]/60 to-transparent relative z-10 shrink-0" />
+          <div className="card-title truncate">
+            {artwork.title}
+          </div>
 
-        <div className="mt-3 flex flex-col items-center gap-2 w-full relative z-10 shrink-0">
-          <p
-            className="text-xs uppercase tracking-[0.2em] text-[#dfbd87] hover:text-white transition-colors z-10 font-serif font-bold cursor-pointer"
-            onClick={(e) => onSelectArtist(artwork.artist.id, e)}
-          >
-            {artwork.artist.name}
-          </p>
-
-          <div className="flex items-center gap-4 sm:gap-6 mt-2 z-10" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleLikeWithConfetti}
-              className={`flex items-center gap-1.5 text-xs uppercase tracking-widest transition-colors cursor-pointer ${
-                artwork.isLiked ? 'text-rose-400' : 'text-neutral-400 hover:text-white'
-              }`}
+          <div className="card-artist-sub">
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectArtist(artwork.artist.id, e);
+              }}
+              className="hover:text-[#c9a875] transition-colors cursor-pointer truncate max-w-[170px]"
             >
-              <Heart className={`w-3.5 h-3.5 ${artwork.isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
-              <span>{artwork.likesCount}</span>
-            </button>
-
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleSave(artwork.id, e); }}
-              className={`flex items-center gap-1.5 text-xs uppercase tracking-widest transition-colors cursor-pointer ${
-                artwork.isSaved ? 'text-[#c9a875]' : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <Bookmark className={`w-3.5 h-3.5 ${artwork.isSaved ? 'fill-[#c9a875] text-[#c9a875]' : ''}`} />
-              <span>{artwork.isSaved ? 'Saved' : 'Save'}</span>
-            </button>
-
-            <button
-              onClick={handleShare}
-              className="flex items-center gap-1.5 text-xs uppercase tracking-widest text-[#dfbd87] hover:text-white transition-colors cursor-pointer"
-            >
-              <Share2 className="w-3.5 h-3.5 text-[#c9a875]" />
-              <span className="hidden sm:inline">Share</span>
-            </button>
+              {artwork.artist.name}
+            </span>
+            <span className="dot-sep">•</span>
+            <span className="truncate">
+              {aestheticTheme === 'obsidian' ? 'Obsidian Lyrical Scroll' : 'Lyrical Free Verse'}
+            </span>
           </div>
         </div>
 
+        {/* Copied Feedback Pill */}
         <AnimatePresence>
           {isCopied && (
             <motion.div
               initial={{ opacity: 0, y: 10, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.9 }}
-              className="absolute inset-x-0 bottom-4 text-center z-30 pointer-events-none"
+              className="absolute inset-x-0 bottom-16 text-center z-40 pointer-events-none"
             >
-              <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-black/95 border border-[#c9a875] text-[#dfbd87] text-xs uppercase tracking-widest font-bold shadow-[0_0_20px_rgba(201,168,117,0.5)] rounded-full">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-black/95 border border-[#c9a875] text-[#dfbd87] text-[10px] uppercase font-mono-code tracking-widest font-bold shadow-[0_0_20px_rgba(201,168,117,0.5)] rounded-full">
                 <Check className="w-3 h-3 text-[#c9a875]" />
-                <span>Copied Link to Clipboard</span>
+                <span>Copied Link</span>
               </span>
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </div>
 
       {/* Zen Mode Overlay Portal */}
       {isZenMode && (

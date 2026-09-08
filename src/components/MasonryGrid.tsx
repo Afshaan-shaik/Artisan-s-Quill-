@@ -8,6 +8,8 @@ import { isVideoMedia, isAudioMedia, getMediaPoster } from '../utils/mediaUtils'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export type GridDensity = 'grande' | 'curatorial' | 'archive';
+
 interface MasonryGridProps {
   artworks: Artwork[];
   onSelectArtwork: (artwork: Artwork) => void;
@@ -19,6 +21,7 @@ interface MasonryGridProps {
   onOpenUpload: (category?: ArtCategory) => void;
   onAddToMoodBoard?: (artwork: Artwork) => void;
   onOpenBardModal?: (poem: { title: string; author: string; authorHandle?: string; content: string }) => void;
+  density?: GridDensity;
 }
 
 interface ArtworkParallaxCardProps {
@@ -45,12 +48,29 @@ const getAspectRatioValue = (ratio: Artwork['aspectRatio']): number => {
   }
 };
 
-/** Responsive column count matching Tailwind breakpoints. */
-const getColumnCount = (width: number): number => {
-  if (width >= 1280) return 4;
-  if (width >= 1024) return 3;
-  if (width >= 640)  return 2;
-  return 1;
+/** Responsive column count and gutter gap matching curatorial density mode. */
+const getColumnCountAndGap = (
+  width: number,
+  density: GridDensity = 'curatorial'
+): { cols: number; gap: number } => {
+  if (density === 'grande') {
+    if (width >= 1024) return { cols: 2, gap: 48 };
+    if (width >= 640)  return { cols: 2, gap: 36 };
+    return { cols: 1, gap: 24 };
+  }
+
+  if (density === 'archive') {
+    if (width >= 1280) return { cols: 4, gap: 26 };
+    if (width >= 1024) return { cols: 3, gap: 24 };
+    if (width >= 640)  return { cols: 2, gap: 20 };
+    return { cols: 1, gap: 16 };
+  }
+
+  // Default: 'curatorial' - spacious 3-column salon layout
+  if (width >= 1280) return { cols: 3, gap: 38 };
+  if (width >= 1024) return { cols: 3, gap: 32 };
+  if (width >= 640)  return { cols: 2, gap: 28 };
+  return { cols: 1, gap: 20 };
 };
 
 // ─── Individual Artwork Card ──────────────────────────────────────────────────
@@ -125,12 +145,12 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
       id={`artwork-card-${artwork.id}`}
       data-artwork-title={artwork.title}
       onClick={() => onSelectArtwork(artwork)}
-      className="relative group overflow-hidden ultra-glass-panel glass-holographic-sheen card-3d-tilt rounded-xl border border-white/10 shadow-2xl cursor-pointer w-full transition-all duration-500 ease-out hover:scale-[1.02] hover:border-[#c9a875]/60 hover:z-10"
+      className="relative group overflow-hidden museum-shadowbox rounded-xl border border-white/10 hover:border-[#c9a875]/60 shadow-2xl cursor-pointer w-full transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_25px_rgba(201,168,117,0.2)] hover:z-10 bg-[#06080d]"
       style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}
     >
-      {/* Image / Video Container */}
+      {/* 1. Museum Passe-Partout Inset Frame */}
       <div
-        className={`relative w-full overflow-hidden bg-[#050608] ${
+        className={`relative w-full overflow-hidden bg-[#030407] rounded-lg border border-white/10 group-hover:border-[#c9a875]/40 transition-colors ${
           isTall ? 'aspect-[3/4]' : isWide ? 'aspect-[16/10]' : 'aspect-square'
         }`}
       >
@@ -160,7 +180,7 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
             loop
             playsInline
             preload="auto"
-            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700 pointer-events-none scale-105 bg-[#050608]"
+            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700 pointer-events-none scale-105 bg-[#030407]"
             style={{
               transform: `scale(${isHovered ? 1.08 : 1.04}) translate3d(${-parallaxOffset.x}px, ${-parallaxOffset.y}px, 0)`
             }}
@@ -178,23 +198,23 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
               setImageLoaded(true);
             }}
             className={`w-full h-full object-cover transition-all duration-700 ease-out ${
-              imageLoaded ? 'opacity-85 group-hover:opacity-100' : 'opacity-0'
+              imageLoaded ? 'opacity-90 group-hover:opacity-100' : 'opacity-0'
             }`}
             style={{
-              transform: `scale(${isHovered ? 1.09 : 1.04}) translate3d(${-parallaxOffset.x}px, ${-parallaxOffset.y}px, 0)`
+              transform: `scale(${isHovered ? 1.08 : 1.04}) translate3d(${-parallaxOffset.x}px, ${-parallaxOffset.y}px, 0)`
             }}
           />
         )}
 
         {/* Category Tag */}
-        <div className="absolute top-5 left-5 px-3 py-1 bg-black/60 backdrop-blur-md border border-white/10 text-[10px] uppercase tracking-widest text-neutral-200 z-10 flex items-center gap-1.5 shadow-md">
+        <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-[9px] uppercase tracking-widest text-neutral-200 z-10 flex items-center gap-1.5 shadow-md rounded-md">
           {getCategoryIcon(artwork.category)}
           <span>{artwork.category}</span>
         </div>
 
-        {/* Masterpiece of the Day Badge */}
+        {/* Masterpiece Badge */}
         {(artwork.id === 'spotlight-masterpiece-1' || artwork.tags?.includes('Masterpiece of the Day')) && (
-          <div className="absolute top-5 right-5 z-10 flex items-center gap-1.5 px-2.5 py-1 bg-[#c9a875]/90 backdrop-blur-md border border-[#dfbd87] text-black text-[9px] font-extrabold tracking-widest uppercase shadow-[0_0_15px_rgba(201,168,117,0.5)]">
+          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1 bg-[#c9a875] text-black text-[9px] font-extrabold tracking-widest uppercase shadow-[0_0_12px_rgba(201,168,117,0.5)] rounded-md">
             <Sparkles className="w-3 h-3 text-black" />
             <span>#1 Masterpiece</span>
           </div>
@@ -202,42 +222,38 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
 
         {/* Video Duration Badge */}
         {artwork.category === 'video' && (
-          <div className="absolute top-5 right-5 z-10 flex items-center gap-1.5 px-2.5 py-1 bg-black/60 backdrop-blur-md border border-white/10 text-white text-[10px] font-medium tracking-widest uppercase shadow-md">
+          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1 bg-black/70 backdrop-blur-md border border-white/10 text-white text-[9px] font-medium tracking-widest uppercase shadow-md rounded-md">
             <Play className="w-3 h-3 fill-current text-[#f0a8d0]" />
             <span>{artwork.videoData?.duration}</span>
           </div>
         )}
 
-        {/* Hover Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 flex flex-col justify-end p-6 sm:p-8 transition-opacity duration-300">
-          <h3 className="text-xl sm:text-2xl font-light tracking-tight text-white mb-1 leading-snug drop-shadow-md">
-            {artwork.title}
-          </h3>
-          <p className="text-[10px] uppercase tracking-widest text-[#c9a875] mb-5 font-mono-code">
-            {artwork.artist.name} • {artwork.medium || artwork.category}
-          </p>
-
-          <div className="flex items-center gap-3">
+        {/* Hover Quick Action Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 flex flex-col justify-end p-4 transition-opacity duration-300 pointer-events-none">
+          <div className="flex items-center gap-2 pointer-events-auto">
             <button
-              onClick={(e) => handleLike(artwork.id, artwork.isLiked, e)}
-              className={`flex items-center gap-1.5 text-[10px] uppercase tracking-widest transition-colors cursor-pointer ${
-                artwork.isLiked ? 'text-rose-400' : 'text-neutral-300 hover:text-white'
+              onClick={(e) => { e.stopPropagation(); handleLike(artwork.id, artwork.isLiked, e); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer ${
+                artwork.isLiked
+                  ? 'bg-rose-500/25 border border-rose-500/60 text-rose-400'
+                  : 'bg-black/60 border border-white/15 text-neutral-200 hover:text-white hover:bg-white/10'
               }`}
             >
-              <Heart className={`w-4 h-4 ${artwork.isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
+              <Heart className={`w-3.5 h-3.5 ${artwork.isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
               <span>{artwork.likesCount}</span>
             </button>
 
             <button
               onClick={(e) => { e.stopPropagation(); onToggleSave(artwork.id, e); }}
-              className={`flex items-center gap-1.5 text-[10px] uppercase tracking-widest transition-colors cursor-pointer ${
-                artwork.isSaved ? 'text-[#c9a875]' : 'text-neutral-300 hover:text-white'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer ${
+                artwork.isSaved
+                  ? 'bg-[#c9a875]/25 border border-[#c9a875]/60 text-[#dfbd87]'
+                  : 'bg-black/60 border border-white/15 text-neutral-200 hover:text-white hover:bg-white/10'
               }`}
             >
-              <Bookmark className={`w-4 h-4 ${artwork.isSaved ? 'fill-[#c9a875] text-[#c9a875]' : ''}`} />
+              <Bookmark className={`w-3.5 h-3.5 ${artwork.isSaved ? 'fill-[#c9a875] text-[#c9a875]' : ''}`} />
               <span>{artwork.isSaved ? 'Saved' : 'Save'}</span>
             </button>
-
 
             <button
               onClick={(e) => {
@@ -249,12 +265,38 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
                   navigator.clipboard.writeText(url);
                 }
               }}
-              className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[#dfbd87] hover:text-white transition-colors cursor-pointer ml-auto"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider bg-black/60 border border-white/15 text-[#dfbd87] hover:text-white hover:bg-white/10 transition-colors cursor-pointer ml-auto backdrop-blur-md"
               title="Share and Curate Artwork"
             >
               <Share2 className="w-3.5 h-3.5 text-[#c9a875]" />
               <span>Share</span>
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Museum Caption Plaque */}
+      <div className="pt-3 px-1 pb-0.5 flex flex-col gap-1.5 select-none">
+        <div className="flex items-center justify-between text-[10px] font-mono-code text-[#c9a875] tracking-wider">
+          <span>#AQ-{(artwork.year || '2026')}-{artwork.id.slice(-4).toUpperCase()}</span>
+          <span className="text-neutral-400 capitalize">{artwork.medium || artwork.category}</span>
+        </div>
+        <h3 className="text-base sm:text-lg font-serif-display font-light text-white group-hover:text-[#f8f5eb] transition-colors leading-snug truncate">
+          {artwork.title}
+        </h3>
+        <div className="flex items-center justify-between text-xs text-neutral-400 font-mono-code pt-0.5 border-t border-white/[0.06]">
+          <span className="text-neutral-300 truncate max-w-[150px] sm:max-w-[200px]">
+            {artwork.artist.name}
+          </span>
+          <div className="flex items-center gap-3 shrink-0 text-[11px]">
+            <span className="text-neutral-400 flex items-center gap-1">
+              <Heart className={`w-3.5 h-3.5 ${artwork.isLiked ? 'fill-rose-500 text-rose-500' : 'text-neutral-400'}`} />
+              {artwork.likesCount || 0}
+            </span>
+            <span className="text-neutral-400 flex items-center gap-1">
+              <Bookmark className={`w-3.5 h-3.5 ${artwork.isSaved ? 'fill-[#c9a875] text-[#c9a875]' : 'text-neutral-400'}`} />
+              {artwork.savesCount || 0}
+            </span>
           </div>
         </div>
       </div>
@@ -272,7 +314,7 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
 const useMasonryLayout = (
   artworks: Artwork[],
   containerRef: React.RefObject<HTMLDivElement | null>,
-  gap: number = 24
+  density: GridDensity = 'curatorial'
 ) => {
   const [positions, setPositions] = useState<
     { top: number; left: number; width: number; height: number }[]
@@ -286,7 +328,7 @@ const useMasonryLayout = (
     const containerWidth = container.clientWidth;
     if (containerWidth === 0) return;
 
-    const cols = getColumnCount(containerWidth);
+    const { cols, gap } = getColumnCountAndGap(containerWidth, density);
     const colWidth = (containerWidth - gap * (cols - 1)) / cols;
     const colHeights = new Array<number>(cols).fill(0);
 
@@ -299,11 +341,12 @@ const useMasonryLayout = (
 
       let itemHeight: number;
       if (artwork.category === 'poetry') {
-        // Poetry cards: standardized disciplined card height
-        itemHeight = 460;
+        // Poetry cards: standardized disciplined card height for parchment matting + museum caption plaque
+        itemHeight = 520;
       } else {
         const ratio = getAspectRatioValue(artwork.aspectRatio);
-        itemHeight = colWidth * ratio;
+        // Visual container + museum plaque height
+        itemHeight = colWidth * ratio + 86;
       }
 
       const top  = colHeights[shortestColIdx];
@@ -316,9 +359,9 @@ const useMasonryLayout = (
     setPositions(newPositions);
     const maxColHeight = colHeights.length > 0 ? Math.max(...colHeights) : 0;
     setTotalHeight(maxColHeight > 0 ? maxColHeight + 60 : 0);
-  }, [artworks, containerRef, gap]);
+  }, [artworks, containerRef, density]);
 
-  // Recompute whenever artworks change
+  // Recompute whenever artworks or density change
   useEffect(() => {
     compute();
   }, [compute]);
@@ -347,11 +390,11 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
   selectedCategory,
   onOpenUpload,
   onAddToMoodBoard,
-  onOpenBardModal
+  onOpenBardModal,
+  density = 'curatorial'
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const GAP = 24;
-  const { positions, totalHeight } = useMasonryLayout(artworks, containerRef, GAP);
+  const { positions, totalHeight } = useMasonryLayout(artworks, containerRef, density);
 
   if (artworks.length === 0) {
     return (

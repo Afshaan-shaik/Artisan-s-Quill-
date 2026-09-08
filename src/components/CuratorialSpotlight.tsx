@@ -137,6 +137,9 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
   const isPoetry = currentWork.category === 'poetry';
   const poemFirstStanza = currentWork.poetryContent?.stanzas?.[0] || '';
 
+  const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+  const romanIndex = romanNumerals[activeIndex] || `${activeIndex + 1}`;
+
   return (
     <section
       id="curatorial-spotlight-hero"
@@ -172,30 +175,40 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. Dark Gradient Overlay & Cinematic Vignette
-          (Ensures all text pops with crisp contrast and luxury depth)
+          2. Museum Shadowbox Gradient & Haute Vignette
+          (Ensures pristine legibility with deep obsidian atmospheric depth)
          ───────────────────────────────────────────────────────────── */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#06070a] via-[#06070a]/75 to-[#06070a]/40 sm:to-black/30 pointer-events-none" />
-      <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#06070a]/90 via-[#06070a]/60 to-transparent pointer-events-none" />
-      <div className="absolute inset-0 z-10 radial-vignette opacity-60 pointer-events-none" />
+      <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#040508] via-[#040508]/80 to-[#040508]/40 sm:to-black/35 pointer-events-none" />
+      <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#040508]/95 via-[#040508]/70 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 z-10 radial-vignette opacity-70 pointer-events-none" />
+
+      {/* Subtle fine gold hairline inner matting */}
+      <div className="absolute inset-2 sm:inset-3 rounded-xl sm:rounded-2xl border border-[#c9a875]/20 pointer-events-none z-10" />
 
       {/* ─────────────────────────────────────────────────────────────
           3. Interactive Content Layer
          ───────────────────────────────────────────────────────────── */}
-      <div className="relative z-20 p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-between min-h-[380px] sm:min-h-[440px] md:min-h-[480px]">
+      <div className="relative z-20 p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-between min-h-[400px] sm:min-h-[440px] md:min-h-[480px]">
         
         {/* Top Header Ribbon in Spotlight */}
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Spotlight of the Day Badge */}
-            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#c9a875]/25 border border-[#c9a875]/70 backdrop-blur-md text-[#f8f5eb] shadow-[0_0_20px_rgba(201,168,117,0.4)]">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+            {/* Roman Numeral Vernissage Badge */}
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0a0c14]/80 border border-[#c9a875]/70 backdrop-blur-md text-[#f8f5eb] shadow-[0_0_22px_rgba(201,168,117,0.35)]">
               <Sparkles className="w-3.5 h-3.5 text-[#e8ca95] animate-pulse" />
-              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.2em] font-sans flex items-center gap-1.5">
-                <span className="px-1.5 py-0.2 rounded bg-[#c9a875] text-black font-extrabold text-[10px] font-mono-code">
-                  #{activeIndex + 1}
+              <span className="text-[11px] sm:text-xs font-mono-code font-bold uppercase tracking-[0.22em] text-[#e8ca95] flex items-center gap-2">
+                <span className="px-1.5 py-0.5 rounded bg-[#c9a875] text-black font-extrabold text-[10px]">
+                  VERNISSAGE {romanIndex}
                 </span>
-                <span>{activeIndex === 0 ? 'Masterpiece of the Day • Curatorial Spotlight' : 'Curatorial Spotlight'}</span>
+                <span className="hidden sm:inline text-neutral-300">
+                  {activeIndex === 0 ? 'Masterpiece of the Day' : 'Curatorial Spotlight'}
+                </span>
               </span>
+            </div>
+
+            {/* Accession Code Plaque */}
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 border border-white/15 backdrop-blur-md text-[10px] font-mono-code tracking-widest text-[#dfbd87]">
+              <span>#AQ-VERNISSAGE-{String(activeIndex + 1).padStart(3, '0')}</span>
             </div>
 
             {/* Category Tag */}
@@ -206,22 +219,22 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
 
             {currentWork.exhibitionName && (
               <div className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/10 border border-white/10 backdrop-blur-md text-xs text-[#dfbd87]">
-                <span>Exhibition: {currentWork.exhibitionName}</span>
+                <span>Salon: {currentWork.exhibitionName}</span>
               </div>
             )}
           </div>
 
           {/* Carousel Controls for Nominations */}
           {candidateSpotlights.length > 1 && (
-            <div className="flex items-center gap-2 bg-black/60 border border-white/15 backdrop-blur-md px-2 py-1 rounded-full">
-              <span className="text-[11px] font-mono-code text-neutral-400 px-1.5">
+            <div className="flex items-center gap-2 bg-black/70 border border-[#c9a875]/40 backdrop-blur-md px-2.5 py-1 rounded-full shadow-lg">
+              <span className="text-[11px] font-mono-code text-[#c9a875] px-1.5 font-bold">
                 {activeIndex + 1} / {candidateSpotlights.length}
               </span>
               <button
                 id="spotlight-prev-btn"
                 onClick={handlePrev}
                 aria-label="Previous Spotlight Masterpiece"
-                className="p-1.5 rounded-full hover:bg-white/15 text-neutral-300 hover:text-white transition-all cursor-pointer"
+                className="p-1.5 rounded-full hover:bg-white/15 text-neutral-300 hover:text-[#c9a875] transition-all cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -229,7 +242,7 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
                 id="spotlight-next-btn"
                 onClick={handleNext}
                 aria-label="Next Spotlight Masterpiece"
-                className="p-1.5 rounded-full hover:bg-white/15 text-neutral-300 hover:text-white transition-all cursor-pointer"
+                className="p-1.5 rounded-full hover:bg-white/15 text-neutral-300 hover:text-[#c9a875] transition-all cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -238,21 +251,21 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
         </div>
 
         {/* Center / Body Section: Cinematic Title, Verse / Curator Notes, and Details */}
-        <div className="my-6 sm:my-8 max-w-3xl space-y-4">
-          {/* Artist Byline */}
+        <div className="my-6 sm:my-8 max-w-3xl space-y-4 sm:space-y-5">
+          {/* Artist Byline Card */}
           <div
             onClick={(e) => onSelectArtist(currentWork.artist.id, e)}
-            className="inline-flex items-center gap-3 p-1.5 pr-4 rounded-full bg-black/50 hover:bg-black/80 border border-white/10 hover:border-[#c9a875]/50 transition-all cursor-pointer backdrop-blur-md"
+            className="inline-flex items-center gap-3 p-1.5 pr-4 rounded-full bg-[#0a0c12]/80 hover:bg-black/90 border border-white/15 hover:border-[#c9a875]/60 transition-all cursor-pointer backdrop-blur-md shadow-md group/artist"
             title={`View profile of ${currentWork.artist.name}`}
           >
             <Avatar
               src={currentWork.artist.avatar}
               name={currentWork.artist.name}
               size="sm"
-              className="border border-[#c9a875]/40"
+              className="border border-[#c9a875]/50 group-hover/artist:border-[#c9a875]"
             />
             <div className="flex items-center gap-1.5 text-xs text-neutral-200">
-              <span className="font-semibold hover:text-[#c9a875] transition-colors">
+              <span className="font-semibold text-white group-hover/artist:text-[#c9a875] transition-colors">
                 {currentWork.artist.name}
               </span>
               {currentWork.artist.verified && (
@@ -267,13 +280,13 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
           {/* Masterpiece Title */}
           <h1
             onClick={() => onSelectArtwork(currentWork)}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif-display tracking-[0.04em] text-white hover:text-[#f8f0de] transition-colors cursor-pointer leading-[1.1] drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]"
+            className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-serif-display font-light tracking-[0.03em] text-white hover:text-[#f8f0de] transition-colors cursor-pointer leading-[1.08] drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]"
           >
             {currentWork.title}
           </h1>
 
-          {/* Medium, Year & Dimensions */}
-          <p className="text-xs sm:text-sm font-mono-code text-[#c9a875] flex flex-wrap items-center gap-2">
+          {/* Medium, Year & Dimensions Plaque Metadata */}
+          <p className="text-xs sm:text-sm font-mono-code text-[#c9a875] flex flex-wrap items-center gap-2 tracking-wider">
             <span>{currentWork.medium || 'Curated Atelier Medium'}</span>
             <span>•</span>
             <span>{currentWork.year}</span>
@@ -287,33 +300,33 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
 
           {/* If Poetry: Evocative Stanza Quote */}
           {isPoetry && poemFirstStanza ? (
-            <div className="relative pl-4 sm:pl-5 border-l-2 border-[#c9a875]/70 my-3 py-1">
-              <Quote className="w-4 h-4 text-[#c9a875]/60 absolute -top-2 left-0 -translate-x-1/2 bg-[#06070a] rounded-full" />
-              <p className="font-cormorant text-base sm:text-lg md:text-xl text-neutral-200 italic leading-relaxed whitespace-pre-line line-clamp-3">
+            <div className="relative pl-5 sm:pl-6 border-l-2 border-[#c9a875] my-3 py-1">
+              <Quote className="w-4 h-4 text-[#c9a875] absolute -top-2 left-0 -translate-x-1/2 bg-[#05060a] rounded-full" />
+              <p className="font-cormorant text-lg sm:text-xl md:text-2xl text-neutral-100 italic leading-relaxed whitespace-pre-line line-clamp-3">
                 "{poemFirstStanza}"
               </p>
               {currentWork.poetryContent?.authorSignature && (
-                <span className="block text-xs font-mono-code text-neutral-400 mt-1">
-                  {currentWork.poetryContent.authorSignature}
+                <span className="block text-xs font-mono-code text-[#dfbd87] mt-1.5 tracking-wider">
+                  — {currentWork.poetryContent.authorSignature}
                 </span>
               )}
             </div>
           ) : (
             /* If Art/Video/Drawing: Curator Note or Description */
-            <p className="text-sm sm:text-base text-neutral-300 leading-relaxed line-clamp-2 sm:line-clamp-3 max-w-2xl drop-shadow">
+            <p className="text-sm sm:text-base text-neutral-200 leading-relaxed line-clamp-2 sm:line-clamp-3 max-w-2xl drop-shadow font-light">
               {currentWork.curatorNote || currentWork.description}
             </p>
           )}
         </div>
 
         {/* Bottom Actions Suite: "View Masterpiece" Primary Button + Social Counters */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-white/10">
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 sm:pt-5 border-t border-white/15">
           <div className="flex flex-wrap items-center gap-3">
             {/* Sleek 'View Masterpiece' Button */}
             <button
               id="view-masterpiece-spotlight-btn"
               onClick={() => onSelectArtwork(currentWork)}
-              className="flex items-center gap-2.5 px-6 sm:px-8 py-3 rounded-full bg-gradient-to-r from-[#c9a875] to-[#e4cb9c] text-black text-xs sm:text-sm font-bold uppercase tracking-[0.16em] shadow-[0_0_25px_rgba(201,168,117,0.5)] hover:shadow-[0_0_35px_rgba(201,168,117,0.75)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="flex items-center gap-2.5 px-7 sm:px-9 py-3 sm:py-3.5 rounded-full bg-gradient-to-r from-[#c9a875] via-[#dfbd87] to-[#e4cb9c] text-black text-xs sm:text-sm font-bold uppercase tracking-[0.18em] shadow-[0_0_28px_rgba(201,168,117,0.55)] hover:shadow-[0_0_40px_rgba(201,168,117,0.8)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
             >
               <Eye className="w-4 h-4 text-black" />
               <span>View Masterpiece</span>
@@ -326,7 +339,7 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
               className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-xs font-semibold uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer hover:scale-105 active:scale-95 ${
                 currentWork.isLiked
                   ? 'bg-rose-500/20 border-rose-500/60 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
-                  : 'bg-black/50 border-white/15 text-neutral-300 hover:text-white hover:bg-white/10'
+                  : 'bg-black/60 border-white/15 text-neutral-300 hover:text-white hover:bg-white/10'
               }`}
             >
               <Heart
@@ -343,8 +356,8 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
               onClick={(e) => onToggleSave(currentWork.id, e)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-xs font-semibold uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer hover:scale-105 active:scale-95 ${
                 currentWork.isSaved
-                  ? 'bg-[#c9a875]/20 border-[#c9a875]/60 text-[#dfbd87] shadow-[0_0_15px_rgba(201,168,117,0.3)]'
-                  : 'bg-black/50 border-white/15 text-neutral-300 hover:text-white hover:bg-white/10'
+                  ? 'bg-[#c9a875]/25 border-[#c9a875]/70 text-[#dfbd87] shadow-[0_0_15px_rgba(201,168,117,0.3)]'
+                  : 'bg-black/60 border-white/15 text-neutral-300 hover:text-white hover:bg-white/10'
               }`}
             >
               <Bookmark
@@ -370,7 +383,7 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
               className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-[#c9a875]/60 bg-black/70 text-[#dfbd87] hover:bg-gradient-to-r hover:from-[#c9a875] hover:to-[#dfbd87] hover:text-black hover:shadow-[0_0_20px_rgba(201,168,117,0.5)] text-xs font-semibold uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer hover:scale-105 active:scale-95"
               title="Share and Curate Artwork"
             >
-              <Share2 className="w-4 h-4 text-[#c9a875] group-hover:text-black" />
+              <Share2 className="w-4 h-4 text-[#c9a875]" />
               <span>Share</span>
             </button>
           </div>

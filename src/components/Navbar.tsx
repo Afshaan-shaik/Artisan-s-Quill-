@@ -279,27 +279,28 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          TIER 2: Navigation & Curatorial Views Ribbon
-          (Gallery, Curators, Saved, Recycle Bin, and Advanced Filter Selector)
+          TIER 2: Navigation & Curatorial Salon Ribbon
+          (All Works, 3D Cosmos, Curated Exhibitions, Constellation, Bard, 3D Vault)
+          + Right: Saved Vault, Recycle Bin, About
          ───────────────────────────────────────────────────────────── */}
-      <div className="border-t border-white/10 bg-[#07080c]/90 px-4 sm:px-6 lg:px-8 xl:px-10 py-2.5 shadow-sm">
-        <div className="max-w-[1760px] mx-auto flex items-center justify-between gap-3 sm:gap-4 overflow-x-auto no-scrollbar">
+      <div className="border-t border-white/[0.06] bg-[#05060a]/95 px-4 sm:px-6 lg:px-8 xl:px-10 py-2 shadow-sm">
+        <div className="max-w-[1760px] mx-auto flex items-center justify-between gap-3 sm:gap-4">
           
-          {/* Main Navigation Views Pills */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Left: Main Navigation Views Pills */}
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar py-0.5">
             <button
               id="nav-all-works-btn"
               onClick={() => {
                 onSelectView('feed');
                 onSelectCategory('all');
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] uppercase font-mono-code tracking-[0.18em] transition-all cursor-pointer whitespace-nowrap ${
                 activeView === 'feed'
-                  ? 'bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-bold shadow-md shadow-[#c9a875]/20'
-                  : 'text-neutral-300 hover:text-white hover:bg-white/10'
+                  ? 'text-[#c9a875] font-bold bg-[#c9a875]/15 border border-[#c9a875]/40 shadow-[0_0_16px_rgba(201,168,117,0.25)]'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/[0.05]'
               }`}
             >
-              <Compass className="w-3.5 h-3.5" />
+              <span>{activeView === 'feed' ? '✦' : '✧'}</span>
               <span>All Works</span>
             </button>
 
@@ -307,28 +308,28 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               id="nav-3d-cosmos-btn"
               onClick={() => onSelectView('cosmos')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] uppercase font-mono-code tracking-[0.18em] transition-all cursor-pointer whitespace-nowrap ${
                 activeView === 'cosmos'
-                  ? 'bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-bold shadow-md shadow-[#c9a875]/20 ring-1 ring-[#c9a875]/50'
-                  : 'text-neutral-300 hover:text-[#dfbd87] hover:bg-white/10'
+                  ? 'text-[#c9a875] font-bold bg-[#c9a875]/15 border border-[#c9a875]/40 shadow-[0_0_16px_rgba(201,168,117,0.25)]'
+                  : 'text-neutral-400 hover:text-[#dfbd87] hover:bg-white/[0.05]'
               }`}
               title="Click to view 3D constellation of art data"
             >
-              <Sparkles className={`w-3.5 h-3.5 ${activeView === 'cosmos' ? 'text-black' : 'text-[#c9a875]'}`} />
+              <Sparkles className={`w-3 h-3 ${activeView === 'cosmos' ? 'text-[#c9a875]' : 'text-neutral-400'}`} />
               <span>3D Cosmos</span>
             </button>
 
             <button
               id="nav-exhibitions-btn"
               onClick={() => onSelectView('exhibitions')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] uppercase font-mono-code tracking-[0.18em] transition-all cursor-pointer whitespace-nowrap ${
                 activeView === 'exhibitions'
-                  ? 'bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-bold shadow-md shadow-[#c9a875]/20'
-                  : 'text-neutral-300 hover:text-white hover:bg-white/10'
+                  ? 'text-[#c9a875] font-bold bg-[#c9a875]/15 border border-[#c9a875]/40 shadow-[0_0_16px_rgba(201,168,117,0.25)]'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/[0.05]'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Curated Exhibitions</span>
+              <span>{activeView === 'exhibitions' ? '✦' : '✧'}</span>
+              <span>Exhibitions</span>
             </button>
 
             {/* 3D Constellation Star Map Modal Trigger */}
@@ -336,7 +337,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 id="nav-constellation-btn"
                 onClick={onOpenConstellationModal}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide text-neutral-300 hover:text-[#dfbd87] hover:bg-[#c9a875]/10 border border-white/5 hover:border-[#c9a875]/40 transition-all cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] uppercase font-mono-code tracking-[0.18em] text-neutral-400 hover:text-[#dfbd87] hover:bg-[#c9a875]/10 border border-transparent hover:border-[#c9a875]/30 transition-all cursor-pointer whitespace-nowrap"
                 title="Launch 3D Constellation of Motifs"
               >
                 <span>🌌</span>
@@ -349,7 +350,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 id="nav-bard-symphony-btn"
                 onClick={onOpenBardModal}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide text-neutral-300 hover:text-[#dfbd87] hover:bg-[#c9a875]/10 border border-white/5 hover:border-[#c9a875]/40 transition-all cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] uppercase font-mono-code tracking-[0.18em] text-neutral-400 hover:text-[#dfbd87] hover:bg-[#c9a875]/10 border border-transparent hover:border-[#c9a875]/30 transition-all cursor-pointer whitespace-nowrap"
                 title="Launch AI Poetic Reciter & Bard Symphony"
               >
                 <span>🎙️</span>
@@ -362,14 +363,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 id="nav-collector-vault-btn"
                 onClick={onOpenCollectorVault}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide text-neutral-300 hover:text-[#dfbd87] hover:bg-[#c9a875]/10 border border-white/5 hover:border-[#c9a875]/40 transition-all cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] uppercase font-mono-code tracking-[0.18em] text-neutral-400 hover:text-[#dfbd87] hover:bg-[#c9a875]/10 border border-transparent hover:border-[#c9a875]/30 transition-all cursor-pointer whitespace-nowrap"
                 title="Open Collector's 3D Trophy Vault & Certificates"
               >
                 <span>🏆</span>
                 <span>3D Vault</span>
               </button>
             )}
+          </div>
 
+          {/* Right: Saved Vault, Recycle Bin, About */}
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
             <button
               id="nav-saved-vault-btn"
               onClick={() => onSelectView('saved')}
@@ -409,15 +413,64 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>About</span>
             </button>
           </div>
+        </div>
+      </div>
 
-          {/* Right: Date Filter & Advanced Palette Utilities */}
-          <div className="flex items-center gap-2 shrink-0">
+      {/* ─────────────────────────────────────────────────────────────
+          TIER 3: Medium & Category Sub-Tabs Ribbon
+          (All, Poetry Cards, Paintings, Drawings, Digital, Video)
+          + Dead-Right: Date Filter & Live Sync Feature
+         ───────────────────────────────────────────────────────────── */}
+      <div className="bg-[#040508]/95 border-t border-white/[0.07] px-4 sm:px-6 lg:px-8 xl:px-10 py-2 shadow-md">
+        <div className="max-w-[1760px] mx-auto flex items-center justify-between gap-4">
+          
+          {/* Left: Category Pills (When on feed or saved), or View Context */}
+          {activeView === 'feed' || activeView === 'saved' ? (
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
+              {categories.map((cat) => {
+                const isSelected = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => onSelectCategory(cat.id)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap group ${
+                      isSelected
+                        ? 'bg-white/15 text-white border border-[#c9a875]/60 shadow-[0_0_15px_rgba(201,168,117,0.15)] font-bold'
+                        : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5 border border-transparent'
+                    }`}
+                    title={cat.desc}
+                  >
+                    <span className="transition-transform group-hover:scale-110">{cat.icon}</span>
+                    <span>{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs font-mono-code text-neutral-400 py-1">
+              <span className="text-[#c9a875]">✦ Atelier Sanctuary</span>
+              <span className="text-neutral-600">/</span>
+              <span className="text-white capitalize font-semibold tracking-wider">
+                {activeView === 'cosmos' && '3D Constellation Cosmos'}
+                {activeView === 'exhibitions' && 'Curated Exhibitions'}
+                {activeView === 'about' && 'Sanctuary Vision & About'}
+                {activeView === 'recycle-bin' && 'Recycle Bin Archive'}
+                {activeView === 'community' && 'Community Salon'}
+                {activeView === 'vaults' && 'Collector Vaults'}
+              </span>
+            </div>
+          )}
+
+          {/* Dead Right: Date Filter & Live Sync Feature (Clean compact size directly under Recycle Bin & About) */}
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
+            {/* Filter Button */}
             <button
+              id="navbar-date-filter-btn"
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.2 text-[11px] font-mono-code font-bold uppercase rounded-lg border transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 text-[10px] font-mono-code font-bold uppercase rounded-md border transition-all cursor-pointer ${
                 showFilters || hasActiveDateFilter
-                  ? 'bg-[#c9a875]/20 border-[#c9a875] text-[#dfbd87]'
-                  : 'bg-white/5 border-white/10 text-neutral-400 hover:text-white hover:bg-white/10'
+                  ? 'bg-[#c9a875]/25 border-[#c9a875] text-[#dfbd87] shadow-[0_0_10px_rgba(201,168,117,0.3)]'
+                  : 'bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:bg-white/10'
               }`}
               title="Toggle Timeline & Date Filter"
             >
@@ -426,16 +479,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               {hasActiveDateFilter && <span className="w-1.5 h-1.5 rounded-full bg-[#c9a875]" />}
             </button>
 
-            {/* Live Sync Symbol (Replacing DBMS button) */}
+            {/* Live Sync Symbol */}
             <button
               id="navbar-live-sync-btn"
               onClick={onOpenBackendModal}
-              className="flex items-center gap-2 px-3 py-1.2 rounded-lg bg-[#c9a875]/10 hover:bg-[#c9a875]/20 border border-[#c9a875]/30 hover:border-[#c9a875]/60 text-[10px] uppercase font-mono-code text-[#dfbd87] shrink-0 transition-all cursor-pointer shadow-sm active:scale-95"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#c9a875]/10 hover:bg-[#c9a875]/20 border border-[#c9a875]/40 hover:border-[#c9a875] text-[10px] uppercase font-mono-code text-[#dfbd87] shrink-0 transition-all cursor-pointer shadow-xs active:scale-95"
               title="Real-Time Global Synchronization Active across 500+ Sanctuary Artists (Click to inspect Architecture)"
             >
-              <span className="relative flex h-2 w-2">
+              <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
               </span>
               <span className="font-bold tracking-wider text-white">Live Sync</span>
             </button>
@@ -478,35 +531,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         )}
       </div>
-
-      {/* ─────────────────────────────────────────────────────────────
-          TIER 3: Medium & Category Sub-Tabs Ribbon
-          (All, Poetry Cards, Paintings, Drawings, Digital, Video)
-         ───────────────────────────────────────────────────────────── */}
-      {activeView === 'feed' && (
-        <div className="bg-[#040508]/90 border-t border-white/5 px-4 sm:px-6 lg:px-8 xl:px-10 py-2">
-          <div className="max-w-[1760px] mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
-            {categories.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => onSelectCategory(cat.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap group ${
-                    isSelected
-                      ? 'bg-white/15 text-white border border-[#c9a875]/60 shadow-[0_0_15px_rgba(201,168,117,0.15)] font-bold'
-                      : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5 border border-transparent'
-                  }`}
-                  title={cat.desc}
-                >
-                  <span className="transition-transform group-hover:scale-110">{cat.icon}</span>
-                  <span>{cat.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </header>
   );
 };

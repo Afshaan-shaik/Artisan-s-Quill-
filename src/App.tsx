@@ -237,6 +237,9 @@ export default function App() {
   // Cinema Mode
   const [isCinemaModeOpen, setIsCinemaModeOpen] = useState(false);
 
+  // Curatorial Grid Density ('grande' = 2 cols, 'curatorial' = 3 cols default, 'archive' = 4 cols)
+  const [gridDensity, setGridDensity] = useState<'grande' | 'curatorial' | 'archive'>('curatorial');
+
   // Reading Queue (Saved View sub-tab)
   const [savedTab, setSavedTab] = useState<'works' | 'queue'>('works');
 
@@ -962,6 +965,50 @@ export default function App() {
                   <Film className="w-4 h-4 text-[#c9a875]" />
                   <span className="hidden sm:inline">Cinema</span>
                 </button>
+
+                {/* Curatorial Density Switcher */}
+                <div
+                  id="curatorial-density-switcher"
+                  className="flex items-center gap-1 p-1 rounded-full bg-neutral-900/90 border border-[#c9a875]/30 backdrop-blur-md shadow-xl"
+                  title="Curatorial Density Scale"
+                >
+                  <button
+                    id="density-grande-btn"
+                    onClick={() => setGridDensity('grande')}
+                    title="2-Column Grande Scale"
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
+                      gridDensity === 'grande'
+                        ? 'bg-[#c9a875] text-black font-bold shadow-[0_0_12px_rgba(201,168,117,0.4)]'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Grande (2-Col)
+                  </button>
+                  <button
+                    id="density-curatorial-btn"
+                    onClick={() => setGridDensity('curatorial')}
+                    title="3-Column Curatorial Salon (Default)"
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
+                      gridDensity === 'curatorial'
+                        ? 'bg-[#c9a875] text-black font-bold shadow-[0_0_12px_rgba(201,168,117,0.4)]'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Curatorial (3-Col)
+                  </button>
+                  <button
+                    id="density-archive-btn"
+                    onClick={() => setGridDensity('archive')}
+                    title="4-Column Archive View"
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
+                      gridDensity === 'archive'
+                        ? 'bg-[#c9a875] text-black font-bold shadow-[0_0_12px_rgba(201,168,117,0.4)]'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Archive (4-Col)
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -977,6 +1024,7 @@ export default function App() {
             ) : (
               <MasonryGrid
                 artworks={artworks}
+                density={gridDensity}
                 onSelectArtwork={handleOpenArtwork}
                 onToggleLike={handleToggleLike}
                 onToggleSave={handleToggleSave}

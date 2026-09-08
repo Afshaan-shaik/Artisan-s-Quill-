@@ -26,7 +26,8 @@ import {
   Compass,
   Quote,
   MessageSquare,
-  PhoneCall
+  PhoneCall,
+  ArrowUpRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { UserProfile, ArtCategory, Inquiry } from '../types';
