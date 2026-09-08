@@ -17,9 +17,7 @@ import {
   Heart,
   Clock,
   Award,
-  ShieldCheck,
   Film,
-  Ghost,
   ArrowRight
 } from 'lucide-react';
 import { Artwork, ArtCategory, UserProfile, Exhibition } from './types';
@@ -797,48 +795,7 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 space-y-8">
         
-        {/* Active Artist Session Banner — shown only when authenticated */}
-        {currentUser.id !== 'guest' && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:px-5 rounded-xl bg-[#090c12]/90 border border-[#c9a875]/30 shadow-md backdrop-blur-md">
-            <div className="flex items-center gap-2.5 text-xs text-neutral-300 font-mono-code">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Authenticated Artist:</span>
-              <span className="font-bold text-white uppercase">{currentUser.name}</span>
-              <span className="text-[#c9a875]">({currentUser.handle})</span>
-            </div>
 
-            <div className="flex items-center gap-3 text-[10px] uppercase font-mono-code text-neutral-400">
-              <span className="flex items-center gap-1 text-emerald-400">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Full Access to Own Works</span>
-              </span>
-              <span className="text-neutral-600">•</span>
-              <span className="text-[#dfbd87]">Other Artists Protected</span>
-            </div>
-          </div>
-        )}
-        {currentUser.id === 'guest' && (
-          <div className="flex items-center gap-3 p-3 sm:px-5 rounded-xl bg-neutral-900/60 border border-white/10 shadow-sm">
-            <Ghost className="w-4 h-4 text-neutral-500 shrink-0" />
-            <p className="text-xs text-neutral-400 font-mono-code">
-              Browsing as <span className="text-white font-bold">Guest</span> — Artworks are visible to all. 
-              <button
-                onClick={() => { setAuthModalMode('login'); setIsAuthModalOpen(true); }}
-                className="text-[#c9a875] hover:text-white underline underline-offset-2 ml-1 cursor-pointer transition-colors"
-              >
-                Sign in
-              </button>
-              {' '}or{' '}
-              <button
-                onClick={() => { setAuthModalMode('signup'); setIsAuthModalOpen(true); }}
-                className="text-[#c9a875] hover:text-white underline underline-offset-2 cursor-pointer transition-colors"
-              >
-                create a profile
-              </button>
-              {' '}to upload your own works.
-            </p>
-          </div>
-        )}
 
         {activeView === 'about' && (
           <AboutUsView
