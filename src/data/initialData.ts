@@ -409,6 +409,50 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     }
   },
   {
+    id: 'urdu-ghazal-ghalib',
+    title: 'Dard Aur Khamoshi (درد اور خاموشی)',
+    artist: {
+      id: 'user-my-atelier',
+      name: 'Afshaan Shaikh',
+      handle: '@afshaanshaikh',
+      avatar: '/curatorial-masterpiece.svg',
+      verified: true,
+      location: 'Atelier Studio • Global Digital Sanctuary'
+    },
+    category: 'poetry',
+    mediaUrl: '',
+    medium: 'Classical Ghazal in Roman Urdu & Nastaliq',
+    year: 2026,
+    description: 'A timeless, soulful classical Ghazal exploring unrequited longing, silent devotion, and the eloquence of unspoken grief in lyrical Roman Urdu.',
+    curatorNote: 'Featured Urdu Masterpiece — Celebrates the lyrical soul of Urdu Shairi with native cadence voice recitation.',
+    tags: ['Urdu Poetry', 'Ghazal', 'Shayari', 'Roman Urdu', 'Native Voice', 'Masterpiece'],
+    likesCount: 0,
+    viewsCount: 1,
+    savesCount: 0,
+    createdAt: '2026-09-12T12:00:00Z',
+    aspectRatio: 'tall',
+    colorPalette: ['#100d14', '#dfbd87', '#3d2b1f', '#f5ebd7'],
+    isLiked: false,
+    isSaved: false,
+    featured: true,
+    poetryContent: {
+      stanzas: [
+        'Har ek baat pe kehte ho tum ke tu kya hai,\nTumhi kaho ke yeh andaaz-e-guftagu kya hai.\n\nہر ایک بات پہ کہتے ہو تم کہ تو کیا ہے\nتمہیں کہو کہ یہ اندازِ گفتگو کیا ہے',
+        'Ragon mein daudte phirne ke hum nahi qayal,\nJab aankh hi se na tapka toh phir lahu kya hai.\n\nرگوں میں دوڑتے پھرنے کے ہم نہیں قائل\nجب آنکھ ہی سے نہ ٹپکا تو پھر لہو کیا ہے',
+        'Mohabbat mein nahi hai farq jeene aur marne ka,\nUsi ko dekh kar jeete hain jis kaafir pe dam nikle.\n\nمحبت میں نہیں ہے فرق جینے اور مرنے کا\nاسی کو دیکھ کر جیتے ہیں جس کافر پہ دم نکلے'
+      ],
+      theme: 'midnight',
+      fontStyle: 'cormorant',
+      alignment: 'center',
+      readingTimeMinutes: 2,
+      authorSignature: '— Mirza Ghalib • Preserved by Afshaan Shaikh',
+      subtitle: 'Classical Ghazal in Roman Urdu & Nastaliq Script',
+      dedication: '— for lovers of timeless Hindustani & Urdu Shairi',
+      poemNumber: 'GHAZAL I.',
+      excerpt: 'Har ek baat pe kehte ho tum ke tu kya hai, Tumhi kaho ke yeh andaaz-e-guftagu kya hai.'
+    }
+  },
+  {
     id: 'art-1-v2',
     title: 'Echoes of Gold and Rust',
     artist: {
