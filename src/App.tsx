@@ -62,6 +62,7 @@ import { Collector3DVaultModal } from './components/Collector3DVaultModal';
 import { PoeticScrollModal } from './components/PoeticScrollModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import IntroWrapper from './components/IntroWrapper';
+import { MeshDriftBackground } from './components/MeshDriftBackground';
 import { subscribeToCloudArtworks, subscribeToCloudComments, signOutFirebaseUser } from './services/firebase';
 import { getActiveSupabaseUser, signOutSupabase, onSupabaseAuthStateChange } from './services/supabaseClient';
 
@@ -719,7 +720,10 @@ export default function App() {
       onOpenInkStudio={() => setIsInkStudioOpen(true)}
     >
     <ErrorBoundary>
-      <div className="min-h-screen w-full bg-gradient-to-br from-[#050608] via-[#0f111a] to-[#050608] text-neutral-200 flex flex-col font-sans selection:bg-[#c9a875]/30 selection:text-[#f8f5eb] relative overflow-x-hidden">
+      <div className="min-h-screen w-full text-neutral-200 flex flex-col font-sans selection:bg-[#c9a875]/30 selection:text-[#f8f5eb] relative overflow-x-hidden">
+      {/* Animated WebGL Shader Background — "Mesh drift" (blobs shader) */}
+      <MeshDriftBackground />
+
       {/* Global Ambient Canvas Texture */}
       <div
         aria-hidden="true"
@@ -796,7 +800,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 space-y-8">
+      <main className="flex-1 w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 space-y-8 relative z-10">
         
 
 
