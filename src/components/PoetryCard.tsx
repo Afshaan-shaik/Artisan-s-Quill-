@@ -7,7 +7,7 @@ import {
 import { Artwork } from '../types';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
-import { getSoothingFemaleVoice } from '../utils/speechUtils';
+import { getSoothingFemaleVoice, detectPoemLanguage, preparePoeticTextForVoice, getVoiceIdentityLabel } from '../utils/speechUtils';
 import { PoetryCardExporterModal } from './PoetryCardExporterModal';
 import { GalleryService } from '../services/api';
 
@@ -325,6 +325,7 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
   isCompact = false
 }) => {
   const [isReciting, setIsReciting] = useState(false);
+  const [recitationVoiceBadge, setRecitationVoiceBadge] = useState<string>('');
   const [activeLine, setActiveLine] = useState<ActiveLineState | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
@@ -338,6 +339,7 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
     if (!isReciting && typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       setActiveLine(null);
+      setRecitationVoiceBadge('');
     }
   }, [isReciting]);
 
@@ -352,7 +354,7 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
 
   if (!poetry) return null;
 
-  // Real-time line-by-line speech recitation engine with soothing female voice
+  // Real-time line-by-line speech recitation engine with native Urdu & Hindi Indian accent detection
   const handleRecite = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
@@ -361,12 +363,30 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
       window.speechSynthesis.cancel();
       setIsReciting(false);
       setActiveLine(null);
+      setRecitationVoiceBadge('');
       return;
     }
 
     window.speechSynthesis.cancel();
     setIsReciting(true);
     isRecitingRef.current = true;
+
+    // Detect language of the poem (Urdu script, Hindi script, or Roman Urdu/Hindi)
+    const allPoemText = poetry.stanzas.join(' ') + ' ' + artwork.title;
+    const langDetection = detectPoemLanguage(allPoemText);
+    const femaleVoice = getSoothingFemaleVoice(allPoemText);
+
+    if (langDetection.isUrduOrHindi) {
+      setRecitationVoiceBadge(
+        femaleVoice
+          ? `${getVoiceIdentityLabel(femaleVoice)} • ${langDetection.accentLabel}`
+          : 'Urdu & Hindi Voice • Native Indian Accent'
+      );
+    } else {
+      setRecitationVoiceBadge(
+        femaleVoice ? getVoiceIdentityLabel(femaleVoice) : 'Soothing Poetic Voice'
+      );
+    }
 
     // Flatten all lines across stanzas with coordinate mapping
     const linesToRead: { stanzaIdx: number; lineIdx: number; text: string }[] = [];
@@ -379,6 +399,7 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
 
     if (linesToRead.length === 0) {
       setIsReciting(false);
+      setRecitationVoiceBadge('');
       return;
     }
 
@@ -388,36 +409,39 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
       if (!isRecitingRef.current || linePointer >= linesToRead.length) {
         setIsReciting(false);
         setActiveLine(null);
+        setRecitationVoiceBadge('');
         return;
       }
 
       const item = linesToRead[linePointer];
       setActiveLine({ stanzaIdx: item.stanzaIdx, lineIdx: item.lineIdx });
 
-      const utterance = new SpeechSynthesisUtterance(item.text);
-      const femaleVoice = getSoothingFemaleVoice();
+      const spokenText = preparePoeticTextForVoice(item.text, langDetection.isUrduOrHindi);
+      const utterance = new SpeechSynthesisUtterance(spokenText);
       if (femaleVoice) {
         utterance.voice = femaleVoice;
       }
-      utterance.rate = 0.88; // Soothing, gentle poetic cadence
-      utterance.pitch = 1.05; // Calm female timbre
+      // Measured, lyrical cadence for Urdu ghazals, nazms, and Hindi verse
+      utterance.rate = langDetection.isUrduOrHindi ? 0.85 : 0.88;
+      utterance.pitch = 1.04; // Calibrated soothing female pitch
 
       utterance.onend = () => {
         if (!isRecitingRef.current) return;
         linePointer++;
-        setTimeout(reciteNextLine, 120); // Seamless, natural breath between verses
+        setTimeout(reciteNextLine, 140); // Natural breathing pause between couplets
       };
 
       utterance.onerror = () => {
         setIsReciting(false);
         setActiveLine(null);
+        setRecitationVoiceBadge('');
       };
 
       window.speechSynthesis.speak(utterance);
     };
 
     reciteNextLine();
-  }, [isReciting, poetry]);
+  }, [isReciting, poetry, artwork.title]);
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -600,7 +624,9 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
         {/* ── Hover Studio Tool Capsule (Bard, Zen, Recite, Share) ── */}
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute top-4 left-4 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-1 p-1 rounded-full bg-black/80 border border-white/15 backdrop-blur-md shadow-md pointer-events-auto"
+          className={`absolute top-4 left-4 z-30 ${
+            isReciting ? 'opacity-100 ring-1 ring-[#c9a875]' : 'opacity-0 group-hover:opacity-100'
+          } transition-all duration-300 flex items-center gap-1 p-1 rounded-full bg-black/80 border border-white/15 backdrop-blur-md shadow-md pointer-events-auto`}
         >
           {onOpenBardModal && (
             <button
@@ -650,6 +676,19 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
             {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-[#c9a875]" />}
           </button>
         </div>
+
+        {/* ── Recitation Voice & Accent Badge (Urdu/Hindi/Indian Voice Identification) ── */}
+        {isReciting && recitationVoiceBadge && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute top-14 left-4 z-30 animate-in fade-in slide-in-from-top-1 duration-300 pointer-events-auto"
+          >
+            <div className="px-2.5 py-1 rounded-full bg-black/90 border border-[#c9a875]/70 text-[#f3e3cb] text-[10px] font-mono-code flex items-center gap-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.8),0_0_12px_rgba(201,168,117,0.35)] backdrop-blur-md">
+              <Sparkles className="w-3 h-3 text-[#c9a875] animate-pulse shrink-0" />
+              <span className="truncate max-w-[210px] font-medium">{recitationVoiceBadge}</span>
+            </div>
+          </div>
+        )}
 
         {/* ── 1. Upper Area: Luxury Poetry Matting ── */}
         <div className={`poetry-parchment-matting theme-${aestheticTheme}`}>

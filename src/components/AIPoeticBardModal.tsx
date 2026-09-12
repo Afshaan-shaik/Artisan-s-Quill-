@@ -13,6 +13,7 @@ import {
   Edit3
 } from 'lucide-react';
 import { bardSymphony, BARD_VOICE_PRESETS, BardVoiceStyle } from '../utils/bardSymphonyEngine';
+import { detectPoemLanguage } from '../utils/speechUtils';
 import { AcousticWaveformRibbon } from './AcousticWaveformRibbon';
 import { PoetryData } from '../types';
 
@@ -77,6 +78,13 @@ export const AIPoeticBardModal: React.FC<AIPoeticBardModalProps> = ({
       setPoemContent(initialPoem.content);
       setIsEditingCustom(false);
       stopRecital();
+
+      // Auto-detect Urdu or Hindi language and assign the native poetic muse
+      const detection = detectPoemLanguage(`${initialPoem.content} ${initialPoem.title}`);
+      if (detection.isUrduOrHindi) {
+        setSelectedVoice('urdu-shair-nazm');
+        bardSymphony.setPreset('urdu-shair-nazm');
+      }
     }
   }, [initialPoem]);
 

@@ -41,7 +41,7 @@ import { CuratorialToolkit } from './CuratorialToolkit';
 import { PoetryCardExporterModal } from './PoetryCardExporterModal';
 import { MarginReflectionsDrawer } from './MarginReflectionsDrawer';
 import confetti from 'canvas-confetti';
-import { getSoothingFemaleVoice } from '../utils/speechUtils';
+import { getSoothingFemaleVoice, detectPoemLanguage, preparePoeticTextForVoice, getVoiceIdentityLabel } from '../utils/speechUtils';
 import { isVideoMedia, isAudioMedia, getMediaPoster } from '../utils/mediaUtils';
 
 interface ArtworkDetailModalProps {
@@ -97,6 +97,11 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   const [newCommentText, setNewCommentText] = useState('');
   const [isReciting, setIsReciting] = useState(false);
   const [activeLine, setActiveLine] = useState<{ stanzaIdx: number; lineIdx: number } | null>(null);
+  const [recitationAccentBadge, setRecitationAccentBadge] = useState<{
+    voiceName: string;
+    langType: string;
+    isUrduHindi: boolean;
+  } | null>(null);
   const [lightingMode, setLightingMode] = useState<GalleryLightingMode>('obsidian');
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
@@ -112,6 +117,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
     if (!isReciting && typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       setActiveLine(null);
+      setRecitationAccentBadge(null);
     }
   }, [isReciting]);
 
@@ -119,6 +125,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   useEffect(() => {
     setIsReciting(false);
     setActiveLine(null);
+    setRecitationAccentBadge(null);
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -210,12 +217,26 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
       window.speechSynthesis.cancel();
       setIsReciting(false);
       setActiveLine(null);
+      setRecitationAccentBadge(null);
       return;
     }
 
     window.speechSynthesis.cancel();
     setIsReciting(true);
     isRecitingRef.current = true;
+
+    // Detect language across full poem context (title + stanzas)
+    const fullPoemContent = `${artwork.title} ${poetry.subtitle || ''} ${poetry.stanzas.join(' ')}`;
+    const detection = detectPoemLanguage(fullPoemContent);
+    const femaleVoice = getSoothingFemaleVoice(fullPoemContent);
+
+    if (femaleVoice) {
+      setRecitationAccentBadge({
+        voiceName: getVoiceIdentityLabel(femaleVoice),
+        langType: detection.label,
+        isUrduHindi: detection.isUrduOrHindi
+      });
+    }
 
     // Flatten all lines with coordinate mapping
     const linesToRead: { stanzaIdx: number; lineIdx: number; text: string }[] = [];
@@ -228,6 +249,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
 
     if (linesToRead.length === 0) {
       setIsReciting(false);
+      setRecitationAccentBadge(null);
       return;
     }
 
@@ -237,29 +259,39 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
       if (!isRecitingRef.current || linePointer >= linesToRead.length) {
         setIsReciting(false);
         setActiveLine(null);
+        setRecitationAccentBadge(null);
         return;
       }
 
       const item = linesToRead[linePointer];
       setActiveLine({ stanzaIdx: item.stanzaIdx, lineIdx: item.lineIdx });
 
-      const utterance = new SpeechSynthesisUtterance(item.text);
-      const femaleVoice = getSoothingFemaleVoice();
-      if (femaleVoice) {
-        utterance.voice = femaleVoice;
+      const processedLineText = preparePoeticTextForVoice(item.text, detection.isUrduOrHindi);
+      const utterance = new SpeechSynthesisUtterance(processedLineText);
+
+      const lineVoice = femaleVoice || getSoothingFemaleVoice(item.text);
+      if (lineVoice) {
+        utterance.voice = lineVoice;
       }
-      utterance.rate = 0.88; // Gentle, soothing poetic cadence
-      utterance.pitch = 1.05; // Calm female timbre
+
+      if (detection.isUrduOrHindi) {
+        utterance.rate = 0.84; // Gentle, expressive cadence for Urdu ghazal & Hindi nazm
+        utterance.pitch = 1.02; // Warm, soothing feminine timbre
+      } else {
+        utterance.rate = 0.88; // Poetic cadence for English
+        utterance.pitch = 1.05;
+      }
 
       utterance.onend = () => {
         if (!isRecitingRef.current) return;
         linePointer++;
-        setTimeout(reciteNextLine, 120); // Seamless, natural breath between verses
+        setTimeout(reciteNextLine, detection.isUrduOrHindi ? 180 : 120); // Authentic breath interval
       };
 
       utterance.onerror = () => {
         setIsReciting(false);
         setActiveLine(null);
+        setRecitationAccentBadge(null);
       };
 
       window.speechSynthesis.speak(utterance);
@@ -635,6 +667,24 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                       <span>Export Story Card</span>
                     </button>
                   </div>
+
+                  {/* Active Recitation Accent & Language Badge */}
+                  {isReciting && recitationAccentBadge && (
+                    <div className="w-full flex justify-center mt-3 animate-fadeIn">
+                      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#c9a875]/20 via-black/80 to-[#c9a875]/20 border border-[#dfbd87]/50 shadow-[0_0_15px_rgba(201,168,117,0.3)]">
+                        <span className="w-2 h-2 rounded-full bg-[#dfbd87] animate-ping" />
+                        <span className="text-[11px] font-mono-code text-[#f8e7c9]">
+                          {recitationAccentBadge.isUrduHindi ? '✦ Urdu/Hindi Poetic AI Voice:' : '✦ Poetic AI Voice:'}{' '}
+                          <strong className="text-[#dfbd87] font-semibold">{recitationAccentBadge.voiceName}</strong>
+                          {recitationAccentBadge.isUrduHindi && (
+                            <span className="ml-1.5 px-1.5 py-0.5 rounded text-[9px] bg-[#dfbd87]/20 text-[#f8e7c9] border border-[#dfbd87]/40 uppercase tracking-widest font-sans">
+                              Native Accent
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-8 text-lg md:text-xl leading-relaxed text-neutral-200 font-serif italic max-w-xl mx-auto w-full">
