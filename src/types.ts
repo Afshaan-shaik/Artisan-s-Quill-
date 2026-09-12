@@ -45,6 +45,13 @@ export interface UserProfile {
   collections?: Collection[];
 }
 
+export type VoiceAccentOption =
+  | 'auto-detect'
+  | 'native-urdu-hindi'
+  | 'founder-poet'
+  | 'british-classical'
+  | 'american-contemporary';
+
 export interface PoetryData {
   stanzas: string[];
   theme: PoetryTheme;
@@ -52,6 +59,9 @@ export interface PoetryData {
   alignment: 'left' | 'center';
   audioRecitationUrl?: string;
   audioRecitationTitle?: string;
+  audioRecitationDuration?: number;
+  preferredVoiceAccent?: VoiceAccentOption;
+  reciterType?: 'founder-authentic' | 'ai-persona';
   readingTimeMinutes: number;
   authorSignature?: string;
   dedicatedCardAccent?: string;
