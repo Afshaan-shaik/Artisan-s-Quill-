@@ -190,6 +190,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     isSaved: false,
     featured: true,
     poetryContent: {
+      preferredVoiceAccent: 'founder-poet',
       stanzas: [
         'The kettle boils for no one now,\na thin white column, patient, spent.\nI keep refilling what has gone\nbecause the habit has not left.',
         'Outside, the lane is dark and wet\nwith something close to permanence.\nThe cup I set for you grows cold\nin the particular silence of the late.',
@@ -236,6 +237,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     isSaved: false,
     featured: true,
     poetryContent: {
+      preferredVoiceAccent: 'founder-poet',
       stanzas: [
         'I have always written in the margins,\nthat narrow corridor between the printed\nand the felt — a country of small addenda\nwhere the real argument lives.',
         'Here: a question mark beside a certainty.\nThere: a word you underlined in pencil,\nso soft the text still shows through\nlike a bruise that healed before it finished.',
@@ -282,6 +284,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     isSaved: false,
     featured: true,
     poetryContent: {
+      preferredVoiceAccent: 'founder-poet',
       stanzas: [
         'The second cup is always the honest one:\npoured not from want but from the refusal\nto let the morning end before\nwe understood what it was trying to say.',
         'The first is urgency, the alarm still ringing\nsomewhere inside the chest.\nThe second is the hand that stops the clock,\nthat says: not yet — there is still this light.',
@@ -396,6 +399,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     isSaved: false,
     featured: true,
     poetryContent: {
+      preferredVoiceAccent: 'founder-poet',
       stanzas: [
         'We write in languages that machines can execute,\nyet whisper in cadences only the soul understands.\nBetween each clock cycle and the quiet dark,\na universe of intent waits to be discovered.',
         'The canvas is not merely pixels or linen,\nbut a resonant chamber of human contemplation.\nWhere code ends and beauty begins,\nthere lies the eternal sanctuary.'
@@ -436,6 +440,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     isSaved: false,
     featured: true,
     poetryContent: {
+      preferredVoiceAccent: 'founder-poet',
       stanzas: [
         'Har ek baat pe kehte ho tum ke tu kya hai,\nTumhi kaho ke yeh andaaz-e-guftagu kya hai.\n\nہر ایک بات پہ کہتے ہو تم کہ تو کیا ہے\nتمہیں کہو کہ یہ اندازِ گفتگو کیا ہے',
         'Ragon mein daudte phirne ke hum nahi qayal,\nJab aankh hi se na tapka toh phir lahu kya hai.\n\nرگوں میں دوڑتے پھرنے کے ہم نہیں قائل\nجب آنکھ ہی سے نہ ٹپکا تو پھر لہو کیا ہے',
@@ -510,6 +515,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     isSaved: false,
     featured: true,
     poetryContent: {
+      preferredVoiceAccent: 'british-classical',
       stanzas: [
         'We traded lanterns for the cold precision\nof stars that had forgotten how to burn.\nYou spoke of stones as though they held a pulse,\nand I listened till the stones agreed.',
         'Between the cedar beams and fallen dew,\nthe house breathes out its century of dust.\nNothing is lost that was not first surrendered\nto the black river running beneath the floor.',
@@ -613,6 +619,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     isLiked: false,
     isSaved: false,
     poetryContent: {
+      preferredVoiceAccent: 'american-contemporary',
       stanzas: [
         'He drew the continent with trembling fingers,\nleaving wide gaps where no ships dared return.\n"Terra Incognita," he whispered to the candle,\n"is only another word for our forgiveness."',
         'The compass rose lay rusted in salt brine.\nThe longitude dissolved beneath his thumb.\nWhen they asked what lay beyond the southern cape,\nhe closed the atlas and named it after her.'

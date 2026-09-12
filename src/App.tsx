@@ -628,6 +628,9 @@ export default function App() {
           poemNumber: data.poemNumber,
           stainVariant: data.stainVariant,
           paperTone: data.paperTone,
+          preferredVoiceAccent: data.preferredVoiceAccent,
+          audioRecitationUrl: data.audioRecitationUrl,
+          audioRecitationDuration: data.audioRecitationDuration,
           excerpt: stanzas[0]?.slice(0, 120),
         },
       };
@@ -666,6 +669,9 @@ export default function App() {
           poemNumber: data.poemNumber,
           stainVariant: data.stainVariant,
           paperTone: data.paperTone,
+          preferredVoiceAccent: data.preferredVoiceAccent,
+          audioRecitationUrl: data.audioRecitationUrl,
+          audioRecitationDuration: data.audioRecitationDuration,
           excerpt: stanzas[0]?.slice(0, 120),
         },
       });

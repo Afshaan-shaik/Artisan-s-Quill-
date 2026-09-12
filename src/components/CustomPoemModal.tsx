@@ -1,4 +1,8 @@
 import React, { useState, useCallback, useId } from 'react';
+import { Mic, Volume2, Sparkles, Check } from 'lucide-react';
+import { VoiceAccentOption } from '../types';
+import { VOICE_ACCENT_PROFILES } from '../utils/afshaanVoiceEngine';
+import { VoiceRecitalStudioModal } from './VoiceRecitalStudioModal';
 
 interface CustomPoemModalProps {
   isOpen: boolean;
@@ -18,6 +22,9 @@ export interface PoemFormData {
   stainVariant: number;
   paperTone: string;
   alignment: 'left' | 'center';
+  preferredVoiceAccent?: VoiceAccentOption;
+  audioRecitationUrl?: string;
+  audioRecitationDuration?: number;
 }
 
 const PAPER_TONES: { label: string; value: string }[] = [
@@ -45,6 +52,9 @@ const DEFAULT_FORM: PoemFormData = {
   stainVariant: 0,
   paperTone: '#EDE0C8',
   alignment: 'left',
+  preferredVoiceAccent: 'auto-detect',
+  audioRecitationUrl: '',
+  audioRecitationDuration: 0,
 };
 
 function splitStanzas(raw: string): string[] {
@@ -171,6 +181,7 @@ export default function CustomPoemModal({
   const [form, setForm] = useState<PoemFormData>({ ...DEFAULT_FORM, ...initialData });
   const [errors, setErrors] = useState<Partial<Record<keyof PoemFormData, string>>>({});
   const [showPreview, setShowPreview] = useState(false);
+  const [isVoiceStudioOpen, setIsVoiceStudioOpen] = useState(false);
   const headingId = useId();
 
   React.useEffect(() => {
@@ -506,6 +517,77 @@ export default function CustomPoemModal({
                   ))}
                 </div>
               </div>
+
+              {/* ── Recitation Voice & Accent Preference ── */}
+              <div style={{ marginBottom: 18, marginTop: 16 }}>
+                <label style={labelStyle}>Recitation Accent & Voice Mode</label>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {VOICE_ACCENT_PROFILES.map((profile) => {
+                    const isSelected = (form.preferredVoiceAccent || 'auto-detect') === profile.id;
+                    return (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        onClick={() => set('preferredVoiceAccent', profile.id)}
+                        className={`text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#c9a875]/25 border border-[#dfbd87] text-[#f5ebd7]'
+                            : 'bg-white/[0.03] border border-white/10 text-neutral-400 hover:text-neutral-200'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm">{profile.flag}</span>
+                          <span className="font-medium">{profile.label}</span>
+                        </span>
+                        {isSelected && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#dfbd87] shadow-[0_0_6px_#dfbd87]" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ── Oral Voice Recital Recording ── */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Oral Voice Recital (Genuine Voice Recording)</label>
+                {form.audioRecitationUrl ? (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-xs text-emerald-300">
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="w-4 h-4 text-emerald-400" />
+                      <span>Oral Recital Attached</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setIsVoiceStudioOpen(true)}
+                        className="text-[11px] underline text-[#dfbd87] hover:text-white cursor-pointer"
+                      >
+                        Listen / Retake
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          set('audioRecitationUrl', '');
+                          set('audioRecitationDuration', 0);
+                        }}
+                        className="text-[11px] text-red-400 hover:text-red-300 cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsVoiceStudioOpen(true)}
+                    className="w-full py-2.5 px-3.5 rounded-xl bg-white/[0.04] hover:bg-[#c9a875]/15 border border-[#c9a875]/40 hover:border-[#dfbd87] text-[#dfbd87] hover:text-white text-xs font-mono-code flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                  >
+                    <Mic className="w-3.5 h-3.5 text-[#c9a875]" />
+                    <span>Record or Upload Your Voice Recital</span>
+                  </button>
+                )}
+              </div>
             </form>
           </div>
 
@@ -559,6 +641,21 @@ export default function CustomPoemModal({
           </button>
         </div>
       </div>
+
+      {/* Voice Recital Studio Modal */}
+      <VoiceRecitalStudioModal
+        isOpen={isVoiceStudioOpen}
+        onClose={() => setIsVoiceStudioOpen(false)}
+        poemTitle={form.title || 'Untitled Poem'}
+        authorName={form.authorName || 'Poet'}
+        stanzas={splitStanzas(form.stanzasText)}
+        existingAudioUrl={form.audioRecitationUrl}
+        onSaveAudioRecital={(audioUrl, duration) => {
+          set('audioRecitationUrl', audioUrl);
+          set('audioRecitationDuration', duration);
+          setIsVoiceStudioOpen(false);
+        }}
+      />
     </div>
   );
 }

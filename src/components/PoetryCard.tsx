@@ -1,13 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Heart, Bookmark, BookMarked, Volume2, VolumeX, Eye,
-  Share2, Sparkles, Check, X, Wind, Layers, Smartphone, Feather
+  Share2, Sparkles, Check, X, Wind, Layers, Smartphone, Feather,
+  Mic, ChevronDown
 } from 'lucide-react';
-import { Artwork } from '../types';
+import { Artwork, VoiceAccentOption } from '../types';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
-import { getSoothingFemaleVoice, detectPoemLanguage, preparePoeticTextForVoice, getVoiceIdentityLabel } from '../utils/speechUtils';
+import { detectPoemLanguage, preparePoeticTextForVoice } from '../utils/speechUtils';
+import { VOICE_ACCENT_PROFILES, resolvePoeticVoice, isAfshaanShaikh } from '../utils/afshaanVoiceEngine';
+import { VoiceRecitalStudioModal } from './VoiceRecitalStudioModal';
 import { PoetryCardExporterModal } from './PoetryCardExporterModal';
 import { GalleryService } from '../services/api';
 
@@ -334,29 +337,94 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
   const isRecitingRef = React.useRef(false);
   const poetry = artwork.poetryContent;
 
+  const isAuthorAfshaan = isAfshaanShaikh(artwork.artist.name, artwork.artist.handle);
+  const [selectedAccent, setSelectedAccent] = useState<VoiceAccentOption>(
+    () => poetry?.preferredVoiceAccent || (isAuthorAfshaan ? 'founder-poet' : 'auto-detect')
+  );
+  const [isAccentMenuOpen, setIsAccentMenuOpen] = useState(false);
+  const [isVoiceStudioOpen, setIsVoiceStudioOpen] = useState(false);
+  const [isPlayingAudioRecording, setIsPlayingAudioRecording] = useState(false);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+
   useEffect(() => {
     isRecitingRef.current = isReciting;
-    if (!isReciting && typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+    if (!isReciting) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+      }
+      setIsPlayingAudioRecording(false);
       setActiveLine(null);
       setRecitationVoiceBadge('');
     }
   }, [isReciting]);
 
-  // Clean up speech on unmount
+  // Clean up speech and audio on unmount
   useEffect(() => {
     return () => {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
+      }
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
       }
     };
   }, []);
 
   if (!poetry) return null;
 
-  // Real-time line-by-line speech recitation engine with native Urdu & Hindi Indian accent detection
+  // Real-time recitation engine with multi-accent & founder genuine voice support
   const handleRecite = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // ── CASE 1: Genuine Recorded Oral Recital Available ──
+    if (poetry.audioRecitationUrl) {
+      if (isPlayingAudioRecording && audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        setIsPlayingAudioRecording(false);
+        setIsReciting(false);
+        setActiveLine(null);
+        setRecitationVoiceBadge('');
+        return;
+      }
+
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+
+      if (!audioPlayerRef.current || audioPlayerRef.current.src !== poetry.audioRecitationUrl) {
+        audioPlayerRef.current = new Audio(poetry.audioRecitationUrl);
+
+        audioPlayerRef.current.onended = () => {
+          setIsPlayingAudioRecording(false);
+          setIsReciting(false);
+          setActiveLine(null);
+          setRecitationVoiceBadge('');
+        };
+
+        audioPlayerRef.current.onerror = () => {
+          setIsPlayingAudioRecording(false);
+          setIsReciting(false);
+          setActiveLine(null);
+          setRecitationVoiceBadge('');
+        };
+      }
+
+      audioPlayerRef.current.play();
+      setIsPlayingAudioRecording(true);
+      setIsReciting(true);
+      setRecitationVoiceBadge(
+        isAuthorAfshaan
+          ? "🎙️ Afshaan Shaikh (Original Voice Recital)"
+          : "🎙️ Poet's Original Voice Recital"
+      );
+      return;
+    }
+
+    // ── CASE 2: Multi-Accent Speech Synthesis Engine ──
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
     if (isReciting) {
@@ -371,22 +439,10 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
     setIsReciting(true);
     isRecitingRef.current = true;
 
-    // Detect language of the poem (Urdu script, Hindi script, or Roman Urdu/Hindi)
     const allPoemText = poetry.stanzas.join(' ') + ' ' + artwork.title;
-    const langDetection = detectPoemLanguage(allPoemText);
-    const femaleVoice = getSoothingFemaleVoice(allPoemText);
+    const resolvedPlan = resolvePoeticVoice(selectedAccent, allPoemText, artwork.artist.name, artwork.artist.handle);
 
-    if (langDetection.isUrduOrHindi) {
-      setRecitationVoiceBadge(
-        femaleVoice
-          ? `${getVoiceIdentityLabel(femaleVoice)} • ${langDetection.accentLabel}`
-          : 'Urdu & Hindi Voice • Native Indian Accent'
-      );
-    } else {
-      setRecitationVoiceBadge(
-        femaleVoice ? getVoiceIdentityLabel(femaleVoice) : 'Soothing Poetic Voice'
-      );
-    }
+    setRecitationVoiceBadge(`✦ ${resolvedPlan.accentLabel} • ${resolvedPlan.voiceLabel}`);
 
     // Flatten all lines across stanzas with coordinate mapping
     const linesToRead: { stanzaIdx: number; lineIdx: number; text: string }[] = [];
@@ -416,19 +472,21 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
       const item = linesToRead[linePointer];
       setActiveLine({ stanzaIdx: item.stanzaIdx, lineIdx: item.lineIdx });
 
-      const spokenText = preparePoeticTextForVoice(item.text, langDetection.isUrduOrHindi);
+      const spokenText = preparePoeticTextForVoice(
+        item.text,
+        resolvedPlan.accentId === 'native-urdu-hindi' || resolvedPlan.isFounder
+      );
       const utterance = new SpeechSynthesisUtterance(spokenText);
-      if (femaleVoice) {
-        utterance.voice = femaleVoice;
+      if (resolvedPlan.voice) {
+        utterance.voice = resolvedPlan.voice;
       }
-      // Measured, lyrical cadence for Urdu ghazals, nazms, and Hindi verse
-      utterance.rate = langDetection.isUrduOrHindi ? 0.85 : 0.88;
-      utterance.pitch = 1.04; // Calibrated soothing female pitch
+      utterance.rate = resolvedPlan.rate;
+      utterance.pitch = resolvedPlan.pitch;
 
       utterance.onend = () => {
         if (!isRecitingRef.current) return;
         linePointer++;
-        setTimeout(reciteNextLine, 140); // Natural breathing pause between couplets
+        setTimeout(reciteNextLine, resolvedPlan.isFounder || resolvedPlan.accentId === 'native-urdu-hindi' ? 180 : 130);
       };
 
       utterance.onerror = () => {
@@ -441,7 +499,16 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
     };
 
     reciteNextLine();
-  }, [isReciting, poetry, artwork.title]);
+  }, [
+    isReciting,
+    isPlayingAudioRecording,
+    poetry,
+    artwork.title,
+    artwork.artist.name,
+    artwork.artist.handle,
+    selectedAccent,
+    isAuthorAfshaan
+  ]);
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -663,10 +730,97 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
             className={`p-1.5 rounded-full transition-colors cursor-pointer ${
               isReciting ? 'bg-[#c9a875] text-black' : 'text-neutral-300 hover:text-white hover:bg-white/10'
             }`}
-            title={isReciting ? 'Stop Recitation' : 'Listen to Voice Recitation'}
+            title={
+              isReciting
+                ? 'Stop Recital'
+                : poetry.audioRecitationUrl
+                ? 'Listen to Genuine Voice Recital'
+                : 'Listen to Voice Recitation'
+            }
           >
             {isReciting ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-[#c9a875]" />}
           </button>
+
+          {/* ── Accent & Recitation Options Dropdown Trigger ── */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsAccentMenuOpen(!isAccentMenuOpen);
+              }}
+              className="px-1.5 py-1 rounded-full hover:bg-white/10 text-[10px] font-mono-code text-[#dfbd87] flex items-center gap-0.5 transition-colors cursor-pointer"
+              title="Change Recitation Voice & Accent Mode"
+            >
+              <span>{VOICE_ACCENT_PROFILES.find((p) => p.id === selectedAccent)?.flag || '✨'}</span>
+              <ChevronDown className="w-2.5 h-2.5 opacity-70" />
+            </button>
+
+            {/* Accent Dropdown Popover */}
+            {isAccentMenuOpen && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 bottom-full mb-2 w-56 rounded-xl bg-[#0d0f17]/95 border border-[#c9a875]/50 shadow-[0_10px_35px_rgba(0,0,0,0.9)] p-1.5 backdrop-blur-xl z-50 animate-in fade-in duration-150"
+              >
+                <div className="px-2.5 py-1 border-b border-white/10 text-[9px] font-mono-code uppercase tracking-wider text-[#c9a875] font-semibold flex items-center justify-between">
+                  <span>Voice Recitation Mode</span>
+                  <span className="text-[8px] text-neutral-400">Options</span>
+                </div>
+
+                <div className="py-1 space-y-0.5">
+                  {VOICE_ACCENT_PROFILES.map((profile) => {
+                    const isSelected = selectedAccent === profile.id;
+                    return (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedAccent(profile.id);
+                          setIsAccentMenuOpen(false);
+                          if (isReciting) {
+                            window.speechSynthesis?.cancel();
+                            audioPlayerRef.current?.pause();
+                            setIsReciting(false);
+                          }
+                        }}
+                        className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#c9a875]/25 text-white font-medium'
+                            : 'hover:bg-white/10 text-neutral-300'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm shrink-0">{profile.flag}</span>
+                          <span className="text-[11px] truncate">{profile.shortLabel}</span>
+                        </span>
+                        {isSelected && <Check className="w-3 h-3 text-[#dfbd87]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* If author is Afshaan or user is founder, show Record Oral Recital */}
+                {isAuthorAfshaan && (
+                  <div className="pt-1 border-t border-white/10 mt-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsAccentMenuOpen(false);
+                        setIsVoiceStudioOpen(true);
+                      }}
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-[#dfbd87] hover:bg-[#c9a875]/20 flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <Mic className="w-3.5 h-3.5 text-[#c9a875]" />
+                      <span className="text-[11px] font-medium">Record in My Voice...</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={handleShare}
@@ -786,6 +940,27 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
           onClose={() => setIsStoryExporterOpen(false)}
         />
       )}
+
+      {/* Voice Recital Studio Modal (Record in My Voice) */}
+      <VoiceRecitalStudioModal
+        isOpen={isVoiceStudioOpen}
+        onClose={() => setIsVoiceStudioOpen(false)}
+        poemTitle={artwork.title}
+        authorName={artwork.artist.name}
+        stanzas={poetry.stanzas}
+        existingAudioUrl={poetry.audioRecitationUrl}
+        onSaveAudioRecital={(audioUrl, duration) => {
+          GalleryService.updateArtwork(artwork.id, {
+            poetryContent: {
+              ...poetry,
+              audioRecitationUrl: audioUrl,
+              audioRecitationDuration: duration,
+              reciterType: 'founder-authentic'
+            }
+          });
+          setIsVoiceStudioOpen(false);
+        }}
+      />
     </>
   );
 };
