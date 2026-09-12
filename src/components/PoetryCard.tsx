@@ -760,7 +760,7 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
             {isAccentMenuOpen && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 bottom-full mb-2 w-56 rounded-xl bg-[#0d0f17]/95 border border-[#c9a875]/50 shadow-[0_10px_35px_rgba(0,0,0,0.9)] p-1.5 backdrop-blur-xl z-50 animate-in fade-in duration-150"
+                className="absolute left-0 top-full mt-2 w-56 rounded-xl bg-[#0d0f17]/95 border border-[#c9a875]/50 shadow-[0_10px_35px_rgba(0,0,0,0.9)] p-1.5 backdrop-blur-xl z-50 animate-in fade-in duration-150 text-left"
               >
                 <div className="px-2.5 py-1 border-b border-white/10 text-[9px] font-mono-code uppercase tracking-wider text-[#c9a875] font-semibold flex items-center justify-between">
                   <span>Voice Recitation Mode</span>
