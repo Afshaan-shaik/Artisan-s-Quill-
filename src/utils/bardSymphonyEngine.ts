@@ -3,7 +3,9 @@
 // The Artisan's Quill — Generative ambient acoustic layers & verse recitation
 // ============================================================================
 
-export type BardVoiceStyle = 'ancient-bard' | 'ethereal-muse' | 'midnight-philosopher' | 'golden-quill';
+import { detectPoemLanguage, getSoothingFemaleVoice, preparePoeticTextForVoice } from './speechUtils';
+
+export type BardVoiceStyle = 'ancient-bard' | 'ethereal-muse' | 'midnight-philosopher' | 'golden-quill' | 'urdu-shair-nazm';
 
 export interface BardVoiceConfig {
   id: BardVoiceStyle;
@@ -61,6 +63,17 @@ export const BARD_VOICE_PRESETS: BardVoiceConfig[] = [
     preferredVoiceLang: ['en-US', 'en-GB', 'en-AU'],
     harpMood: 'dorian',
     celloRoot: 73.42 // D2
+  },
+  {
+    id: 'urdu-shair-nazm',
+    label: 'Urdu & Hindi Poetic Muse',
+    emoji: '🌙',
+    description: 'Soulful, lyrical native Indian & Urdu female cadence, ideal for ghazals, nazms & shairi.',
+    pitch: 1.02,
+    rate: 0.84,
+    preferredVoiceLang: ['ur-PK', 'ur-IN', 'ur', 'hi-IN', 'hi', 'en-IN'],
+    harpMood: 'dorian',
+    celloRoot: 58.27 // A#1 / Bb1 - warm oriental harmonic resonance
   }
 ];
 
@@ -399,18 +412,29 @@ class BardSymphonyEngine {
       return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(lineText);
-    utterance.pitch = this.currentPreset.pitch;
-    utterance.rate = this.currentPreset.rate;
+    const detection = detectPoemLanguage(lineText);
+    const isUrduHindi = this.currentPreset.id === 'urdu-shair-nazm' || detection.isUrduOrHindi;
+
+    const processedText = preparePoeticTextForVoice(lineText, isUrduHindi);
+    const utterance = new SpeechSynthesisUtterance(processedText);
+    utterance.pitch = isUrduHindi ? 1.02 : this.currentPreset.pitch;
+    utterance.rate = isUrduHindi ? 0.84 : this.currentPreset.rate;
     utterance.volume = this.volumes.voice;
 
     // Pick best matching natural voice
-    const voices = window.speechSynthesis.getVoices();
-    const matchingVoice = voices.find((v) =>
-      this.currentPreset.preferredVoiceLang.some((lang) => v.lang.startsWith(lang))
-    );
-    if (matchingVoice) {
-      utterance.voice = matchingVoice;
+    if (isUrduHindi) {
+      const femaleVoice = getSoothingFemaleVoice(lineText);
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      }
+    } else {
+      const voices = window.speechSynthesis.getVoices();
+      const matchingVoice = voices.find((v) =>
+        this.currentPreset.preferredVoiceLang.some((lang) => v.lang.startsWith(lang))
+      );
+      if (matchingVoice) {
+        utterance.voice = matchingVoice;
+      }
     }
 
     utterance.onend = () => {
