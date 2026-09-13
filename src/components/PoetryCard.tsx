@@ -12,6 +12,7 @@ import { detectPoemLanguage, preparePoeticTextForVoice } from '../utils/speechUt
 import { VOICE_ACCENT_PROFILES, resolvePoeticVoice, isAfshaanShaikh } from '../utils/afshaanVoiceEngine';
 import { VoiceRecitalStudioModal } from './VoiceRecitalStudioModal';
 import { PoetryCardExporterModal } from './PoetryCardExporterModal';
+import { SpotifyRecitalPlayer } from './SpotifyRecitalPlayer';
 import { GalleryService } from '../services/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -63,12 +64,24 @@ interface ZenOverlayProps {
   artwork: Artwork;
   isReciting: boolean;
   activeLine: ActiveLineState | null;
+  currentTime: number;
+  duration: number;
+  currentLineIndex: number;
+  totalLines: number;
+  playbackRate: number;
+  reciterBadge?: string;
+  selectedAccent: VoiceAccentOption;
   onClose: () => void;
   onToggleLike: (id: string, e: React.MouseEvent) => void;
   onToggleSave: (id: string, e: React.MouseEvent) => void;
   onShare?: (artwork: Artwork) => void;
   onAddToMoodBoard?: (artwork: Artwork) => void;
   onRecite: (e: React.MouseEvent) => void;
+  onSeek: (seconds: number) => void;
+  onSkipSeconds: (delta: number) => void;
+  onSeekLine: (lineIndex: number) => void;
+  onRestart: () => void;
+  onChangePlaybackRate: (rate: number) => void;
   onOpenStoryExporter?: () => void;
 }
 
@@ -76,12 +89,24 @@ const ZenOverlay: React.FC<ZenOverlayProps> = ({
   artwork,
   isReciting,
   activeLine,
+  currentTime,
+  duration,
+  currentLineIndex,
+  totalLines,
+  playbackRate,
+  reciterBadge,
+  selectedAccent,
   onClose,
   onToggleLike,
   onToggleSave,
   onShare,
   onAddToMoodBoard,
   onRecite,
+  onSeek,
+  onSkipSeconds,
+  onSeekLine,
+  onRestart,
+  onChangePlaybackRate,
   onOpenStoryExporter,
 }) => {
   const poetry = artwork.poetryContent!;
@@ -239,6 +264,30 @@ const ZenOverlay: React.FC<ZenOverlayProps> = ({
           {/* Divider */}
           <div className="h-px w-20 bg-gradient-to-r from-transparent via-[#c9a875]/50 to-transparent" />
 
+          {/* Spotify Recital Scrubber Bar (Minute/Second Seeking & Stanza Jump) */}
+          {(isReciting || Boolean(poetry.audioRecitationUrl)) && (
+            <div className="w-full max-w-xl mx-auto my-2 animate-fadeIn" onClick={(e) => e.stopPropagation()}>
+              <SpotifyRecitalPlayer
+                mode={poetry.audioRecitationUrl ? 'authentic-audio' : 'speech-synthesis'}
+                isPlaying={isReciting}
+                currentTime={currentTime}
+                duration={duration}
+                currentLineIndex={currentLineIndex}
+                totalLines={totalLines || (poetry.stanzas.join('\n').split('\n').filter(Boolean).length)}
+                reciterBadge={reciterBadge || (poetry.audioRecitationUrl ? 'Authentic Oral Recitation' : 'Urdu/Hindi Poetic Voice')}
+                isUrduHindi={selectedAccent === 'native-urdu-hindi' || selectedAccent === 'founder-poet'}
+                playbackRate={playbackRate}
+                onTogglePlay={() => onRecite({} as any)}
+                onSeek={onSeek}
+                onSkipSeconds={onSkipSeconds}
+                onSeekLine={onSeekLine}
+                onRestart={onRestart}
+                onChangePlaybackRate={onChangePlaybackRate}
+                className="shadow-2xl"
+              />
+            </div>
+          )}
+
           {/* ALL stanzas with active spoken verse tracking */}
           <div className="space-y-10 w-full">
             {poetry.stanzas.map((stanza, sIdx) => {
@@ -346,6 +395,153 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
   const [isPlayingAudioRecording, setIsPlayingAudioRecording] = useState(false);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
+  // Spotify Scrubber & Recital Timeline Tracking
+  const [audioCurrentTime, setAudioCurrentTime] = useState<number>(0);
+  const [audioDuration, setAudioDuration] = useState<number>(() => poetry?.audioRecitationDuration || 0);
+  const [currentLineIndex, setCurrentLineIndex] = useState<number>(0);
+  const [totalLinesCount, setTotalLinesCount] = useState<number>(0);
+  const [, setCurrentVerseSnippet] = useState<string>('');
+  const [playbackRate, setPlaybackRate] = useState<number>(1.0);
+  const linesToReadRef = useRef<{ stanzaIdx: number; lineIdx: number; text: string }[]>([]);
+  const linePointerRef = useRef<number>(0);
+
+  const setupAudioListeners = useCallback((audio: HTMLAudioElement) => {
+    audio.ontimeupdate = () => {
+      setAudioCurrentTime(audio.currentTime);
+      if (!isNaN(audio.duration) && audio.duration > 0) {
+        setAudioDuration(audio.duration);
+      }
+    };
+    audio.onloadedmetadata = () => {
+      if (!isNaN(audio.duration) && audio.duration > 0) {
+        setAudioDuration(audio.duration);
+      }
+    };
+    audio.onended = () => {
+      setIsPlayingAudioRecording(false);
+      setIsReciting(false);
+      setAudioCurrentTime(0);
+      setActiveLine(null);
+      setRecitationVoiceBadge('');
+    };
+    audio.onerror = () => {
+      setIsPlayingAudioRecording(false);
+      setIsReciting(false);
+      setActiveLine(null);
+      setRecitationVoiceBadge('');
+    };
+  }, []);
+
+  const handleSeekSpeechLine = useCallback((targetLineIndex: number) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    const lines = linesToReadRef.current;
+    if (lines.length === 0) return;
+
+    const clamped = Math.max(0, Math.min(targetLineIndex, lines.length - 1));
+    linePointerRef.current = clamped;
+    setCurrentLineIndex(clamped);
+    setAudioCurrentTime(clamped * 3.5);
+
+    window.speechSynthesis.cancel();
+
+    const item = lines[clamped];
+    setActiveLine({ stanzaIdx: item.stanzaIdx, lineIdx: item.lineIdx });
+    setCurrentVerseSnippet(item.text);
+
+    if (isRecitingRef.current) {
+      const allPoemText = poetry ? `${artwork.title} ${poetry.stanzas.join(' ')}` : artwork.title;
+      const resolvedPlan = resolvePoeticVoice(selectedAccent, allPoemText, artwork.artist.name, artwork.artist.handle);
+
+      const spokenText = preparePoeticTextForVoice(
+        item.text,
+        resolvedPlan.accentId === 'native-urdu-hindi' || resolvedPlan.isFounder
+      );
+      const utterance = new SpeechSynthesisUtterance(spokenText);
+      if (resolvedPlan.voice) utterance.voice = resolvedPlan.voice;
+      utterance.rate = resolvedPlan.rate * playbackRate;
+      utterance.pitch = resolvedPlan.pitch;
+
+      utterance.onend = () => {
+        if (!isRecitingRef.current) return;
+        setTimeout(() => {
+          handleSeekSpeechLine(clamped + 1);
+        }, 150 / playbackRate);
+      };
+
+      utterance.onerror = () => {
+        setIsReciting(false);
+        setActiveLine(null);
+        setRecitationVoiceBadge('');
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+  }, [artwork, poetry, selectedAccent, playbackRate]);
+
+  const handleSeek = useCallback((targetSeconds: number) => {
+    if (!poetry) return;
+
+    if (poetry.audioRecitationUrl) {
+      if (audioPlayerRef.current) {
+        const clamped = Math.max(0, Math.min(targetSeconds, audioDuration || 9999));
+        audioPlayerRef.current.currentTime = clamped;
+        setAudioCurrentTime(clamped);
+      }
+    } else {
+      const lines = linesToReadRef.current;
+      if (lines.length === 0) return;
+      const targetLine = Math.min(
+        lines.length - 1,
+        Math.max(0, Math.round((targetSeconds / Math.max(audioDuration, 1)) * lines.length))
+      );
+      handleSeekSpeechLine(targetLine);
+    }
+  }, [poetry, audioDuration, handleSeekSpeechLine]);
+
+  const handleSkipSeconds = useCallback((deltaSeconds: number) => {
+    if (!poetry) return;
+
+    if (poetry.audioRecitationUrl) {
+      if (audioPlayerRef.current) {
+        const target = Math.max(
+          0,
+          Math.min(audioPlayerRef.current.currentTime + deltaSeconds, audioDuration || 9999)
+        );
+        audioPlayerRef.current.currentTime = target;
+        setAudioCurrentTime(target);
+      }
+    } else {
+      const deltaLines = deltaSeconds > 0 ? 1 : -1;
+      handleSeekSpeechLine(linePointerRef.current + deltaLines);
+    }
+  }, [poetry, audioDuration, handleSeekSpeechLine]);
+
+  const handleRestart = useCallback(() => {
+    if (poetry?.audioRecitationUrl) {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.currentTime = 0;
+        setAudioCurrentTime(0);
+        audioPlayerRef.current.play().catch(() => {});
+        setIsPlayingAudioRecording(true);
+        setIsReciting(true);
+      }
+    } else {
+      linePointerRef.current = 0;
+      setCurrentLineIndex(0);
+      setAudioCurrentTime(0);
+      if (isReciting) {
+        handleSeekSpeechLine(0);
+      }
+    }
+  }, [poetry, isReciting, handleSeekSpeechLine]);
+
+  const handleChangePlaybackRate = useCallback((rate: number) => {
+    setPlaybackRate(rate);
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.playbackRate = rate;
+    }
+  }, []);
+
   useEffect(() => {
     isRecitingRef.current = isReciting;
     if (!isReciting) {
@@ -397,23 +593,11 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
 
       if (!audioPlayerRef.current || audioPlayerRef.current.src !== poetry.audioRecitationUrl) {
         audioPlayerRef.current = new Audio(poetry.audioRecitationUrl);
-
-        audioPlayerRef.current.onended = () => {
-          setIsPlayingAudioRecording(false);
-          setIsReciting(false);
-          setActiveLine(null);
-          setRecitationVoiceBadge('');
-        };
-
-        audioPlayerRef.current.onerror = () => {
-          setIsPlayingAudioRecording(false);
-          setIsReciting(false);
-          setActiveLine(null);
-          setRecitationVoiceBadge('');
-        };
       }
 
-      audioPlayerRef.current.play();
+      setupAudioListeners(audioPlayerRef.current);
+      audioPlayerRef.current.playbackRate = playbackRate;
+      audioPlayerRef.current.play().catch(() => {});
       setIsPlayingAudioRecording(true);
       setIsReciting(true);
       setRecitationVoiceBadge(
@@ -453,24 +637,35 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
       });
     });
 
+    linesToReadRef.current = linesToRead;
+    setTotalLinesCount(linesToRead.length);
+    setAudioDuration(linesToRead.length * 3.5);
+
     if (linesToRead.length === 0) {
       setIsReciting(false);
       setRecitationVoiceBadge('');
       return;
     }
 
-    let linePointer = 0;
+    let linePointer = linePointerRef.current < linesToRead.length ? linePointerRef.current : 0;
 
     const reciteNextLine = () => {
       if (!isRecitingRef.current || linePointer >= linesToRead.length) {
         setIsReciting(false);
         setActiveLine(null);
         setRecitationVoiceBadge('');
+        setAudioCurrentTime(0);
+        linePointerRef.current = 0;
         return;
       }
 
+      linePointerRef.current = linePointer;
+      setCurrentLineIndex(linePointer);
+      setAudioCurrentTime(linePointer * 3.5);
+
       const item = linesToRead[linePointer];
       setActiveLine({ stanzaIdx: item.stanzaIdx, lineIdx: item.lineIdx });
+      setCurrentVerseSnippet(item.text);
 
       const spokenText = preparePoeticTextForVoice(
         item.text,
@@ -480,13 +675,13 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
       if (resolvedPlan.voice) {
         utterance.voice = resolvedPlan.voice;
       }
-      utterance.rate = resolvedPlan.rate;
+      utterance.rate = resolvedPlan.rate * playbackRate;
       utterance.pitch = resolvedPlan.pitch;
 
       utterance.onend = () => {
         if (!isRecitingRef.current) return;
         linePointer++;
-        setTimeout(reciteNextLine, resolvedPlan.isFounder || resolvedPlan.accentId === 'native-urdu-hindi' ? 180 : 130);
+        setTimeout(reciteNextLine, (resolvedPlan.isFounder || resolvedPlan.accentId === 'native-urdu-hindi' ? 180 : 130) / playbackRate);
       };
 
       utterance.onerror = () => {
@@ -507,7 +702,9 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
     artwork.artist.name,
     artwork.artist.handle,
     selectedAccent,
-    isAuthorAfshaan
+    isAuthorAfshaan,
+    playbackRate,
+    setupAudioListeners
   ]);
 
   const handleShare = (e: React.MouseEvent) => {
@@ -844,6 +1041,31 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
           </div>
         )}
 
+        {/* ── Compact Spotify Recital Player on Card ── */}
+        {isReciting && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-20 inset-x-3 z-30 animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-auto"
+          >
+            <SpotifyRecitalPlayer
+              mode={poetry.audioRecitationUrl ? 'authentic-audio' : 'speech-synthesis'}
+              isPlaying={isReciting}
+              currentTime={audioCurrentTime}
+              duration={audioDuration}
+              currentLineIndex={currentLineIndex}
+              totalLines={totalLinesCount}
+              isCompact={true}
+              onTogglePlay={() => handleRecite({ stopPropagation: () => {} } as any)}
+              onSeek={handleSeek}
+              onSkipSeconds={handleSkipSeconds}
+              onSeekLine={handleSeekSpeechLine}
+              onRestart={handleRestart}
+              onChangePlaybackRate={handleChangePlaybackRate}
+              className="shadow-[0_8px_32px_rgba(0,0,0,0.9)]"
+            />
+          </div>
+        )}
+
         {/* ── 1. Upper Area: Luxury Poetry Matting ── */}
         <div className={`poetry-parchment-matting theme-${aestheticTheme}`}>
           <div>
@@ -922,12 +1144,24 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
           artwork={artwork}
           isReciting={isReciting}
           activeLine={activeLine}
+          currentTime={audioCurrentTime}
+          duration={audioDuration}
+          currentLineIndex={currentLineIndex}
+          totalLines={totalLinesCount}
+          playbackRate={playbackRate}
+          reciterBadge={recitationVoiceBadge}
+          selectedAccent={selectedAccent}
           onClose={() => setIsZenMode(false)}
           onToggleLike={onToggleLike}
           onToggleSave={onToggleSave}
           onShare={onShare}
           onAddToMoodBoard={onAddToMoodBoard}
           onRecite={handleRecite}
+          onSeek={handleSeek}
+          onSkipSeconds={handleSkipSeconds}
+          onSeekLine={handleSeekSpeechLine}
+          onRestart={handleRestart}
+          onChangePlaybackRate={handleChangePlaybackRate}
           onOpenStoryExporter={() => setIsStoryExporterOpen(true)}
         />
       )}

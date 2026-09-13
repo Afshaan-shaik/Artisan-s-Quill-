@@ -43,6 +43,7 @@ import { CuratorialToolkit } from './CuratorialToolkit';
 import { PoetryCardExporterModal } from './PoetryCardExporterModal';
 import { MarginReflectionsDrawer } from './MarginReflectionsDrawer';
 import { VoiceRecitalStudioModal } from './VoiceRecitalStudioModal';
+import { SpotifyRecitalPlayer } from './SpotifyRecitalPlayer';
 import confetti from 'canvas-confetti';
 import { getSoothingFemaleVoice, detectPoemLanguage, preparePoeticTextForVoice, getVoiceIdentityLabel } from '../utils/speechUtils';
 import { VOICE_ACCENT_PROFILES, resolvePoeticVoice, isAfshaanShaikh } from '../utils/afshaanVoiceEngine';
@@ -129,6 +130,44 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   const audioPlayerRef = React.useRef<HTMLAudioElement | null>(null);
   const isRecitingRef = React.useRef(false);
 
+  // Spotify Scrubber & Recital Timeline Tracking (Minute/Second Seeking)
+  const [audioCurrentTime, setAudioCurrentTime] = useState<number>(0);
+  const [audioDuration, setAudioDuration] = useState<number>(() => artwork?.poetryContent?.audioRecitationDuration || 0);
+  const [currentLineIndex, setCurrentLineIndex] = useState<number>(0);
+  const [totalLinesCount, setTotalLinesCount] = useState<number>(0);
+  const [currentVerseSnippet, setCurrentVerseSnippet] = useState<string>('');
+  const [playbackRate, setPlaybackRate] = useState<number>(1.0);
+  const linesToReadRef = React.useRef<{ stanzaIdx: number; lineIdx: number; text: string }[]>([]);
+  const linePointerRef = React.useRef<number>(0);
+
+  // Setup HTML5 audio listeners for live time tracking
+  const setupAudioListeners = useCallback((audio: HTMLAudioElement) => {
+    audio.ontimeupdate = () => {
+      setAudioCurrentTime(audio.currentTime);
+      if (!isNaN(audio.duration) && audio.duration > 0) {
+        setAudioDuration(audio.duration);
+      }
+    };
+    audio.onloadedmetadata = () => {
+      if (!isNaN(audio.duration) && audio.duration > 0) {
+        setAudioDuration(audio.duration);
+      }
+    };
+    audio.onended = () => {
+      setIsPlayingAudioRecording(false);
+      setIsReciting(false);
+      setAudioCurrentTime(0);
+      setActiveLine(null);
+      setRecitationAccentBadge(null);
+    };
+    audio.onerror = () => {
+      setIsPlayingAudioRecording(false);
+      setIsReciting(false);
+      setActiveLine(null);
+      setRecitationAccentBadge(null);
+    };
+  }, []);
+
   useEffect(() => {
     isRecitingRef.current = isReciting;
     if (!isReciting) {
@@ -151,6 +190,11 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
     setRecitationAccentBadge(null);
     setIsPlayingAudioRecording(false);
     setIsAccentMenuOpen(false);
+    setAudioCurrentTime(0);
+    setAudioDuration(artwork?.poetryContent?.audioRecitationDuration || 0);
+    setCurrentLineIndex(0);
+    setCurrentVerseSnippet('');
+    linePointerRef.current = 0;
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -256,6 +300,123 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
     };
   }, [artwork?.id]);
 
+  // ── Handlers for Spotify Recital Player Scrubber (Seeking & Skipping) ──
+  const handleSeekSpeechLine = useCallback((targetLineIndex: number) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    const lines = linesToReadRef.current;
+    if (lines.length === 0) return;
+
+    const clamped = Math.max(0, Math.min(targetLineIndex, lines.length - 1));
+    linePointerRef.current = clamped;
+    setCurrentLineIndex(clamped);
+    setAudioCurrentTime(clamped * 3.5);
+
+    window.speechSynthesis.cancel();
+
+    const item = lines[clamped];
+    setActiveLine({ stanzaIdx: item.stanzaIdx, lineIdx: item.lineIdx });
+    setCurrentVerseSnippet(item.text);
+
+    if (isRecitingRef.current) {
+      const allPoemText = `${artwork?.title || ''} ${lines.map((l) => l.text).join(' ')}`;
+      const authorName = typeof artwork?.artist === 'string' ? artwork.artist : artwork?.artist?.name;
+      const authorHandle = typeof artwork?.artist === 'object' ? artwork?.artist?.handle : undefined;
+      const resolvedPlan = resolvePoeticVoice(selectedAccent, allPoemText, authorName, authorHandle);
+
+      const spokenText = preparePoeticTextForVoice(
+        item.text,
+        resolvedPlan.accentId === 'native-urdu-hindi' || resolvedPlan.isFounder
+      );
+      const utterance = new SpeechSynthesisUtterance(spokenText);
+      if (resolvedPlan.voice) utterance.voice = resolvedPlan.voice;
+      utterance.rate = resolvedPlan.rate * playbackRate;
+      utterance.pitch = resolvedPlan.pitch;
+
+      utterance.onend = () => {
+        if (!isRecitingRef.current) return;
+        setTimeout(() => {
+          handleSeekSpeechLine(clamped + 1);
+        }, 150 / playbackRate);
+      };
+
+      utterance.onerror = () => {
+        setIsReciting(false);
+        setActiveLine(null);
+        setRecitationAccentBadge(null);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+  }, [artwork, selectedAccent, playbackRate]);
+
+  const handleSeek = useCallback((targetSeconds: number) => {
+    if (!artwork?.poetryContent) return;
+    const poetry = artwork.poetryContent;
+
+    if (poetry.audioRecitationUrl) {
+      if (audioPlayerRef.current) {
+        const clamped = Math.max(0, Math.min(targetSeconds, audioDuration || 9999));
+        audioPlayerRef.current.currentTime = clamped;
+        setAudioCurrentTime(clamped);
+      }
+    } else {
+      const lines = linesToReadRef.current;
+      if (lines.length === 0) return;
+      const targetLine = Math.min(
+        lines.length - 1,
+        Math.max(0, Math.round((targetSeconds / Math.max(audioDuration, 1)) * lines.length))
+      );
+      handleSeekSpeechLine(targetLine);
+    }
+  }, [artwork, audioDuration, handleSeekSpeechLine]);
+
+  const handleSkipSeconds = useCallback((deltaSeconds: number) => {
+    if (!artwork?.poetryContent) return;
+    const poetry = artwork.poetryContent;
+
+    if (poetry.audioRecitationUrl) {
+      if (audioPlayerRef.current) {
+        const target = Math.max(
+          0,
+          Math.min(audioPlayerRef.current.currentTime + deltaSeconds, audioDuration || 9999)
+        );
+        audioPlayerRef.current.currentTime = target;
+        setAudioCurrentTime(target);
+      }
+    } else {
+      const deltaLines = deltaSeconds > 0 ? 1 : -1;
+      handleSeekSpeechLine(linePointerRef.current + deltaLines);
+    }
+  }, [artwork, audioDuration, handleSeekSpeechLine]);
+
+  const handleRestart = useCallback(() => {
+    if (artwork?.poetryContent?.audioRecitationUrl) {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.currentTime = 0;
+        setAudioCurrentTime(0);
+        audioPlayerRef.current.play().catch(() => {});
+        setIsPlayingAudioRecording(true);
+        setIsReciting(true);
+      }
+    } else {
+      linePointerRef.current = 0;
+      setCurrentLineIndex(0);
+      setAudioCurrentTime(0);
+      if (isReciting) {
+        handleSeekSpeechLine(0);
+      } else {
+        handleRecite();
+      }
+    }
+  }, [artwork, isReciting, handleSeekSpeechLine]);
+
+  const handleChangePlaybackRate = useCallback((rate: number) => {
+    setPlaybackRate(rate);
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.playbackRate = rate;
+    }
+  }, []);
+
   const handleRecite = useCallback(() => {
     if (!artwork) return;
     const poetry = artwork.poetryContent;
@@ -267,8 +428,6 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
         audioPlayerRef.current.pause();
         setIsPlayingAudioRecording(false);
         setIsReciting(false);
-        setActiveLine(null);
-        setRecitationAccentBadge(null);
         return;
       }
 
@@ -278,23 +437,11 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
 
       if (!audioPlayerRef.current || audioPlayerRef.current.src !== poetry.audioRecitationUrl) {
         audioPlayerRef.current = new Audio(poetry.audioRecitationUrl);
-
-        audioPlayerRef.current.onended = () => {
-          setIsPlayingAudioRecording(false);
-          setIsReciting(false);
-          setActiveLine(null);
-          setRecitationAccentBadge(null);
-        };
-
-        audioPlayerRef.current.onerror = () => {
-          setIsPlayingAudioRecording(false);
-          setIsReciting(false);
-          setActiveLine(null);
-          setRecitationAccentBadge(null);
-        };
       }
 
-      audioPlayerRef.current.play();
+      setupAudioListeners(audioPlayerRef.current);
+      audioPlayerRef.current.playbackRate = playbackRate;
+      audioPlayerRef.current.play().catch(() => {});
       setIsPlayingAudioRecording(true);
       setIsReciting(true);
       setRecitationAccentBadge({
@@ -342,24 +489,35 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
       });
     });
 
+    linesToReadRef.current = linesToRead;
+    setTotalLinesCount(linesToRead.length);
+    setAudioDuration(linesToRead.length * 3.5);
+
     if (linesToRead.length === 0) {
       setIsReciting(false);
       setRecitationAccentBadge(null);
       return;
     }
 
-    let linePointer = 0;
+    const startIdx = linePointerRef.current < linesToRead.length ? linePointerRef.current : 0;
 
-    const reciteNextLine = () => {
-      if (!isRecitingRef.current || linePointer >= linesToRead.length) {
+    const reciteNextLine = (idx: number) => {
+      if (!isRecitingRef.current || idx >= linesToRead.length) {
         setIsReciting(false);
         setActiveLine(null);
         setRecitationAccentBadge(null);
+        setAudioCurrentTime(0);
+        linePointerRef.current = 0;
         return;
       }
 
-      const item = linesToRead[linePointer];
+      linePointerRef.current = idx;
+      setCurrentLineIndex(idx);
+      setAudioCurrentTime(idx * 3.5);
+
+      const item = linesToRead[idx];
       setActiveLine({ stanzaIdx: item.stanzaIdx, lineIdx: item.lineIdx });
+      setCurrentVerseSnippet(item.text);
 
       const spokenText = preparePoeticTextForVoice(
         item.text,
@@ -369,13 +527,14 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
       if (resolvedPlan.voice) {
         utterance.voice = resolvedPlan.voice;
       }
-      utterance.rate = resolvedPlan.rate;
+      utterance.rate = resolvedPlan.rate * playbackRate;
       utterance.pitch = resolvedPlan.pitch;
 
       utterance.onend = () => {
         if (!isRecitingRef.current) return;
-        linePointer++;
-        setTimeout(reciteNextLine, resolvedPlan.isFounder || resolvedPlan.accentId === 'native-urdu-hindi' ? 180 : 130);
+        setTimeout(() => {
+          reciteNextLine(idx + 1);
+        }, (resolvedPlan.isFounder || resolvedPlan.accentId === 'native-urdu-hindi' ? 180 : 130) / playbackRate);
       };
 
       utterance.onerror = () => {
@@ -387,13 +546,15 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
       window.speechSynthesis.speak(utterance);
     };
 
-    reciteNextLine();
+    reciteNextLine(startIdx);
   }, [
     artwork,
     isReciting,
     isPlayingAudioRecording,
     selectedAccent,
-    isAuthorAfshaan
+    isAuthorAfshaan,
+    playbackRate,
+    setupAudioListeners
   ]);
 
   // Keyboard Shortcuts Listener
@@ -868,9 +1029,35 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                     </button>
                   </div>
 
+                  {/* Spotify Recital Player Scrubber Bar (Minute/Second Seeking & Stanza Jump) */}
+                  {(isReciting || Boolean(poetry.audioRecitationUrl)) && (
+                    <div className="w-full max-w-xl mx-auto mt-4 mb-3 animate-fadeIn">
+                      <SpotifyRecitalPlayer
+                        mode={poetry.audioRecitationUrl ? 'authentic-audio' : 'speech-synthesis'}
+                        isPlaying={isReciting}
+                        currentTime={audioCurrentTime}
+                        duration={audioDuration}
+                        currentLineIndex={currentLineIndex}
+                        totalLines={totalLinesCount || (poetry.stanzas.join('\n').split('\n').filter(Boolean).length)}
+                        currentLineText={currentVerseSnippet}
+                        reciterBadge={recitationAccentBadge?.voiceName || (poetry.audioRecitationUrl ? 'Authentic Oral Recitation' : 'Urdu/Hindi Poetic Voice')}
+                        isUrduHindi={recitationAccentBadge?.isUrduHindi ?? (selectedAccent === 'native-urdu-hindi' || selectedAccent === 'founder-poet')}
+                        accentFlag={VOICE_ACCENT_PROFILES.find((p) => p.id === selectedAccent)?.flag || '✨'}
+                        playbackRate={playbackRate}
+                        onTogglePlay={handleRecite}
+                        onSeek={handleSeek}
+                        onSkipSeconds={handleSkipSeconds}
+                        onSeekLine={handleSeekSpeechLine}
+                        onRestart={handleRestart}
+                        onChangePlaybackRate={handleChangePlaybackRate}
+                        className="shadow-2xl"
+                      />
+                    </div>
+                  )}
+
                   {/* Active Recitation Accent & Language Badge */}
                   {isReciting && recitationAccentBadge && (
-                    <div className="w-full flex justify-center mt-3 animate-fadeIn">
+                    <div className="w-full flex justify-center mt-2 animate-fadeIn">
                       <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#c9a875]/20 via-black/80 to-[#c9a875]/20 border border-[#dfbd87]/50 shadow-[0_0_15px_rgba(201,168,117,0.3)]">
                         <span className="w-2 h-2 rounded-full bg-[#dfbd87] animate-ping" />
                         <span className="text-[11px] font-mono-code text-[#f8e7c9]">
