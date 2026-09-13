@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Heart, Bookmark, Play, Sparkles, Image, Film, Palette, PenTool, Share2, Layers } from 'lucide-react';
 import { Artwork, ArtCategory } from '../types';
 import { PoetryCard } from './PoetryCard';
@@ -54,22 +54,22 @@ const getColumnCountAndGap = (
   density: GridDensity = 'curatorial'
 ): { cols: number; gap: number } => {
   if (density === 'grande') {
-    if (width >= 1024) return { cols: 2, gap: 48 };
-    if (width >= 640)  return { cols: 2, gap: 36 };
-    return { cols: 1, gap: 24 };
+    if (width >= 1024) return { cols: 2, gap: 36 };
+    if (width >= 640)  return { cols: 2, gap: 28 };
+    return { cols: 1, gap: 20 };
   }
 
   if (density === 'archive') {
-    if (width >= 1280) return { cols: 4, gap: 26 };
-    if (width >= 1024) return { cols: 3, gap: 24 };
+    if (width >= 1280) return { cols: 4, gap: 24 };
+    if (width >= 1024) return { cols: 3, gap: 22 };
     if (width >= 640)  return { cols: 2, gap: 20 };
     return { cols: 1, gap: 16 };
   }
 
   // Default: 'curatorial' - spacious 3-column salon layout
-  if (width >= 1280) return { cols: 3, gap: 38 };
-  if (width >= 1024) return { cols: 3, gap: 32 };
-  if (width >= 640)  return { cols: 2, gap: 28 };
+  if (width >= 1280) return { cols: 3, gap: 32 };
+  if (width >= 1024) return { cols: 3, gap: 28 };
+  if (width >= 640)  return { cols: 2, gap: 24 };
   return { cols: 1, gap: 20 };
 };
 
@@ -276,7 +276,7 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
       </div>
 
       {/* 2. Museum Caption Plaque */}
-      <div className="pt-3 px-1 pb-0.5 flex flex-col gap-1.5 select-none">
+      <div className="pt-3 px-3.5 pb-3 flex flex-col gap-1.5 select-none">
         <div className="flex items-center justify-between text-[10px] font-mono-code text-[#c9a875] tracking-wider">
           <span>#AQ-{(artwork.year || '2026')}-{artwork.id.slice(-4).toUpperCase()}</span>
           <span className="text-neutral-400 capitalize">{artwork.medium || artwork.category}</span>
@@ -284,7 +284,7 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
         <h3 className="text-base sm:text-lg font-serif-display font-light text-white group-hover:text-[#f8f5eb] transition-colors leading-snug truncate">
           {artwork.title}
         </h3>
-        <div className="flex items-center justify-between text-xs text-neutral-400 font-mono-code pt-0.5 border-t border-white/[0.06]">
+        <div className="flex items-center justify-between text-xs text-neutral-400 font-mono-code pt-1 border-t border-white/[0.08]">
           <span className="text-neutral-300 truncate max-w-[150px] sm:max-w-[200px]">
             {artwork.artist.name}
           </span>
@@ -304,80 +304,6 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
   );
 };
 
-// ─── JS Masonry Engine Hook ───────────────────────────────────────────────────
-
-/**
- * Computes absolute (top, left, width, height) for each item using the
- * "shortest column" greedy algorithm — the same one Pinterest uses.
- * Recalculates automatically via ResizeObserver whenever container width changes.
- */
-const useMasonryLayout = (
-  artworks: Artwork[],
-  containerRef: React.RefObject<HTMLDivElement | null>,
-  density: GridDensity = 'curatorial'
-) => {
-  const [positions, setPositions] = useState<
-    { top: number; left: number; width: number; height: number }[]
-  >([]);
-  const [totalHeight, setTotalHeight] = useState(0);
-
-  const compute = useCallback(() => {
-    const container = containerRef.current;
-    if (!container || artworks.length === 0) return;
-
-    const containerWidth = container.clientWidth;
-    if (containerWidth === 0) return;
-
-    const { cols, gap } = getColumnCountAndGap(containerWidth, density);
-    const colWidth = (containerWidth - gap * (cols - 1)) / cols;
-    const colHeights = new Array<number>(cols).fill(0);
-
-    const newPositions = artworks.map((artwork) => {
-      // Shortest column wins
-      const shortestColIdx = colHeights.reduce(
-        (minIdx, h, i) => (h < colHeights[minIdx] ? i : minIdx),
-        0
-      );
-
-      let itemHeight: number;
-      if (artwork.category === 'poetry') {
-        // Poetry cards: standardized disciplined card height for parchment matting + museum caption plaque
-        itemHeight = 520;
-      } else {
-        const ratio = getAspectRatioValue(artwork.aspectRatio);
-        // Visual container + museum plaque height
-        itemHeight = colWidth * ratio + 86;
-      }
-
-      const top  = colHeights[shortestColIdx];
-      const left = shortestColIdx * (colWidth + gap);
-      colHeights[shortestColIdx] += itemHeight + gap;
-
-      return { top, left, width: colWidth, height: itemHeight };
-    });
-
-    setPositions(newPositions);
-    const maxColHeight = colHeights.length > 0 ? Math.max(...colHeights) : 0;
-    setTotalHeight(maxColHeight > 0 ? maxColHeight + 60 : 0);
-  }, [artworks, containerRef, density]);
-
-  // Recompute whenever artworks or density change
-  useEffect(() => {
-    compute();
-  }, [compute]);
-
-  // Recompute whenever the container is resized (responsive)
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const observer = new ResizeObserver(() => compute());
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, [containerRef, compute]);
-
-  return { positions, totalHeight };
-};
-
 // ─── MasonryGrid Component ────────────────────────────────────────────────────
 
 export const MasonryGrid: React.FC<MasonryGridProps> = ({
@@ -394,7 +320,86 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
   density = 'curatorial'
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { positions, totalHeight } = useMasonryLayout(artworks, containerRef, density);
+  const [containerWidth, setContainerWidth] = useState<number>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth > 0) {
+      return window.innerWidth;
+    }
+    return 1280;
+  });
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current && containerRef.current.clientWidth > 0) {
+        setContainerWidth(containerRef.current.clientWidth);
+      } else if (typeof window !== 'undefined' && window.innerWidth > 0) {
+        setContainerWidth(window.innerWidth);
+      }
+    };
+
+    updateWidth();
+
+    const container = containerRef.current;
+    let observer: ResizeObserver | null = null;
+    if (container && typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(updateWidth);
+      observer.observe(container);
+    }
+
+    window.addEventListener('resize', updateWidth);
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener('resize', updateWidth);
+    };
+  }, []);
+
+  const { cols, gap } = useMemo(
+    () => getColumnCountAndGap(containerWidth, density),
+    [containerWidth, density]
+  );
+
+  // Distribute artworks across columns using balanced height estimation
+  // This guarantees natural document flow (0% overlap, 100% equal horizontal and vertical gap)
+  const columns = useMemo(() => {
+    if (cols <= 1) {
+      return [artworks.map((artwork, originalIndex) => ({ artwork, originalIndex }))];
+    }
+
+    const colsArr: { artwork: Artwork; originalIndex: number }[][] = Array.from(
+      { length: cols },
+      () => []
+    );
+    const colHeights = new Array<number>(cols).fill(0);
+
+    artworks.forEach((artwork, originalIndex) => {
+      // Find column with smallest current accumulated height
+      let shortestColIdx = 0;
+      for (let c = 1; c < cols; c++) {
+        if (colHeights[c] < colHeights[shortestColIdx]) {
+          shortestColIdx = c;
+        }
+      }
+
+      colsArr[shortestColIdx].push({ artwork, originalIndex });
+
+      // Approximate visual weight to keep bottoms balanced
+      let weight = 1.0;
+      if (artwork.category === 'poetry') {
+        const stanzaCount = artwork.poetryContent?.stanzas?.length || 2;
+        weight = Math.min(1.4, 0.95 + stanzaCount * 0.1);
+      } else {
+        switch (artwork.aspectRatio) {
+          case 'tall': weight = 1.35; break;
+          case 'portrait': weight = 1.25; break;
+          case 'wide': weight = 0.75; break;
+          case 'ultrawide': weight = 0.6; break;
+          case 'square': default: weight = 1.0; break;
+        }
+      }
+      colHeights[shortestColIdx] += weight;
+    });
+
+    return colsArr;
+  }, [artworks, cols]);
 
   if (artworks.length === 0) {
     return (
@@ -418,66 +423,63 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
     <div
       id="gallery-masonry-container"
       ref={containerRef}
-      className="relative w-full pb-16"
+      className="w-full pb-16 grid items-start"
       style={{
-        height: totalHeight > 0 ? `${totalHeight}px` : 'auto',
-        minHeight: '400px'
+        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+        gap: `${gap}px`,
       }}
     >
-      {artworks.map((artwork, index) => {
-        const pos = positions[index];
-        // Don't render until positions are computed (prevents FOUC)
-        if (!pos) return null;
+      {columns.map((columnArtworks, colIdx) => (
+        <div
+          key={`gallery-col-${colIdx}`}
+          className="flex flex-col w-full min-w-0"
+          style={{ gap: `${gap}px` }}
+        >
+          {columnArtworks.map(({ artwork, originalIndex }) => {
+            if (artwork.category === 'poetry' && artwork.poetryContent) {
+              return (
+                <motion.div
+                  key={artwork.id}
+                  initial={{ opacity: 0, y: 35 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-50px' }}
+                  transition={{
+                    duration: 0.75,
+                    ease: [0.16, 1, 0.3, 1],
+                    delay: Math.min((originalIndex % 4) * 0.08, 0.28)
+                  }}
+                  className="w-full"
+                >
+                  <PoetryCard
+                    artwork={artwork}
+                    onSelect={onSelectArtwork}
+                    onToggleLike={onToggleLike}
+                    onToggleSave={onToggleSave}
+                    onSelectArtist={onSelectArtist}
+                    onShare={onShareArtwork}
+                    onAddToMoodBoard={onAddToMoodBoard}
+                    onOpenBardModal={onOpenBardModal}
+                  />
+                </motion.div>
+              );
+            }
 
-        const itemStyle: React.CSSProperties = {
-          position: 'absolute',
-          top:   pos.top,
-          left:  pos.left,
-          width: pos.width,
-        };
-
-        if (artwork.category === 'poetry' && artwork.poetryContent) {
-          return (
-            <motion.div
-              key={artwork.id}
-              initial={{ opacity: 0, y: 35 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{
-                duration: 0.75,
-                ease: [0.16, 1, 0.3, 1],
-                delay: Math.min((index % 4) * 0.08, 0.28)
-              }}
-              style={itemStyle}
-            >
-              <PoetryCard
-                artwork={artwork}
-                onSelect={onSelectArtwork}
-                onToggleLike={onToggleLike}
-                onToggleSave={onToggleSave}
-                onSelectArtist={onSelectArtist}
-                onShare={onShareArtwork}
-                onAddToMoodBoard={onAddToMoodBoard}
-                onOpenBardModal={onOpenBardModal}
-              />
-            </motion.div>
-          );
-        }
-
-        return (
-          <div key={artwork.id} style={itemStyle}>
-            <ArtworkParallaxCard
-              artwork={artwork}
-              index={index}
-              onSelectArtwork={onSelectArtwork}
-              onToggleLike={onToggleLike}
-              onToggleSave={onToggleSave}
-              onShareArtwork={onShareArtwork}
-              onAddToMoodBoard={onAddToMoodBoard}
-            />
-          </div>
-        );
-      })}
+            return (
+              <div key={artwork.id} className="w-full">
+                <ArtworkParallaxCard
+                  artwork={artwork}
+                  index={originalIndex}
+                  onSelectArtwork={onSelectArtwork}
+                  onToggleLike={onToggleLike}
+                  onToggleSave={onToggleSave}
+                  onShareArtwork={onShareArtwork}
+                  onAddToMoodBoard={onAddToMoodBoard}
+                />
+              </div>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 };

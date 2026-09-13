@@ -254,7 +254,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
 
   return (
     <div id="about-us-view" className="space-y-24 py-6 sm:py-10 max-w-6xl mx-auto px-4 sm:px-6">
-      
+
       {/* ─────────────────────────────────────────────────────────────
           SECTION 1: OUR VISIONARY & CREATOR (AFSHAAN SHAIKH EXCLUSIVELY)
          ───────────────────────────────────────────────────────────── */}
@@ -280,7 +280,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#dfbd87]/5 rounded-full blur-3xl pointer-events-none" />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 p-6 sm:p-10 lg:p-14 relative z-10 items-center">
-            
+
             {/* Left: Portrait Canvas */}
             <div className="lg:col-span-5 flex flex-col items-center">
               <div className="relative group w-full max-w-sm">
@@ -296,7 +296,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                   />
                   {/* Subtle Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#06070a] via-transparent to-transparent opacity-80" />
-                  
+
                   {/* Edit Photo Trigger (Restricted exclusively to Afshaan Shaikh) */}
                   {isFounderLoggedIn && onOpenEditProfile && (
                     <button
@@ -362,7 +362,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
 
             {/* Right: Visionary Bio & Disciplines */}
             <div className="lg:col-span-7 space-y-6">
-              
+
               {/* Name & Titles */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between flex-wrap gap-2">
@@ -392,8 +392,8 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
 
               {/* Bio & Evocative Manifesto */}
               <p className="text-sm sm:text-base text-neutral-300 font-sans leading-relaxed">
-                Forging seamless harmony between algorithmic computation and boundless human expression. 
-                In an era saturated with ephemeral noise, every interface, shader, and lyric card in this sanctuary 
+                Forging seamless harmony between algorithmic computation and boundless human expression.
+                In an era saturated with ephemeral noise, every interface, shader, and lyric card in this sanctuary
                 is created with deliberate craftsmanship—an architectural devotion to permanence where code breathes with the soul of fine art.
               </p>
 
@@ -484,7 +484,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
       <section className="space-y-12">
         <div className="p-8 sm:p-12 rounded-2xl bg-gradient-to-r from-neutral-950 via-[#0e1017] to-neutral-950 border border-[#c9a875]/30 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-80 h-80 bg-[#c9a875]/5 rounded-full blur-3xl pointer-events-none" />
-          
+
           <div className="space-y-8 relative z-10">
             <div className="space-y-3 text-center sm:text-left">
               <span className="text-[10px] uppercase tracking-[0.3em] text-[#c9a875] font-mono-code font-bold flex items-center justify-center sm:justify-start gap-2">
@@ -534,7 +534,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
          ───────────────────────────────────────────────────────────── */}
       <section id="connect-section" className="pt-8 border-t border-white/10 scroll-mt-28">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
-          
+
           {/* Left Column: Direct Inquiries Info */}
           <div className="lg:col-span-5 space-y-6">
             <div className="space-y-3">
@@ -548,8 +548,8 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
             </div>
 
             <p className="text-sm sm:text-base text-neutral-400 font-sans leading-relaxed max-w-md">
-              The Artisan's Quill operates at the vanguard of artistry and modern engineering. 
-              Whether you seek to acquire a piece, commission bespoke poetry, discuss software architecture, 
+              The Artisan's Quill operates at the vanguard of artistry and modern engineering.
+              Whether you seek to acquire a piece, commission bespoke poetry, discuss software architecture,
               or explore creative collaborations with Afshaan Shaikh, our atelier is at your disposal.
             </p>
 
@@ -604,7 +604,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                 <div className="w-14 h-14 rounded-full bg-[#c9a875]/20 border-2 border-[#c9a875] flex items-center justify-center mx-auto text-[#dfbd87] shadow-[0_0_30px_rgba(201,168,117,0.3)]">
                   <CheckCircle2 className="w-7 h-7 text-[#e8c690]" />
                 </div>
-                
+
                 <div className="space-y-2">
                   <span className="text-[10px] font-mono-code uppercase tracking-[0.25em] text-[#c9a875]">
                     Concierge Transmission Complete
@@ -624,7 +624,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
                       Live
                     </span>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                     {/* Direct WhatsApp Chat */}
                     <a
@@ -671,7 +671,7 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
               </div>
             ) : (
               <form onSubmit={(e) => handleSubmit(e, 'both')} className="space-y-5">
-                
+
                 {/* Full Name */}
                 <div className="space-y-1.5">
                   <label className="block text-[10px] font-mono-code uppercase tracking-[0.2em] text-[#c9a875] font-semibold">
