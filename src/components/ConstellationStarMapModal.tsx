@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Sparkles, Compass, Eye, Filter, Zap, Info, Feather } from 'lucide-react';
 import { Artwork } from '../types';
+import { CosmosLiveArtworkMedia } from './CosmosLiveArtworkMedia';
 
 interface ConstellationStarMapModalProps {
   isOpen: boolean;
@@ -393,43 +394,19 @@ export const ConstellationStarMapModal: React.FC<ConstellationStarMapModalProps>
           {/* Holographic 3D Glass Preview Tooltip */}
           {hoveredNode && (
             <div
-              className="absolute z-20 pointer-events-none transform -translate-x-1/2 -translate-y-full mb-4 w-64 rounded-xl ultra-glass-elevated border border-[#c9a875]/50 p-3 shadow-[0_0_30px_rgba(201,168,117,0.3)] animate-in fade-in zoom-in-95 duration-150"
+              className="absolute z-20 pointer-events-none mb-4 w-72 rounded-xl ultra-glass-elevated border border-[#c9a875]/50 p-3 shadow-[0_0_30px_rgba(201,168,117,0.3)] animate-in fade-in zoom-in-95 duration-150"
               style={{
-                left: `${hoverPos.x}px`,
-                top: `${hoverPos.y - 15}px`
+                left: `${Math.max(145, Math.min(window.innerWidth - 145, hoverPos.x))}px`,
+                top: `${hoverPos.y < 220 ? hoverPos.y + 20 : hoverPos.y - 15}px`,
+                transform: hoverPos.y < 220 ? 'translate(-50%, 0)' : 'translate(-50%, -100%)'
               }}
             >
               {/* Holographic Tooltip Media Container */}
-              <div className="h-32 w-full rounded-lg overflow-hidden mb-2.5 bg-gradient-to-br from-[#1b1713] via-[#0d0f14] to-black border border-[#c9a875]/30 relative flex items-center justify-center shadow-inner">
-                {hoveredNode.artwork.category === 'video' || hoveredNode.artwork.mediaUrl?.match(/\.(mp4|webm|mov)(\?.*)?$/i) ? (
-                  <video
-                    src={hoveredNode.artwork.mediaUrl}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
-                ) : hoveredNode.artwork.category === 'poetry' ? (
-                  <div className="w-full h-full p-3 bg-gradient-to-b from-[#251d15] to-[#0d0a08] flex flex-col items-center justify-center text-center">
-                    <Feather className="w-6 h-6 text-[#dfbd87] mb-1 opacity-90 drop-shadow-sm" />
-                    <span className="text-[10px] font-serif italic text-[#f4ecd8] line-clamp-2 px-2 leading-relaxed">
-                      "{hoveredNode.artwork.poetryContent?.stanzas?.[0]?.split('\n')[0] || hoveredNode.artwork.description || 'Illuminated Verse'}"
-                    </span>
-                  </div>
-                ) : (
-                  <img
-                    src={hoveredNode.artwork.thumbnailUrl || hoveredNode.artwork.mediaUrl}
-                    alt={hoveredNode.artwork.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                )}
-                <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-sm border border-white/15 text-[8px] font-mono-code uppercase text-[#dfbd87] flex items-center gap-1 shadow-sm">
-                  {hoveredNode.artwork.category === 'video' ? '🎬 Video' : hoveredNode.artwork.category === 'poetry' ? '🪶 Poetry' : '🎨 Art'}
-                </div>
+              <div className="h-36 w-full rounded-lg overflow-hidden mb-2.5 bg-gradient-to-br from-[#1b1713] via-[#0d0f14] to-black border border-[#c9a875]/30 relative shadow-inner">
+                <CosmosLiveArtworkMedia
+                  artwork={hoveredNode.artwork}
+                  accentColor={hoveredNode.color}
+                />
               </div>
 
               <h4 className="text-xs font-serif font-bold text-white line-clamp-1">

@@ -18,6 +18,7 @@ import {
   Layers
 } from 'lucide-react';
 import { Artwork, ArtCategory } from '../types';
+import { CosmosLiveArtworkMedia } from './CosmosLiveArtworkMedia';
 
 interface ConstellationCosmosViewProps {
   artworks: Artwork[];
@@ -114,8 +115,15 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const isMouseOverTooltipRef = useRef(false);
   const animFrameIdRef = useRef<number | null>(null);
   const nodesRef = useRef<StarNode3D[]>([]);
+  const hoveredNodeRef = useRef<typeof hoveredNode>(null);
+
+  useEffect(() => {
+    hoveredNodeRef.current = hoveredNode;
+  }, [hoveredNode]);
 
   // Camera State
   const cameraRef = useRef({
@@ -587,6 +595,23 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
       projectedStars.forEach((star) => {
         const { node, px, py, scale, isMatch, isMediumSelected, isHovered } = star;
 
+        // Real-time track tooltip screen position with 3D galaxy rotation
+        if (isHovered && tooltipRef.current && canvas) {
+          const sx = px / dpr;
+          const sy = py / dpr;
+          const cardW = 320;
+          const canvasW = canvas.offsetWidth || window.innerWidth;
+          const clampedX = Math.max(cardW / 2 + 16, Math.min(canvasW - cardW / 2 - 16, sx));
+          const isNearTop = sy < 280;
+          const topY = isNearTop ? sy + 24 : sy - 16;
+
+          tooltipRef.current.style.left = `${clampedX}px`;
+          tooltipRef.current.style.top = `${topY}px`;
+          tooltipRef.current.style.transform = isNearTop
+            ? 'translate(-50%, 0)'
+            : 'translate(-50%, -100%)';
+        }
+
         // Visual dimming for filtered or non-matching stars
         let alpha = isMediumSelected ? (isMatch ? 1.0 : 0.22) : 0.12;
         if (isHovered) alpha = 1.0;
@@ -720,6 +745,9 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
       return;
     }
 
+    // Do not alter hover state while interacting with the tooltip card
+    if (isMouseOverTooltipRef.current) return;
+
     // Hit Testing Star Nodes
     const dpr = window.devicePixelRatio || 1;
     const width = canvas.offsetWidth * dpr;
@@ -777,7 +805,7 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
         }
       }
     } else {
-      if (hoveredNode) {
+      if (hoveredNode && !isMouseOverTooltipRef.current) {
         setHoveredNode(null);
       }
     }
@@ -1048,52 +1076,117 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
           className="w-full h-full cursor-grab active:cursor-grabbing block"
         />
 
-        {/* ── HOVERED STAR HUD INSPECTOR TOOLTIP CARD ── */}
+        {/* ── HOVERED STAR HUD INSPECTOR TOOLTIP CARD (LIVE ART PIECE PREVIEW) ── */}
         {hoveredNode && (
           <div
-            className="absolute z-30 pointer-events-none transform -translate-x-1/2 -translate-y-[120%] transition-all duration-150"
+            ref={tooltipRef}
+            onMouseEnter={() => {
+              isMouseOverTooltipRef.current = true;
+            }}
+            onMouseLeave={() => {
+              isMouseOverTooltipRef.current = false;
+              setHoveredNode(null);
+            }}
+            onClick={() => onSelectArtwork(hoveredNode.artwork)}
+            className="absolute z-30 pointer-events-auto cursor-pointer transition-opacity duration-150 group"
             style={{
-              left: `${hoveredNode.screenX}px`,
-              top: `${hoveredNode.screenY}px`
+              left: `${Math.max(160, Math.min((canvasRef.current?.offsetWidth || window.innerWidth) - 160, hoveredNode.screenX))}px`,
+              top: `${hoveredNode.screenY < 280 ? hoveredNode.screenY + 24 : hoveredNode.screenY - 16}px`,
+              transform: hoveredNode.screenY < 280 ? 'translate(-50%, 0)' : 'translate(-50%, -100%)'
             }}
           >
-            <div className="w-64 p-3 rounded-xl bg-[#090b14]/95 border border-[#c9a875]/50 backdrop-blur-2xl shadow-[0_10px_35px_rgba(0,0,0,0.85)] flex gap-3 items-center">
-              {/* Thumbnail Image */}
-              <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0 bg-neutral-900 border border-white/15 relative">
-                <img
-                  src={hoveredNode.artwork.thumbnailUrl || hoveredNode.artwork.mediaUrl}
-                  alt={hoveredNode.artwork.title}
-                  className="w-full h-full object-cover"
+            <div
+              className="w-72 sm:w-80 rounded-2xl bg-[#090b14]/95 border border-[#c9a875]/60 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_30px_rgba(201,168,117,0.25)] overflow-hidden transition-all duration-300 hover:border-[#dfbd87] hover:scale-[1.02]"
+              style={{
+                boxShadow: `0 20px 50px rgba(0,0,0,0.9), 0 0 30px ${hoveredNode.color}33`
+              }}
+            >
+              {/* 1. Live Art Piece Viewport (Autoplays video, illuminated verse, or pristine painting/drawing) */}
+              <div className="relative w-full h-36 overflow-hidden bg-[#05070d] border-b border-white/10">
+                <CosmosLiveArtworkMedia
+                  artwork={hoveredNode.artwork}
+                  accentColor={hoveredNode.color}
                 />
-              </div>
 
-              {/* Star Information */}
-              <div className="flex-1 min-w-0">
-                <span
-                  className="inline-block px-1.5 py-0.5 rounded text-[9px] font-mono-code uppercase font-bold tracking-wider mb-1"
-                  style={{
-                    backgroundColor: `${hoveredNode.color}22`,
-                    color: hoveredNode.color,
-                    border: `1px solid ${hoveredNode.color}55`
-                  }}
-                >
-                  {hoveredNode.artwork.category}
-                </span>
+                {/* Floating Category Pill */}
+                <div className="absolute top-2.5 left-2.5 z-20 pointer-events-none">
+                  <span
+                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[9px] font-mono-code uppercase font-bold tracking-wider shadow-md backdrop-blur-md"
+                    style={{
+                      backgroundColor: `${hoveredNode.color}25`,
+                      color: hoveredNode.color,
+                      border: `1px solid ${hoveredNode.color}66`
+                    }}
+                  >
+                    {MEDIUM_METRICS[hoveredNode.artwork.category]?.icon || <Sparkles className="w-2.5 h-2.5" />}
+                    <span>{hoveredNode.artwork.category}</span>
+                  </span>
+                </div>
 
-                <h4 className="text-xs font-serif-display font-medium text-white truncate">
-                  {hoveredNode.artwork.title}
-                </h4>
-
-                <p className="text-[10px] font-mono-code text-neutral-400 truncate">
-                  {hoveredNode.artwork.artist?.handle || hoveredNode.artwork.artist?.name}
-                </p>
-
-                <div className="flex items-center justify-between mt-1 text-[10px] font-mono-code text-neutral-400">
-                  <span className="flex items-center gap-1 text-rose-400">
+                {/* Floating Likes Pill */}
+                <div className="absolute top-2.5 right-2.5 z-20 pointer-events-none">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-md border border-white/15 text-[9px] font-mono-code text-rose-400 font-bold shadow-md">
                     <Heart className="w-2.5 h-2.5 fill-rose-400" />
                     <span>{hoveredNode.artwork.likesCount || 0}</span>
                   </span>
-                  <span className="text-[#dfbd87] text-[9px]">Click to inspect →</span>
+                </div>
+              </div>
+
+              {/* 2. Star Details & Information */}
+              <div className="p-3.5 space-y-2.5">
+                {/* Title and Medium */}
+                <div>
+                  <h4 className="text-sm font-serif-display font-medium text-white truncate group-hover:text-[#dfbd87] transition-colors">
+                    {hoveredNode.artwork.title}
+                  </h4>
+                  <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono-code text-neutral-400">
+                    <span className="truncate">
+                      {hoveredNode.artwork.medium || `${hoveredNode.artwork.category} Star`}
+                    </span>
+                    {hoveredNode.artwork.year && (
+                      <>
+                        <span className="text-neutral-600">•</span>
+                        <span>{hoveredNode.artwork.year}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Artist Row */}
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10 text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-5 h-5 rounded-full overflow-hidden shrink-0 border border-white/20 bg-neutral-800">
+                      <img
+                        src={hoveredNode.artwork.artist?.avatar || '/curatorial-masterpiece.svg'}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/curatorial-masterpiece.svg';
+                        }}
+                      />
+                    </div>
+                    <div className="min-w-0 flex items-center gap-1">
+                      <span className="text-[11px] font-medium text-neutral-200 truncate">
+                        {hoveredNode.artwork.artist?.name || 'Sanctuary Artist'}
+                      </span>
+                      {hoveredNode.artwork.artist?.verified && (
+                        <span className="text-[#c9a875] text-[10px]" title="Verified Artisan">✦</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <span className="text-[10px] font-mono-code text-neutral-400 shrink-0">
+                    {hoveredNode.artwork.artist?.handle}
+                  </span>
+                </div>
+
+                {/* Footer Action Strip */}
+                <div className="flex items-center justify-between pt-1 text-[10px] font-mono-code text-neutral-400">
+                  <span className="text-neutral-500 text-[9px]">Click star to inspect</span>
+                  <span className="text-[#dfbd87] group-hover:translate-x-0.5 transition-transform flex items-center gap-1 font-semibold text-[10px]">
+                    <span>View Piece in Detail</span>
+                    <span>→</span>
+                  </span>
                 </div>
               </div>
             </div>
