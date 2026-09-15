@@ -92,7 +92,11 @@ interface YTPlayerInstance {
   destroy: () => void;
 }
 
-export const AudioAmbiencePlayer: React.FC = () => {
+interface AudioAmbiencePlayerProps {
+  variant?: 'pill' | 'circular';
+}
+
+export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ variant = 'pill' }) => {
   // Playback State
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTrack, setCurrentTrack] = useState<UniversalTrack | null>(null);
@@ -621,64 +625,87 @@ export const AudioAmbiencePlayer: React.FC = () => {
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. TOP NAVIGATION CAPSULE PILL
+          2. TOP NAVIGATION CAPSULE PILL OR MOBILE CIRCULAR BUTTON
          ───────────────────────────────────────────────────────────── */}
       <div id="ambient-audio-suite" className="relative inline-flex items-center" ref={dropdownRef}>
-        <div className="flex items-center gap-0.5 p-1 rounded-full bg-[#0a0c10]/90 hover:bg-[#0a0c10] border border-[#c9a875]/45 hover:border-[#c9a875] transition-all duration-200 shadow-lg backdrop-blur-md">
-          {/* Play/Pause / Open Studio Trigger */}
+        {variant === 'circular' ? (
           <button
             id="toggle-ambience-music-btn"
-            onClick={togglePlay}
-            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:pl-3.5 sm:pr-3 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
               isPlaying && currentTrack
-                ? 'bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-extrabold shadow-[0_0_16px_rgba(201,168,117,0.6)]'
-                : 'text-[#e4be88] hover:text-white hover:bg-white/10'
+                ? 'bg-[#c9a875]/25 border-[#c9a875] text-[#dfbd87] shadow-[0_0_14px_rgba(201,168,117,0.4)]'
+                : 'bg-neutral-900/90 border-white/15 text-purple-300 hover:text-white hover:border-[#c9a875]/50'
             }`}
             title={
               isPlaying && currentTrack
-                ? `Pause ${currentTrack.title}`
-                : currentTrack
-                ? `Play ${currentTrack.title}`
-                : 'Open Universal Music Sanctuary'
+                ? `Playing: ${currentTrack.title}`
+                : 'Music Sanctuary'
             }
           >
-            {/* Music Equalizer Wave */}
-            <div className="flex items-center gap-1">
-              <Music
-                className={`w-3.5 h-3.5 ${
-                  isPlaying && currentTrack ? 'animate-bounce text-black' : 'text-[#c9a875]'
-                }`}
-              />
-              {isPlaying && currentTrack && (
-                <div className="flex items-end gap-0.5 h-3 w-3 px-0.5">
-                  <span className="w-0.5 bg-black animate-[pulse_0.8s_ease-in-out_infinite] h-full rounded-full" />
-                  <span className="w-0.5 bg-black animate-[pulse_1.1s_ease-in-out_infinite_0.2s] h-2/3 rounded-full" />
-                  <span className="w-0.5 bg-black animate-[pulse_0.9s_ease-in-out_infinite_0.4s] h-5/6 rounded-full" />
-                </div>
-              )}
-            </div>
-
-            <span className="text-xs uppercase tracking-widest whitespace-nowrap font-bold max-w-[125px] truncate hidden md:inline">
-              {isPlaying && currentTrack ? currentTrack.title : 'Music Sanctuary'}
-            </span>
-          </button>
-
-          {/* Quick Dropdown Toggle */}
-          <button
-            id="open-soundscape-menu-btn"
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className={`p-1.5 rounded-full text-neutral-300 hover:text-white hover:bg-white/15 transition-all cursor-pointer ${
-              isDropdownOpen ? 'bg-white/20 text-white' : ''
-            }`}
-            title="Music Menu"
-          >
-            <ChevronDown
-              className={`w-3.5 h-3.5 text-[#c9a875] transition-transform duration-200 ${
-                isDropdownOpen ? 'rotate-180' : ''
+            <Music
+              className={`w-4 h-4 ${
+                isPlaying && currentTrack ? 'animate-bounce text-[#c9a875]' : 'text-purple-300'
               }`}
             />
           </button>
-        </div>
+        ) : (
+          <div className="flex items-center gap-0.5 p-1 rounded-full bg-[#0a0c10]/90 hover:bg-[#0a0c10] border border-[#c9a875]/45 hover:border-[#c9a875] transition-all duration-200 shadow-lg backdrop-blur-md">
+            {/* Play/Pause / Open Studio Trigger */}
+            <button
+              id="toggle-ambience-music-btn"
+              onClick={togglePlay}
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:pl-3.5 sm:pr-3 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
+                isPlaying && currentTrack
+                  ? 'bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-extrabold shadow-[0_0_16px_rgba(201,168,117,0.6)]'
+                  : 'text-[#e4be88] hover:text-white hover:bg-white/10'
+              }`}
+              title={
+                isPlaying && currentTrack
+                  ? `Pause ${currentTrack.title}`
+                  : currentTrack
+                  ? `Play ${currentTrack.title}`
+                  : 'Open Universal Music Sanctuary'
+              }
+            >
+              {/* Music Equalizer Wave */}
+              <div className="flex items-center gap-1">
+                <Music
+                  className={`w-3.5 h-3.5 ${
+                    isPlaying && currentTrack ? 'animate-bounce text-black' : 'text-[#c9a875]'
+                  }`}
+                />
+                {isPlaying && currentTrack && (
+                  <div className="flex items-end gap-0.5 h-3 w-3 px-0.5">
+                    <span className="w-0.5 bg-black animate-[pulse_0.8s_ease-in-out_infinite] h-full rounded-full" />
+                    <span className="w-0.5 bg-black animate-[pulse_1.1s_ease-in-out_infinite_0.2s] h-2/3 rounded-full" />
+                    <span className="w-0.5 bg-black animate-[pulse_0.9s_ease-in-out_infinite_0.4s] h-5/6 rounded-full" />
+                  </div>
+                )}
+              </div>
+
+              <span className="text-xs uppercase tracking-widest whitespace-nowrap font-bold max-w-[125px] truncate hidden md:inline">
+                {isPlaying && currentTrack ? currentTrack.title : 'Music Sanctuary'}
+              </span>
+            </button>
+
+            {/* Quick Dropdown Toggle */}
+            <button
+              id="open-soundscape-menu-btn"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className={`p-1.5 rounded-full text-neutral-300 hover:text-white hover:bg-white/15 transition-all cursor-pointer ${
+                isDropdownOpen ? 'bg-white/20 text-white' : ''
+              }`}
+              title="Music Menu"
+            >
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-[#c9a875] transition-transform duration-200 ${
+                  isDropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+          </div>
+        )}
 
         {/* Floating Quick Dropdown (Default Non-Maximized State) */}
         {isDropdownOpen && (

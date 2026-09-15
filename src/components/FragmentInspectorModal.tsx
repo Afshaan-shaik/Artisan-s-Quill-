@@ -93,6 +93,27 @@ export const FragmentInspectorModal: React.FC<FragmentInspectorModalProps> = ({
     setIsDragging(false);
   };
 
+  // Mobile Touch Pan Handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (zoomLevel <= 1 || e.touches.length === 0) return;
+    setIsDragging(true);
+    const touch = e.touches[0];
+    setDragStart({ x: touch.clientX - position.x, y: touch.clientY - position.y });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || zoomLevel <= 1 || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    setPosition({
+      x: touch.clientX - dragStart.x,
+      y: touch.clientY - dragStart.y
+    });
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
   const resetView = () => {
     setZoomLevel(1);
     setPosition({ x: 0, y: 0 });
@@ -123,9 +144,10 @@ export const FragmentInspectorModal: React.FC<FragmentInspectorModalProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`fixed inset-0 z-[80] flex flex-col ${getBackgroundClass()} text-white select-none transition-colors duration-500 overflow-hidden animate-in fade-in duration-200`}
+      className={`fixed inset-0 z-[120] flex flex-col ${getBackgroundClass()} text-white select-none transition-colors duration-500 overflow-hidden animate-in fade-in duration-200`}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Top Header Control Bar */}
       <div className="flex items-center justify-between px-4 sm:px-8 py-3.5 border-b border-white/10 bg-black/85 backdrop-blur-2xl z-30 shrink-0">
@@ -217,11 +239,14 @@ export const FragmentInspectorModal: React.FC<FragmentInspectorModalProps> = ({
 
       {/* Main Interactive Canvas Area */}
       <div
-        className={`flex-1 relative flex items-center justify-center overflow-hidden ${
+        className={`flex-1 relative flex items-center justify-center overflow-hidden touch-none ${
           zoomLevel > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
         }`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Subtle Grid Overlay if active */}
         {showGrid && (
@@ -266,7 +291,7 @@ export const FragmentInspectorModal: React.FC<FragmentInspectorModalProps> = ({
         {zoomLevel > 1 && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-[#c9a875]/40 text-[#dfbd87] text-[10px] uppercase font-mono-code flex items-center gap-2 pointer-events-none shadow-lg z-20">
             <Move className="w-3 h-3 text-[#c9a875] animate-pulse" />
-            <span>Click & Drag to Pan Canvas</span>
+            <span>Drag or Touch to Pan Canvas</span>
           </div>
         )}
       </div>

@@ -307,7 +307,7 @@ export const PoetryCardExporterModal: React.FC<PoetryCardExporterModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center p-3 sm:p-6 bg-black/95 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/95 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-300">
       <canvas ref={canvasRef} className="hidden" />
 
       <div className="relative w-full max-w-5xl max-h-[92vh] bg-[#07090e] border border-[#c9a875]/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden">

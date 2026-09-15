@@ -23,6 +23,7 @@ interface ArtistSwitcherDropdownProps {
   onSelectCurrentUserProfile: () => void;
   onLogout?: () => void;
   onOpenCollectorVault?: () => void;
+  variant?: 'pill' | 'circular';
 }
 
 export const ArtistSwitcherDropdown: React.FC<ArtistSwitcherDropdownProps> = ({
@@ -32,7 +33,8 @@ export const ArtistSwitcherDropdown: React.FC<ArtistSwitcherDropdownProps> = ({
   onOpenEditProfile,
   onSelectCurrentUserProfile,
   onLogout,
-  onOpenCollectorVault
+  onOpenCollectorVault,
+  variant = 'pill'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -51,69 +53,96 @@ export const ArtistSwitcherDropdown: React.FC<ArtistSwitcherDropdownProps> = ({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Active Persona Pill in Navbar */}
-      <div className="flex items-center gap-1">
+      {variant === 'circular' ? (
+        /* Mobile Circular Avatar Persona Trigger */
         <button
           id="artist-profile-menu-btn"
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center gap-1.5 sm:gap-2.5 p-1 sm:pl-2 sm:pr-3 sm:py-1.5 rounded-full border transition-all cursor-pointer group shadow-lg ${
+          className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer overflow-hidden border shadow-md ${
             isOpen
-              ? 'bg-neutral-900 border-[#c9a875] ring-2 ring-[#c9a875]/40 shadow-[0_0_22px_rgba(201,168,117,0.4)]'
-              : 'bg-gradient-to-r from-neutral-950 via-[#0e1017] to-neutral-950 border-[#c9a875]/60 hover:border-[#c9a875] hover:shadow-[0_0_20px_rgba(201,168,117,0.35)]'
+              ? 'border-[#c9a875] ring-2 ring-[#c9a875]/70 shadow-[0_0_16px_rgba(201,168,117,0.5)] scale-105'
+              : 'border-[#c9a875]/80 ring-1 ring-[#c9a875]/30 hover:border-[#c9a875]'
           }`}
-          title={isGuest ? 'Guest Visitor — Sign in to access your atelier' : 'Your Private Artist Account & Settings'}
+          title={isGuest ? 'Guest Visitor — Sign in to access your atelier' : `Atelier Profile: ${currentUser.name}`}
         >
-          <div className="relative">
-            {isGuest ? (
-              // Guest avatar: ghost icon
-              <div className="w-8 h-8 rounded-full border border-neutral-600 bg-neutral-800 flex items-center justify-center">
-                <Ghost className="w-4 h-4 text-neutral-400" />
-              </div>
-            ) : (
-              <>
-                <Avatar
-                  src={currentUser.avatar}
-                  name={currentUser.name}
-                  className="w-8 h-8 rounded-full border border-[#c9a875] overflow-hidden shrink-0 shadow-sm"
-                  textSize="text-xs font-bold"
-                />
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 text-black rounded-full flex items-center justify-center text-[7px] font-extrabold border border-black shadow-xs">
-                  ✓
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="hidden sm:flex flex-col text-left">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs uppercase tracking-widest text-white font-bold whitespace-nowrap group-hover:text-[#f3e3cb] transition-colors">
-                {isGuest ? 'Guest' : currentUser.name}
-              </span>
-              {!isGuest && <ShieldCheck className="w-3 h-3 text-[#c9a875] shrink-0" />}
+          {isGuest ? (
+            <div className="w-full h-full bg-neutral-900 flex items-center justify-center">
+              <Ghost className="w-4 h-4 text-neutral-400" />
             </div>
-            <span className="text-[9px] uppercase tracking-wider text-[#c9a875] font-mono-code -mt-0.5 whitespace-nowrap">
-              {isGuest ? 'Visitor' : currentUser.handle}
-            </span>
-          </div>
-
-          <ChevronDown
-            className={`w-3.5 h-3.5 text-[#c9a875] ml-0.5 transition-transform duration-300 ${
-              isOpen ? 'rotate-180' : ''
-            }`}
-          />
+          ) : (
+            <Avatar
+              src={currentUser.avatar}
+              name={currentUser.name}
+              className="w-full h-full object-cover"
+              textSize="text-[10px] font-bold"
+            />
+          )}
         </button>
-
-        {/* Quick trigger to view profile — hidden for guests */}
-        {!isGuest && (
+      ) : (
+        /* Desktop Active Persona Pill in Navbar */
+        <div className="flex items-center gap-1">
           <button
-            onClick={onSelectCurrentUserProfile}
-            className="hidden md:flex p-2 rounded-full bg-neutral-900/90 hover:bg-neutral-800 border border-[#c9a875]/40 hover:border-[#c9a875] text-[#dfbd87] hover:text-white transition-all cursor-pointer shadow-sm hover:scale-105"
-            title="Open Your Public Profile"
+            id="artist-profile-menu-btn"
+            onClick={() => setIsOpen(!isOpen)}
+            className={`flex items-center gap-1.5 sm:gap-2.5 p-1 sm:pl-2 sm:pr-3 sm:py-1.5 rounded-full border transition-all cursor-pointer group shadow-lg ${
+              isOpen
+                ? 'bg-neutral-900 border-[#c9a875] ring-2 ring-[#c9a875]/40 shadow-[0_0_22px_rgba(201,168,117,0.4)]'
+                : 'bg-gradient-to-r from-neutral-950 via-[#0e1017] to-neutral-950 border-[#c9a875]/60 hover:border-[#c9a875] hover:shadow-[0_0_20px_rgba(201,168,117,0.35)]'
+            }`}
+            title={isGuest ? 'Guest Visitor — Sign in to access your atelier' : 'Your Private Artist Account & Settings'}
           >
-            <User className="w-4 h-4" />
+            <div className="relative">
+              {isGuest ? (
+                // Guest avatar: ghost icon
+                <div className="w-8 h-8 rounded-full border border-neutral-600 bg-neutral-800 flex items-center justify-center">
+                  <Ghost className="w-4 h-4 text-neutral-400" />
+                </div>
+              ) : (
+                <>
+                  <Avatar
+                    src={currentUser.avatar}
+                    name={currentUser.name}
+                    className="w-8 h-8 rounded-full border border-[#c9a875] overflow-hidden shrink-0 shadow-sm"
+                    textSize="text-xs font-bold"
+                  />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 text-black rounded-full flex items-center justify-center text-[7px] font-extrabold border border-black shadow-xs">
+                    ✓
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="hidden sm:flex flex-col text-left">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs uppercase tracking-widest text-white font-bold whitespace-nowrap group-hover:text-[#f3e3cb] transition-colors">
+                  {isGuest ? 'Guest' : currentUser.name}
+                </span>
+                {!isGuest && <ShieldCheck className="w-3 h-3 text-[#c9a875] shrink-0" />}
+              </div>
+              <span className="text-[9px] uppercase tracking-wider text-[#c9a875] font-mono-code -mt-0.5 whitespace-nowrap">
+                {isGuest ? 'Visitor' : currentUser.handle}
+              </span>
+            </div>
+
+            <ChevronDown
+              className={`w-3.5 h-3.5 text-[#c9a875] ml-0.5 transition-transform duration-300 ${
+                isOpen ? 'rotate-180' : ''
+              }`}
+            />
           </button>
-        )}
-      </div>
+
+          {/* Quick trigger to view profile — hidden for guests */}
+          {!isGuest && (
+            <button
+              onClick={onSelectCurrentUserProfile}
+              className="hidden md:flex p-2 rounded-full bg-neutral-900/90 hover:bg-neutral-800 border border-[#c9a875]/40 hover:border-[#c9a875] text-[#dfbd87] hover:text-white transition-all cursor-pointer shadow-sm hover:scale-105"
+              title="Open Your Public Profile"
+            >
+              <User className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Dropdown Menu */}
       {isOpen && (

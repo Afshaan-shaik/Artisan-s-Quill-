@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Wrench,
   Palette,
@@ -9,9 +10,11 @@ import {
   Share2,
   FolderPlus,
   ChevronDown,
+  ChevronRight,
   Download,
   Smartphone,
-  Layers
+  Layers,
+  X
 } from 'lucide-react';
 import { Artwork } from '../types';
 
@@ -142,54 +145,129 @@ export const CuratorialToolkit: React.FC<CuratorialToolkitProps> = ({
         <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isOpen ? 'rotate-180 text-black' : 'text-[#c9a875]'}`} />
       </button>
 
-      {/* Expanded Dropdown Chamber */}
+      {/* Responsive Studio Suite Display */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-[#0b0e14]/98 border border-[#c9a875]/40 shadow-[0_25px_60px_rgba(0,0,0,0.95),0_0_30px_rgba(201,168,117,0.2)] backdrop-blur-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-200 divide-y divide-white/10">
-          {/* Header */}
-          <div className="px-3 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#c9a875]" />
-              <span className="text-[10px] uppercase font-mono-code font-bold tracking-widest text-[#dfbd87]">
-                Masterpiece Studio Suite
+        <>
+          {/* Mobile Native Bottom Sheet (<sm) via Portal */}
+          {typeof document !== 'undefined' &&
+            createPortal(
+              <div
+                id="mobile-curatorial-toolkit-overlay"
+                onClick={() => setIsOpen(false)}
+                className="sm:hidden fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex flex-col justify-end animate-in fade-in duration-200"
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full max-h-[85vh] overflow-y-auto bg-[#0a0d16] border-t border-[#c9a875]/60 rounded-t-3xl p-5 pb-8 shadow-2xl animate-in slide-in-from-bottom duration-300 space-y-3"
+                >
+                  {/* Pull handle */}
+                  <div className="w-12 h-1 bg-neutral-600 rounded-full mx-auto mb-2" />
+
+                  {/* Sheet Header */}
+                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#c9a875]" />
+                      <span className="font-serif-display text-base font-semibold text-white tracking-wide">
+                        Masterpiece Studio Suite
+                      </span>
+                    </div>
+                    <button
+                      id="mobile-toolkit-close-btn"
+                      onClick={() => setIsOpen(false)}
+                      className="p-1.5 rounded-full hover:bg-white/10 text-neutral-400 hover:text-white cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Tools List */}
+                  <div className="space-y-2 py-1">
+                    {tools.map((tool) => (
+                      <button
+                        key={tool.id}
+                        id={`mobile-tool-btn-${tool.id}`}
+                        onClick={() => {
+                          setIsOpen(false);
+                          tool.action();
+                        }}
+                        className="w-full p-3.5 rounded-2xl bg-white/[0.04] hover:bg-[#c9a875]/20 border border-white/10 hover:border-[#c9a875]/60 transition-all flex items-center gap-3.5 text-left cursor-pointer active:scale-[0.98]"
+                      >
+                        <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-[#c9a875] shrink-0">
+                          {tool.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-serif-display font-medium text-white truncate">
+                            {tool.name}
+                          </div>
+                          <div className="text-[11px] font-mono-code text-neutral-400 truncate">
+                            {tool.subtitle}
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-neutral-500 shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Cancel Button */}
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="w-full py-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-medium text-white text-center cursor-pointer mt-2"
+                  >
+                    Close Studio Suite
+                  </button>
+                </div>
+              </div>,
+              document.body
+            )}
+
+          {/* Desktop Dropdown Chamber (sm:block hidden) */}
+          <div className="hidden sm:block absolute right-0 mt-2 w-80 rounded-2xl bg-[#0b0e14]/98 border border-[#c9a875]/40 shadow-[0_25px_60px_rgba(0,0,0,0.95),0_0_30px_rgba(201,168,117,0.2)] backdrop-blur-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-200 divide-y divide-white/10">
+            {/* Header */}
+            <div className="px-3 py-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-[#c9a875]" />
+                <span className="text-[10px] uppercase font-mono-code font-bold tracking-widest text-[#dfbd87]">
+                  Masterpiece Studio Suite
+                </span>
+              </div>
+              <span className="text-[9px] font-mono-code text-neutral-500">
+                {tools.length} Tools
               </span>
             </div>
-            <span className="text-[9px] font-mono-code text-neutral-500">
-              {tools.length} Tools
-            </span>
-          </div>
 
-          {/* Tools Grid */}
-          <div className="py-2 space-y-1">
-            {tools.map((tool) => (
-              <button
-                key={tool.id}
-                onClick={() => {
-                  setIsOpen(false);
-                  tool.action();
-                }}
-                className="w-full p-2.5 rounded-xl hover:bg-[#c9a875]/15 border border-transparent hover:border-[#c9a875]/40 transition-all flex items-center gap-3 text-left group cursor-pointer"
-              >
-                <div className="p-2 rounded-lg bg-white/5 group-hover:bg-[#c9a875]/20 border border-white/10 group-hover:border-[#c9a875]/50 transition-colors shrink-0">
-                  {tool.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-serif-display font-medium text-white group-hover:text-[#dfbd87] transition-colors truncate">
-                    {tool.name}
+            {/* Tools Grid */}
+            <div className="py-2 space-y-1">
+              {tools.map((tool) => (
+                <button
+                  key={tool.id}
+                  onClick={() => {
+                    setIsOpen(false);
+                    tool.action();
+                  }}
+                  className="w-full p-2.5 rounded-xl hover:bg-[#c9a875]/15 border border-transparent hover:border-[#c9a875]/40 transition-all flex items-center gap-3 text-left group cursor-pointer"
+                >
+                  <div className="p-2 rounded-lg bg-white/5 group-hover:bg-[#c9a875]/20 border border-white/10 group-hover:border-[#c9a875]/50 transition-colors shrink-0">
+                    {tool.icon}
                   </div>
-                  <div className="text-[10px] font-mono-code text-neutral-400 truncate">
-                    {tool.subtitle}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-serif-display font-medium text-white group-hover:text-[#dfbd87] transition-colors truncate">
+                      {tool.name}
+                    </div>
+                    <div className="text-[10px] font-mono-code text-neutral-400 truncate">
+                      {tool.subtitle}
+                    </div>
                   </div>
-                </div>
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
 
-          {/* Footer Note */}
-          <div className="px-3 pt-2 text-[9px] font-mono-code text-neutral-500 flex items-center justify-between">
-            <span>The Artisan's Quill Suite</span>
-            <span>Esc to close</span>
+            {/* Footer Note */}
+            <div className="px-3 pt-2 text-[9px] font-mono-code text-neutral-500 flex items-center justify-between">
+              <span>The Artisan's Quill Suite</span>
+              <span>Esc to close</span>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

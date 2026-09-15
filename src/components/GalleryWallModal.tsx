@@ -130,7 +130,7 @@ export const GalleryWallModal: React.FC<GalleryWallModalProps> = ({
   const displayImage = artwork.mediaUrl || artwork.thumbnailUrl || (artwork.id === 'spotlight-masterpiece-1' || artwork.category === 'digital' ? '/curatorial-masterpiece.svg' : 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1600&q=80');
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/95 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/95 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-300">
       <div className="relative w-full max-w-7xl h-full max-h-[94vh] bg-[#050608] border border-[#c9a875]/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         
         {/* Top Header Controls */}
@@ -184,7 +184,7 @@ export const GalleryWallModal: React.FC<GalleryWallModalProps> = ({
           
           {/* Main 3D Salon Wall Viewport */}
           <div
-            className={`lg:col-span-8 xl:col-span-9 p-6 sm:p-12 md:p-16 flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-700 ${activeWall.bgClass}`}
+            className={`lg:col-span-8 xl:col-span-9 p-4 sm:p-12 md:p-16 flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-700 min-h-[280px] lg:min-h-0 ${activeWall.bgClass}`}
           >
             {/* Gallery Track Lighting Bloom */}
             <div

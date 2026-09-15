@@ -546,10 +546,26 @@ export const Navbar: React.FC<NavbarProps> = ({
           MOBILE APPARATUS & ATELIER EXPERIENCE (block md:hidden)
          ───────────────────────────────────────────────────────────── */}
       <div className="block md:hidden">
-        {/* Mobile Top App Bar (56px) */}
-        <div className="flex items-center justify-between h-14 px-3.5 bg-[#06070a]/98 backdrop-blur-2xl border-b border-white/10">
+        {/* Dynamic Island Status Bar Capsule (from Image 4 reference) */}
+        <div className="w-full pt-2 pb-1 flex items-center justify-center bg-[#06070a] border-b border-white/[0.04]">
+          <button
+            id="mobile-dynamic-island-sync-btn"
+            onClick={onOpenBackendModal}
+            className="inline-flex items-center gap-2 px-3.5 py-0.5 rounded-full bg-black/95 border border-white/15 text-[11px] font-mono-code text-neutral-200 shadow-md hover:border-[#c9a875]/60 hover:text-white transition-all cursor-pointer"
+            title="Centralized Real-Time Cloud Synchronization (500+ active connections)"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="font-medium tracking-wide">Live Sync 500+</span>
+          </button>
+        </div>
+
+        {/* Mobile Top App Bar (h-14 landscape:h-11 from Image 4 reference) */}
+        <div className="flex items-center justify-between h-14 landscape:h-11 px-3 bg-[#06070a]/98 backdrop-blur-2xl border-b border-white/10">
           
-          {/* Left Brand Logo & Title */}
+          {/* Left Brand Logo Badge & Title (from Image 4) */}
           <div
             id="mobile-brand-logo-btn"
             onClick={() => {
@@ -557,44 +573,44 @@ export const Navbar: React.FC<NavbarProps> = ({
               onSelectCategory('all');
               onSearchChange('');
             }}
-            className="flex items-center gap-2 cursor-pointer group shrink-0"
+            className="flex items-center gap-2.5 cursor-pointer group shrink-0"
             title="The Artisan's Quill — Home Atelier"
           >
-            <div className="p-1.5 rounded-lg bg-gradient-to-br from-white/15 to-white/5 border border-[#c9a875]/40 shadow-sm">
-              <Feather className="w-4 h-4 text-[#c9a875]" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-neutral-900/90 border border-white/15 flex items-center justify-center shadow-inner group-hover:border-[#c9a875]/60 transition-colors">
+              <Feather className="w-5 h-5 text-[#e0c49a]" />
             </div>
             <div className="flex flex-col">
-              <span className="font-serif-display text-base font-medium tracking-wide text-white leading-none">
+              <span className="font-serif-display text-[17px] sm:text-lg font-medium tracking-wide text-white leading-tight">
                 The Artisan's Quill
               </span>
-              <span className="text-[8px] uppercase tracking-[0.2em] text-[#c9a875]/80 font-mono-code mt-0.5">
-                Atelier Vault
+              <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.24em] text-[#c9a875] font-mono-code font-medium mt-0.5">
+                ATELIER & GALLERY VAULT
               </span>
             </div>
           </div>
 
-          {/* Right Action Suite: Search, Audio, Avatar/Profile, Drawer Menu */}
+          {/* Right Action Suite: 4 Circular Buttons (Search, Audio, Avatar, Menu) from Image 4 */}
           <div className="flex items-center gap-1.5 shrink-0">
-            {/* Search Toggle Icon */}
+            {/* 1. Search Circular Button */}
             <button
               id="mobile-search-toggle-btn"
               onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-              className={`p-2 rounded-full border transition-all cursor-pointer ${
+              className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all cursor-pointer ${
                 isMobileSearchOpen || searchQuery
                   ? 'bg-[#c9a875]/20 border-[#c9a875] text-[#dfbd87]'
-                  : 'bg-white/5 border-white/10 text-neutral-300 hover:text-white'
+                  : 'bg-neutral-900/90 border-white/15 text-cyan-400 hover:text-white hover:border-white/30'
               }`}
               title="Toggle Search"
             >
               <Search className="w-4 h-4" />
             </button>
 
-            {/* Audio Ambience Player */}
+            {/* 2. Audio Ambience Player (Circular Variant) */}
             <div className="relative">
-              <AudioAmbiencePlayer />
+              <AudioAmbiencePlayer variant="circular" />
             </div>
 
-            {/* Artist Profile Dropdown */}
+            {/* 3. Artist Profile Switcher (Circular Avatar Variant) */}
             <ArtistSwitcherDropdown
               currentUser={currentUser}
               onOpenCreateProfile={() => {
@@ -605,13 +621,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               onSelectCurrentUserProfile={onSelectCurrentUser}
               onLogout={onLogout}
               onOpenCollectorVault={onOpenCollectorVault}
+              variant="circular"
             />
 
-            {/* Sanctuary Menu Drawer Hamburger Trigger */}
+            {/* 4. Sanctuary Menu Drawer Hamburger Trigger */}
             <button
               id="mobile-menu-drawer-btn"
               onClick={() => setIsMobileDrawerOpen(true)}
-              className="p-2 rounded-full bg-white/5 border border-white/10 text-[#c9a875] hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+              className="w-9 h-9 rounded-full bg-neutral-900/90 border border-white/15 flex items-center justify-center text-neutral-200 hover:text-white hover:border-[#c9a875]/50 transition-all cursor-pointer"
               title="Open Sanctuary Menu"
             >
               <Menu className="w-4 h-4" />
@@ -650,12 +667,26 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         )}
 
-        {/* Mobile Category Rail or Context Breadcrumb */}
-        <div className="bg-[#050609]/95 border-b border-white/[0.06] px-3 py-2 flex items-center justify-between gap-2">
+        {/* Mobile Category Rail (Exact Image 4 reference with icons & gold active border) */}
+        <div className="bg-[#050609]/95 border-b border-white/[0.06] px-3 py-2 landscape:py-1 flex items-center justify-between gap-2">
           {activeView === 'feed' || activeView === 'saved' ? (
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 w-full">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 w-full">
               {categories.map((cat) => {
                 const isSelected = selectedCategory === cat.id;
+                // Category emoji badges matching Image 4
+                const emojiIcon =
+                  cat.id === 'all'
+                    ? '✦'
+                    : cat.id === 'poetry'
+                    ? '🪶'
+                    : cat.id === 'painting'
+                    ? '🎨'
+                    : cat.id === 'drawing'
+                    ? '✒️'
+                    : cat.id === 'digital'
+                    ? '🖼️'
+                    : '🎬';
+
                 return (
                   <button
                     key={cat.id}
@@ -665,13 +696,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                         onSelectView('feed');
                       }
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                       isSelected
-                        ? 'bg-[#c9a875]/20 text-white border border-[#c9a875] font-bold shadow-[0_0_12px_rgba(201,168,117,0.25)]'
-                        : 'text-neutral-400 hover:text-neutral-200 bg-white/5 border border-white/5'
+                        ? 'bg-neutral-950 text-[#fcedd2] border border-[#c9a875] font-semibold shadow-[0_0_12px_rgba(201,168,117,0.3)]'
+                        : 'text-neutral-300 hover:text-white bg-neutral-900/80 border border-white/10'
                     }`}
                   >
-                    <span>{cat.icon}</span>
+                    <span>{emojiIcon}</span>
                     <span>{cat.label}</span>
                   </button>
                 );
@@ -681,14 +712,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 id="mobile-date-filter-btn"
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-mono-code font-bold uppercase rounded-full border transition-all cursor-pointer shrink-0 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono-code font-bold uppercase rounded-full border transition-all cursor-pointer shrink-0 ${
                   showFilters || hasActiveDateFilter
                     ? 'bg-[#c9a875]/25 border-[#c9a875] text-[#dfbd87]'
-                    : 'bg-white/5 border-white/10 text-neutral-300'
+                    : 'bg-neutral-900/80 border-white/10 text-neutral-300'
                 }`}
                 title="Toggle Filter"
               >
-                <Filter className="w-3 h-3" />
+                <Filter className="w-3 h-3 text-[#c9a875]" />
                 <span>Filter</span>
                 {hasActiveDateFilter && <span className="w-1.5 h-1.5 rounded-full bg-[#c9a875]" />}
               </button>
@@ -761,7 +792,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         aria-label="Mobile Navigation Dock"
         className="block md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#06070a]/96 backdrop-blur-2xl border-t border-[#c9a875]/30 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] pb-[env(safe-area-inset-bottom,6px)]"
       >
-        <div className="flex items-center justify-around h-15 px-2">
+        <div className="flex items-center justify-around h-15 landscape:h-12 px-2">
           {/* 1. Feed / Atelier */}
           <button
             id="mobile-dock-feed-btn"
@@ -769,13 +800,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               onSelectView('feed');
               onSelectCategory('all');
             }}
-            className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center gap-1 landscape:gap-0.5 flex-1 py-1 landscape:py-0.5 transition-all cursor-pointer ${
               activeView === 'feed'
                 ? 'text-[#c9a875] font-bold'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <Layers className="w-5 h-5" />
+            <Layers className="w-5 h-5 landscape:w-4 landscape:h-4" />
             <span className="text-[9px] font-mono-code uppercase tracking-wider">Atelier</span>
           </button>
 
@@ -783,27 +814,27 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             id="mobile-dock-cosmos-btn"
             onClick={() => onSelectView('cosmos')}
-            className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center gap-1 landscape:gap-0.5 flex-1 py-1 landscape:py-0.5 transition-all cursor-pointer ${
               activeView === 'cosmos'
                 ? 'text-[#c9a875] font-bold'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-5 h-5 landscape:w-4 landscape:h-4" />
             <span className="text-[9px] font-mono-code uppercase tracking-wider">Cosmos</span>
           </button>
 
           {/* 3. Center Elevated Gold '+' Button */}
-          <div className="relative -top-3.5 flex flex-col items-center shrink-0 px-1">
+          <div className="relative -top-3.5 landscape:-top-2 flex flex-col items-center shrink-0 px-1">
             <button
               id="mobile-dock-create-btn"
               onClick={() => setIsMobileActionSheetOpen(true)}
-              className="w-13 h-13 rounded-full bg-gradient-to-tr from-[#c9a875] via-[#dfbd87] to-[#e4cb9c] text-black flex items-center justify-center shadow-[0_0_24px_rgba(201,168,117,0.7)] border-3 border-[#06070a] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              className="w-13 h-13 landscape:w-10 landscape:h-10 rounded-full bg-gradient-to-tr from-[#c9a875] via-[#dfbd87] to-[#e4cb9c] text-black flex items-center justify-center shadow-[0_0_24px_rgba(201,168,117,0.7)] border-3 border-[#06070a] hover:scale-105 active:scale-95 transition-all cursor-pointer"
               title="Create in Atelier"
             >
-              <Plus className="w-6 h-6 stroke-[2.5]" />
+              <Plus className="w-6 h-6 landscape:w-4 landscape:h-4 stroke-[2.5]" />
             </button>
-            <span className="text-[8px] font-mono-code uppercase tracking-widest text-[#dfbd87] font-bold mt-0.5">
+            <span className="text-[8px] font-mono-code uppercase tracking-widest text-[#dfbd87] font-bold mt-0.5 landscape:hidden">
               Create
             </span>
           </div>
@@ -812,13 +843,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             id="mobile-dock-exhibitions-btn"
             onClick={() => onSelectView('exhibitions')}
-            className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center gap-1 landscape:gap-0.5 flex-1 py-1 landscape:py-0.5 transition-all cursor-pointer ${
               activeView === 'exhibitions'
                 ? 'text-[#c9a875] font-bold'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <Compass className="w-5 h-5" />
+            <Compass className="w-5 h-5 landscape:w-4 landscape:h-4" />
             <span className="text-[9px] font-mono-code uppercase tracking-wider">Salons</span>
           </button>
 
@@ -826,13 +857,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             id="mobile-dock-saved-btn"
             onClick={() => onSelectView('saved')}
-            className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center gap-1 landscape:gap-0.5 flex-1 py-1 landscape:py-0.5 transition-all cursor-pointer ${
               activeView === 'saved'
                 ? 'text-[#c9a875] font-bold'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <Bookmark className="w-5 h-5" />
+            <Bookmark className="w-5 h-5 landscape:w-4 landscape:h-4" />
             <span className="text-[9px] font-mono-code uppercase tracking-wider">Saved</span>
           </button>
         </div>
