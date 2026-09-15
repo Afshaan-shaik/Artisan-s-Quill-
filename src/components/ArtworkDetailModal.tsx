@@ -1497,7 +1497,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
         </div>
 
         {/* Museum Keyboard Shortcuts & Navigation Hint Bar */}
-        <div className="flex items-center justify-between px-6 py-2.5 bg-[#07080c] border-t border-white/5 text-[10px] font-mono-code text-neutral-400 shrink-0">
+        <div className="hidden md:flex items-center justify-between px-6 py-2.5 bg-[#07080c] border-t border-white/5 text-[10px] font-mono-code text-neutral-400 shrink-0">
           <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
             <span className="flex items-center gap-1.5 text-neutral-500 font-bold uppercase tracking-wider">
               <Command className="w-3 h-3 text-[#c9a875]" /> Shortcuts:

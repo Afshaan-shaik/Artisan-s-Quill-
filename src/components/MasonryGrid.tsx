@@ -285,18 +285,32 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
           {artwork.title}
         </h3>
         <div className="flex items-center justify-between text-xs text-neutral-400 font-mono-code pt-1 border-t border-white/[0.08]">
-          <span className="text-neutral-300 truncate max-w-[150px] sm:max-w-[200px]">
+          <span className="text-neutral-300 truncate max-w-[140px] sm:max-w-[200px]">
             {artwork.artist.name}
           </span>
           <div className="flex items-center gap-3 shrink-0 text-[11px]">
-            <span className="text-neutral-400 flex items-center gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLike(artwork.id, artwork.isLiked, e);
+              }}
+              className="text-neutral-400 hover:text-rose-400 active:scale-90 flex items-center gap-1 p-1 -m-1 transition-all cursor-pointer"
+              title="Like artwork"
+            >
               <Heart className={`w-3.5 h-3.5 ${artwork.isLiked ? 'fill-rose-500 text-rose-500' : 'text-neutral-400'}`} />
-              {artwork.likesCount || 0}
-            </span>
-            <span className="text-neutral-400 flex items-center gap-1">
+              <span>{artwork.likesCount || 0}</span>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleSave(artwork.id, e);
+              }}
+              className="text-neutral-400 hover:text-[#dfbd87] active:scale-90 flex items-center gap-1 p-1 -m-1 transition-all cursor-pointer"
+              title="Save artwork to vault"
+            >
               <Bookmark className={`w-3.5 h-3.5 ${artwork.isSaved ? 'fill-[#c9a875] text-[#c9a875]' : 'text-neutral-400'}`} />
-              {artwork.savesCount || 0}
-            </span>
+              <span>{artwork.savesCount || 0}</span>
+            </button>
           </div>
         </div>
       </div>

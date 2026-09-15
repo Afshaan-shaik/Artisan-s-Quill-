@@ -56,7 +56,7 @@ export const ArtistSwitcherDropdown: React.FC<ArtistSwitcherDropdownProps> = ({
         <button
           id="artist-profile-menu-btn"
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-full border transition-all cursor-pointer group shadow-lg ${
+          className={`flex items-center gap-1.5 sm:gap-2.5 p-1 sm:pl-2 sm:pr-3 sm:py-1.5 rounded-full border transition-all cursor-pointer group shadow-lg ${
             isOpen
               ? 'bg-neutral-900 border-[#c9a875] ring-2 ring-[#c9a875]/40 shadow-[0_0_22px_rgba(201,168,117,0.4)]'
               : 'bg-gradient-to-r from-neutral-950 via-[#0e1017] to-neutral-950 border-[#c9a875]/60 hover:border-[#c9a875] hover:shadow-[0_0_20px_rgba(201,168,117,0.35)]'
@@ -84,7 +84,7 @@ export const ArtistSwitcherDropdown: React.FC<ArtistSwitcherDropdownProps> = ({
             )}
           </div>
 
-          <div className="flex flex-col text-left">
+          <div className="hidden sm:flex flex-col text-left">
             <div className="flex items-center gap-1.5">
               <span className="text-xs uppercase tracking-widest text-white font-bold whitespace-nowrap group-hover:text-[#f3e3cb] transition-colors">
                 {isGuest ? 'Guest' : currentUser.name}
@@ -108,16 +108,16 @@ export const ArtistSwitcherDropdown: React.FC<ArtistSwitcherDropdownProps> = ({
           <button
             onClick={onSelectCurrentUserProfile}
             className="hidden md:flex p-2 rounded-full bg-neutral-900/90 hover:bg-neutral-800 border border-[#c9a875]/40 hover:border-[#c9a875] text-[#dfbd87] hover:text-white transition-all cursor-pointer shadow-sm hover:scale-105"
-            title="Open Studio Profile Details"
+            title="Open Your Public Profile"
           >
-            <Layers className="w-3.5 h-3.5" />
+            <User className="w-4 h-4" />
           </button>
         )}
       </div>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-72 sm:w-80 rounded-2xl bg-[#090b10]/98 border border-[#c9a875]/50 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(201,168,117,0.2)] backdrop-blur-2xl p-4 z-50 animate-in fade-in slide-in-from-top-3 duration-200 text-neutral-200">
+        <div className="absolute right-0 mt-3 w-72 sm:w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-[#090b10]/98 border border-[#c9a875]/50 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(201,168,117,0.2)] backdrop-blur-2xl p-4 z-50 animate-in fade-in slide-in-from-top-3 duration-200 text-neutral-200">
 
           {/* Active User / Guest Card */}
           <div className="p-3.5 rounded-xl bg-gradient-to-r from-[#17140e] via-[#100f0d] to-[#17140e] border border-[#c9a875]/40 shadow-inner mb-3 space-y-2.5">

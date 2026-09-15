@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>The Artisan's Quill — Mobile Sanctuary Architecture Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400&family=Literata:ital,opsz,wght@0,7..72,300;0,7..72,400;0,7..72,500;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --void: #050608;
+      --deep: #090b12;
+      --surface: #0e111a;
+      --gold: #c9a875;
+      --gold-light: #dfbd87;
+      --gold-glow: rgba(201, 168, 117, 0.25);
+      --star: #f8f5eb;
+      --text-muted: #8e92a4;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-gold: rgba(201, 168, 117, 0.35);
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background-color: #030406;
+      color: var(--star);
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0;
+      margin: 0;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(201, 168, 117, 0.08), transparent 60%),
+        radial-gradient(circle at 80% 50%, rgba(59, 130, 246, 0.04), transparent 50%);
+    }
+
+    /* Top Desktop Banner (Only shown when viewed on wide screens to explain the mockup) */
+    .desktop-toolbar {
+      width: 100%;
+      background: #080a10;
+      border-bottom: 1px solid var(--border-gold);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--gold-light);
+      z-index: 1000;
+    }
+    .desktop-toolbar .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(201, 168, 117, 0.15);
+      border: 1px solid var(--border-gold);
+      color: var(--gold-light);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+    .pulse-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse-dot 1.8s infinite;
+    }
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+
+    .view-toggles {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .view-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: #bbb;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .view-btn.active, .view-btn:hover {
+      background: var(--gold);
+      color: #000;
+      font-weight: bold;
+      border-color: var(--gold);
+    }
+
+    /* Container for the Phone Frame */
+    .preview-container {
+      padding: 24px 12px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    /* Modern Phone Chassis Mockup */
+    .phone-chassis {
+      width: 100%;
+      max-width: 412px;
+      height: 870px;
+      background: #000;
+      border-radius: 50px;
+      border: 10px solid #1a1c24;
+      box-shadow: 
+        0 0 0 2px rgba(201, 168, 117, 0.3),
+        0 25px 80px rgba(0, 0, 0, 0.95),
+        0 0 50px rgba(201, 168, 117, 0.15);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* When switched to raw fullscreen mobile */
+    body.raw-mobile .desktop-toolbar { display: none; }
+    body.raw-mobile .preview-container { padding: 0; max-width: 100%; }
+    body.raw-mobile .phone-chassis {
+      max-width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      border: none;
+      box-shadow: none;
+    }
+
+    /* Phone Status Bar */
+    .phone-status-bar {
+      height: 44px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      position: relative;
+      z-index: 60;
+      background: rgba(6, 7, 10, 0.95);
+      backdrop-filter: blur(20px);
+      flex-shrink: 0;
+    }
+    .dynamic-island {
+      position: absolute;
+      left: 50%;
+      top: 10px;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 26px;
+      background: #000;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      font-size: 9px;
+      color: var(--gold-light);
+    }
+
+    /* Main Mobile Web App Root */
+    .app-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      background: #050608;
+    }
+
+    /* ─── 1. TOP MOBILE APP BAR ─── */
+    .mobile-app-bar {
+      height: 56px;
+      background: rgba(6, 7, 10, 0.96);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      flex-shrink: 0;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(201,168,117,0.15));
+      border: 1px solid var(--border-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold);
+    }
+    .brand-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #fff;
+    }
+    .brand-subtitle {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 7px;
+      letter-spacing: 0.22em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-top: -2px;
+    }
+
+    .app-bar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .icon-action-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #d1d5db;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .icon-action-btn:active {
+      transform: scale(0.92);
+      background: rgba(201, 168, 117, 0.2);
+      color: var(--gold);
+    }
+    .user-avatar-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1.5px solid var(--gold);
+      background: #111;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+    .user-avatar-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Expandable Search Input Strip */
+    .mobile-search-expand {
+      display: none;
+      padding: 8px 16px 10px;
+      background: rgba(7, 9, 14, 0.98);
+      border-bottom: 1px solid var(--border-gold);
+    }
+    .mobile-search-expand.open {
+      display: block;
+      animation: slideDown 0.25s ease-out;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .search-input-box {
+      width: 100%;
+      height: 36px;
+      background: #030406;
+      border: 1px solid var(--border-gold);
+      border-radius: 10px;
+      padding: 0 34px 0 12px;
+      color: #fff;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+    }
+    .search-input-box::placeholder { color: #6b7280; }
+
+    /* ─── 2. HORIZONTAL CATEGORY RAILS ─── */
+    .category-rail {
+      background: rgba(5, 6, 9, 0.95);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+    .category-rail::-webkit-scrollbar { display: none; }
+    .cat-pill {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      color: #a1a1aa;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .cat-pill.active {
+      background: rgba(201, 168, 117, 0.18);
+      border-color: var(--gold);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 0 12px rgba(201, 168, 117, 0.25);
+    }
+    .cat-pill:active { transform: scale(0.95); }
+
+    /* ─── 3. SCROLLABLE FEED CONTENT ─── */
+    .feed-scroll-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 14px 14px 90px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Curatorial Spotlight Hero Card */
+    .spotlight-card {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border-gold);
+      background: #0a0c12;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.8), 0 0 25px rgba(201,168,117,0.15);
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 20px;
+      background-size: cover;
+      background-position: center;
+      background-image: linear-gradient(180deg, rgba(4,5,8,0.2) 0%, rgba(4,5,8,0.92) 80%), url('/curatorial-masterpiece.svg');
+    }
+    .spotlight-top-tags {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .vernissage-tag {
+      padding: 3px 9px;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid var(--gold);
+      border-radius: 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .category-chip {
+      padding: 3px 8px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      font-size: 9px;
+      color: #e5e7eb;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .spotlight-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 26px;
+      font-weight: 500;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+    .spotlight-meta {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: var(--gold-light);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .spotlight-desc {
+      font-size: 11px;
+      line-height: 1.5;
+      color: #d1d5db;
+      margin-bottom: 16px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .spotlight-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-view-masterpiece {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 25px;
+      background: linear-gradient(90deg, #c9a875, #dfbd87);
+      color: #000;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(201,168,117,0.4);
+    }
+    .btn-icon-counter {
+      padding: 8px 12px;
+      border-radius: 20px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      font-size: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+    }
+
+    /* 3D Cosmos Banner Card */
+    .cosmos-banner-card {
+      background: linear-gradient(135deg, #0a0d18 0%, #13172c 50%, #0a0d18 100%);
+      border: 1px solid var(--border-gold);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+    }
+    .cosmos-text h4 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 14px;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .cosmos-text p {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: #9ca3af;
+    }
+    .cosmos-badge-btn {
+      padding: 6px 12px;
+      background: rgba(201,168,117,0.2);
+      border: 1px solid var(--gold);
+      color: var(--gold-light);
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 600;
+      font-family: 'IBM Plex Mono', monospace;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* Artwork Grid Header */
+    .grid-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .grid-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: #fff;
+    }
+    .filter-capsule {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #090b10;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 3px;
+    }
+    .filter-chip {
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: 9px;
+      font-family: 'IBM Plex Mono', monospace;
+      color: #888;
+      cursor: pointer;
+    }
+    .filter-chip.active {
+      background: var(--gold);
+      color: #000;
+      font-weight: bold;
+    }
+
+    /* Single Column Mobile Card */
+    .mobile-art-card {
+      border-radius: 16px;
+      background: #080a10;
+      border: 1px solid rgba(255,255,255,0.1);
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      cursor: pointer;
+    }
+    .art-media-frame {
+      width: 100%;
+      height: 230px;
+      position: relative;
+      background: #000;
+      overflow: hidden;
+    }
+    .art-media-frame img, .art-media-frame video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .art-category-pill {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.12);
+      font-size: 8px;
+      font-family: 'IBM Plex Mono', monospace;
+      color: #e4e4e7;
+      text-transform: uppercase;
+    }
+    .art-touch-actions {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .touch-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+
+    /* Poetry Card Variant */
+    .poetry-card-preview {
+      background: #E8DAC1;
+      color: #1a1208;
+      padding: 24px 20px;
+      min-height: 240px;
+      border-radius: 16px;
+      position: relative;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      border: 1px solid #d4c2a3;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+    }
+    .poetry-ring {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(101,67,33,0.3);
+      background: radial-gradient(circle, rgba(101,67,33,0.12) 50%, transparent 70%);
+    }
+    .poem-cat-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: #6b4d2e;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .poem-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 20px;
+      font-style: italic;
+      color: #1a1208;
+      margin-bottom: 10px;
+    }
+    .poem-excerpt {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #2b1d10;
+      font-style: italic;
+      margin-bottom: 16px;
+    }
+    .poem-author {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: #6b4d2e;
+      text-transform: uppercase;
+    }
+
+    .card-caption-plaque {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .card-plaque-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 14px;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-plaque-artist {
+      font-size: 10px;
+      color: #a1a1aa;
+      font-family: 'IBM Plex Mono', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* ─── 4. MOBILE BOTTOM APP DOCK (NATIVE APP FEEL) ─── */
+    .mobile-bottom-dock {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: rgba(6, 7, 11, 0.96);
+      backdrop-filter: blur(28px);
+      border-top: 1px solid rgba(201, 168, 117, 0.3);
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 70;
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+    }
+    .dock-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: #71717a;
+      font-size: 8px;
+      font-family: 'IBM Plex Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      flex: 1;
+      height: 100%;
+      transition: all 0.2s ease;
+    }
+    .dock-tab.active {
+      color: var(--gold);
+      font-weight: 700;
+    }
+    .dock-tab svg { width: 18px; height: 18px; stroke-width: 1.8; }
+
+    /* Elevated Center '+' Button */
+    .dock-elevated-center {
+      position: relative;
+      top: -14px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #dfbd87, #c9a875);
+      border: 3px solid #06070b;
+      box-shadow: 0 0 24px rgba(201,168,117,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      cursor: pointer;
+      font-size: 24px;
+      font-weight: 300;
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+    .dock-elevated-center:active { transform: scale(0.92); }
+
+    /* ─── 5. SLIDING SANCTUARY MOBILE DRAWER ─── */
+    .mobile-drawer-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .mobile-drawer-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .mobile-drawer-sheet {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      width: 82%;
+      max-width: 320px;
+      background: #080a11;
+      border-left: 1px solid var(--border-gold);
+      box-shadow: -15px 0 40px rgba(0,0,0,0.9);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 101;
+      padding: 24px 18px;
+      overflow-y: auto;
+    }
+    .mobile-drawer-overlay.open .mobile-drawer-sheet {
+      transform: translateX(0);
+    }
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .drawer-section-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--gold);
+      margin: 16px 0 8px;
+    }
+    .drawer-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: #e4e4e7;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .drawer-item:hover, .drawer-item:active {
+      background: rgba(201, 168, 117, 0.15);
+      color: var(--gold-light);
+    }
+    .drawer-item .icon {
+      font-size: 16px;
+      width: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ─── 6. SLIDING ACTION SHEET (FOR '+' BUTTON) ─── */
+    .action-sheet-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 120;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .action-sheet-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .action-sheet-panel {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #090c14;
+      border-top: 1px solid var(--border-gold);
+      border-radius: 28px 28px 0 0;
+      padding: 20px 20px 36px;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 -20px 50px rgba(0,0,0,0.9);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .action-sheet-overlay.open .action-sheet-panel {
+      transform: translateY(0);
+    }
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      background: #4b5563;
+      border-radius: 4px;
+      margin: 0 auto 12px;
+    }
+    .sheet-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 18px;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .sheet-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .sheet-btn:active {
+      background: rgba(201,168,117,0.2);
+      border-color: var(--gold);
+    }
+
+    /* Annotations & Callouts */
+    .preview-legend {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      width: 100%;
+      max-width: 800px;
+      font-size: 11px;
+      color: #a1a1aa;
+    }
+    .legend-card {
+      background: #090c12;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .legend-card h5 {
+      color: var(--gold-light);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Preview Bar (For Desktop Reviewers) -->
+  <header class="desktop-toolbar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span class="badge">
+        <span class="pulse-dot"></span>
+        MOBILE APPLICATION ARCHITECTURE
+      </span>
+      <span>The Artisan's Quill — Full Screen Mobile Preview</span>
+    </div>
+    <div class="view-toggles">
+      <button class="view-btn active" id="btn-mockup" onclick="toggleMockupView(true)">Device Frame</button>
+      <button class="view-btn" id="btn-fullscreen" onclick="toggleMockupView(false)">Raw Fullscreen</button>
+    </div>
+  </header>
+
+  <div class="preview-container">
+    <div class="phone-chassis" id="phoneChassis">
+
+      <!-- Status Bar -->
+      <div class="phone-status-bar">
+        <span>9:41</span>
+        <div class="dynamic-island">
+          <span style="color:#10b981;">●</span>
+          <span>Live Sync 500+</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span>5G</span>
+          <span>100%</span>
+        </div>
+      </div>
+
+      <!-- Main Application Container -->
+      <div class="app-screen">
+
+        <!-- 1. Top App Bar -->
+        <div class="mobile-app-bar">
+          <div class="brand-group" onclick="showNotification('Home Atelier Navigated')">
+            <div class="brand-icon">🪶</div>
+            <div>
+              <div class="brand-title">The Artisan's Quill</div>
+              <div class="brand-subtitle">Atelier &amp; Gallery Vault</div>
+            </div>
+          </div>
+
+          <div class="app-bar-actions">
+            <!-- Search Toggle -->
+            <button class="icon-action-btn" id="searchToggleBtn" onclick="toggleSearch()" title="Search">
+              🔍
+            </button>
+
+            <!-- Audio Soundscape Button -->
+            <button class="icon-action-btn" onclick="showNotification('Ambient Music: The Great Gig in the Sky (Loop)')" title="Soundscape">
+              🎵
+            </button>
+
+            <!-- User Avatar -->
+            <div class="user-avatar-btn" onclick="openDrawer()" title="Artist Persona">
+              <img src="/curatorial-masterpiece.svg" alt="Afshaan Shaikh">
+            </div>
+
+            <!-- Hamburger Drawer Menu -->
+            <button class="icon-action-btn" onclick="openDrawer()" title="Atelier Menu">
+              ☰
+            </button>
+          </div>
+        </div>
+
+        <!-- Collapsible Search Bar -->
+        <div class="mobile-search-expand" id="searchExpand">
+          <input type="text" class="search-input-box" placeholder="Search paintings, poetry, artists, medium...">
+        </div>
+
+        <!-- 2. Single Smooth Horizontal Category Rail -->
+        <div class="category-rail">
+          <div class="cat-pill active">✦ All Works</div>
+          <div class="cat-pill">🪶 Poetry Cards</div>
+          <div class="cat-pill">🎨 Paintings</div>
+          <div class="cat-pill">✒️ Drawings &amp; Ink</div>
+          <div class="cat-pill">🖼️ Digital Media</div>
+          <div class="cat-pill">🎞️ Motion Loops</div>
+          <div class="cat-pill" style="border-color: var(--gold);">⚡ Filter</div>
+        </div>
+
+        <!-- 3. Scrollable Feed Body -->
+        <div class="feed-scroll-content">
+
+          <!-- Curatorial Spotlight Hero Card -->
+          <div class="spotlight-card">
+            <div class="spotlight-top-tags">
+              <span class="vernissage-tag">✦ VERNISSAGE I</span>
+              <span class="category-chip">Motion Cinema</span>
+            </div>
+
+            <div class="spotlight-title">I Suppose</div>
+            <div class="spotlight-meta">
+              <span>Afshaan Shaikh</span>
+              <span>•</span>
+              <span>4K Fluid Dynamics</span>
+              <span>•</span>
+              <span>2026</span>
+            </div>
+            <div class="spotlight-desc">
+              Selected as the #1 Masterpiece of the Day and Permanent Curatorial Spotlight. Hypnotic volumetric cinema loop.
+            </div>
+
+            <div class="spotlight-actions">
+              <button class="btn-view-masterpiece" onclick="showNotification('Opening Masterpiece Modal: I Suppose')">
+                <span>👁</span>
+                <span>View Masterpiece</span>
+              </button>
+              <button class="btn-icon-counter" onclick="showNotification('Masterpiece Liked!')">
+                <span>♥</span>
+                <span>1</span>
+              </button>
+              <button class="btn-icon-counter" onclick="showNotification('Masterpiece Saved to Vault!')">
+                <span>🔖</span>
+                <span>2</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3D Cosmos Quick Gateway Banner -->
+          <div class="cosmos-banner-card" onclick="showNotification('Launching 3D Cosmos Interactive Starmap')">
+            <div class="cosmos-text">
+              <h4>🌌 3D Constellation Cosmos</h4>
+              <p>30 celestial star nodes indexed in WebGL</p>
+            </div>
+            <div class="cosmos-badge-btn">Explore ↗</div>
+          </div>
+
+          <!-- Feed Title & Filter Controls -->
+          <div class="grid-header-row">
+            <div class="grid-title">Curated Sanctuary</div>
+            <div class="filter-capsule">
+              <span class="filter-chip active">Curated</span>
+              <span class="filter-chip">Popular</span>
+              <span class="filter-chip">Latest</span>
+            </div>
+          </div>
+
+          <!-- Card 1: Coffee Stained Parchment Poetry Card -->
+          <div class="poetry-card-preview" onclick="showNotification('Opening Poetry Card: vo Ek khaalis Nazar')">
+            <div class="poetry-ring"></div>
+            <div class="poem-cat-tag">POEM I. • COFFEE STAINED</div>
+            <div class="poem-title">vo Ek khaalis Nazar</div>
+            <div class="poem-excerpt">
+              "vo ek Khaalis nazar ,<br>
+              jiske liye tumne apni tamaam zindagi guzaardi,<br>
+              Shayad vo Nazar tumhare liye bani hi nahi hay..."
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div class="poem-author">— AFSHAAN SHAIKH, 2026</div>
+              <div style="display: flex; gap: 8px;">
+                <span style="font-size: 13px;">♥ 3</span>
+                <span style="font-size: 13px;">🔖 5</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Fine Digital Artwork Card -->
+          <div class="mobile-art-card" onclick="showNotification('Opening Artwork: OG B\'Day')">
+            <div class="art-media-frame">
+              <img src="/curatorial-masterpiece.svg" alt="Art">
+              <div class="art-category-pill">Digital Media</div>
+              <div class="art-touch-actions">
+                <button class="touch-btn">♥</button>
+                <button class="touch-btn">🔖</button>
+              </div>
+            </div>
+            <div class="card-caption-plaque">
+              <div class="card-plaque-title">OG B'Day</div>
+              <div class="card-plaque-artist">
+                <span>AFSHAAN SHAIKH</span>
+                <span style="color: var(--gold);">#AQ-2026</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 4. Mobile Bottom App Dock -->
+        <div class="mobile-bottom-dock">
+          <div class="dock-tab active" onclick="showNotification('Feed Active')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            <span>Atelier</span>
+          </div>
+
+          <div class="dock-tab" onclick="showNotification('Switching to 3D Cosmos View')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+            <span>Cosmos</span>
+          </div>
+
+          <!-- Center '+' Elevated Button -->
+          <div class="dock-elevated-center" onclick="openActionSheet()" title="Create &amp; Upload">
+            +
+          </div>
+
+          <div class="dock-tab" onclick="showNotification('Switching to Curated Exhibitions View')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+            <span>Exhibitions</span>
+          </div>
+
+          <div class="dock-tab" onclick="showNotification('Switching to Saved Vault')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+            <span>Saved</span>
+          </div>
+        </div>
+
+        <!-- 5. Slide-out Sanctuary Mobile Drawer -->
+        <div class="mobile-drawer-overlay" id="drawerOverlay" onclick="closeDrawer()">
+          <div class="mobile-drawer-sheet" onclick="event.stopPropagation()">
+            <div class="drawer-header">
+              <div class="brand-title" style="font-size: 15px;">Sanctuary Studio</div>
+              <button class="icon-action-btn" onclick="closeDrawer()">✕</button>
+            </div>
+
+            <div class="drawer-section-label">Curatorial Studios</div>
+            <div class="drawer-item" onclick="showNotification('Launching AI Poetic Bard Symphony')">
+              <span class="icon">🎙️</span>
+              <span>Bard Symphony</span>
+            </div>
+            <div class="drawer-item" onclick="showNotification('Launching 3D Constellation Starmap')">
+              <span class="icon">🌌</span>
+              <span>3D Constellation</span>
+            </div>
+            <div class="drawer-item" onclick="showNotification('Opening Collector\'s 3D Vault')">
+              <span class="icon">🏆</span>
+              <span>3D Trophy Vault</span>
+            </div>
+            <div class="drawer-item" onclick="showNotification('Launching Fluid Ink Poetry Studio')">
+              <span class="icon">✒️</span>
+              <span>Fluid Ink Studio</span>
+            </div>
+            <div class="drawer-item" onclick="showNotification('Launching Cinema Mode Slideshow')">
+              <span class="icon">🎞️</span>
+              <span>Cinema Mode</span>
+            </div>
+
+            <div class="drawer-section-label">Sanctuary Ateliers</div>
+            <div class="drawer-item" onclick="showNotification('Opening Community Salon Hub')">
+              <span class="icon">👥</span>
+              <span>Community Salon</span>
+            </div>
+            <div class="drawer-item" onclick="showNotification('Opening About Us Vision')">
+              <span class="icon">📜</span>
+              <span>About &amp; Vision</span>
+            </div>
+            <div class="drawer-item" onclick="showNotification('Opening Recycle Bin')">
+              <span class="icon">🗑️</span>
+              <span>Recycle Bin</span>
+            </div>
+
+            <div class="drawer-section-label">System &amp; Persona</div>
+            <div class="drawer-item" onclick="showNotification('Cloud Sync Active: 500+ Concurrency')">
+              <span class="icon">🟢</span>
+              <span>Live Cloud Sync Status</span>
+            </div>
+            <div class="drawer-item" onclick="showNotification('Opening Profile &amp; Authentication')">
+              <span class="icon">👤</span>
+              <span>Artist Account</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Bottom Action Sheet (Quick Create/Upload) -->
+        <div class="action-sheet-overlay" id="actionSheet" onclick="closeActionSheet()">
+          <div class="action-sheet-panel" onclick="event.stopPropagation()">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title">Create in Sanctuary</div>
+
+            <div class="sheet-btn" onclick="showNotification('Opening Artwork Upload Modal'); closeActionSheet();">
+              <span style="font-size: 18px;">🖼️</span>
+              <div>
+                <strong>Upload Artwork / Media</strong>
+                <div style="font-size: 10px; color: #9ca3af; font-family: 'IBM Plex Mono', monospace;">Paintings, Drawings, Digital &amp; Loops</div>
+              </div>
+            </div>
+
+            <div class="sheet-btn" onclick="showNotification('Opening Fluid Ink Poetry Studio'); closeActionSheet();">
+              <span style="font-size: 18px;">✒️</span>
+              <div>
+                <strong>Fluid Ink &amp; Gold-Leaf Studio</strong>
+                <div style="font-size: 10px; color: #9ca3af; font-family: 'IBM Plex Mono', monospace;">Calligraphic parchment and gold leaf stamping</div>
+              </div>
+            </div>
+
+            <div class="sheet-btn" onclick="showNotification('Opening Write Poem Modal'); closeActionSheet();">
+              <span style="font-size: 18px;">🪶</span>
+              <div>
+                <strong>Inscribe Poetry Card</strong>
+                <div style="font-size: 10px; color: #9ca3af; font-family: 'IBM Plex Mono', monospace;">Coffee-stained lyrical verse archive</div>
+              </div>
+            </div>
+
+            <div class="sheet-btn" onclick="closeActionSheet();" style="justify-content: center; background: rgba(255,255,255,0.08); margin-top: 6px;">
+              <span>Cancel</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Explanation & Features Legend -->
+    <div class="preview-legend">
+      <div class="legend-card">
+        <h5>1. Luxury App Bar</h5>
+        <p>Replaces the 3-tier desktop header with a unified 56px luxury header. Integrated Search toggle, Audio player, and Drawer menu.</p>
+      </div>
+      <div class="legend-card">
+        <h5>2. Bottom App Dock</h5>
+        <p>Puts the 5 core destinations right under the thumb: Atelier, 3D Cosmos, Quick Upload (+), Exhibitions, and Saved Vault.</p>
+      </div>
+      <div class="legend-card">
+        <h5>3. Sanctuary Drawer</h5>
+        <p>100% of desktop features preserved: Bard Symphony, 3D Constellation, 3D Trophy Vault, Ink Studio, Community, &amp; Live Sync.</p>
+      </div>
+      <div class="legend-card">
+        <h5>4. Zero Content Loss</h5>
+        <p>Every artwork, poetry card, live WebSocket update, and video loop renders in a fluid single/double column mobile view.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleSearch() {
+      const el = document.getElementById('searchExpand');
+      el.classList.toggle('open');
+      if (el.classList.contains('open')) {
+        el.querySelector('input').focus();
+      }
+    }
+
+    function openDrawer() {
+      document.getElementById('drawerOverlay').classList.add('open');
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawerOverlay').classList.remove('open');
+    }
+
+    function openActionSheet() {
+      document.getElementById('actionSheet').classList.add('open');
+    }
+
+    function closeActionSheet() {
+      document.getElementById('actionSheet').classList.remove('open');
+    }
+
+    function toggleMockupView(isFrame) {
+      document.body.classList.toggle('raw-mobile', !isFrame);
+      document.getElementById('btn-mockup').classList.toggle('active', isFrame);
+      document.getElementById('btn-fullscreen').classList.toggle('active', !isFrame);
+    }
+
+    function showNotification(msg) {
+      let toast = document.getElementById('preview-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'preview-toast';
+        toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#0d1017; border:1px solid #c9a875; color:#dfbd87; font-family:monospace; font-size:11px; padding:8px 16px; border-radius:20px; z-index:9999; box-shadow:0 0 20px rgba(0,0,0,0.8); transition:opacity 0.3s;';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = '✦ ' + msg;
+      toast.style.opacity = '1';
+      clearTimeout(window._toastTimeout);
+      window._toastTimeout = setTimeout(() => {
+        toast.style.opacity = '0';
+      }, 2500);
+    }
+  </script>
+</body>
+</html>

@@ -162,10 +162,10 @@ export const FloatingGuestbook: React.FC = () => {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 sm:bottom-12 sm:right-12 z-40 p-4 bg-[#0a0c10]/80 backdrop-blur-xl border border-white/10 hover:border-[#c9a875]/50 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.5)] hover:shadow-[0_0_40px_rgba(201,168,117,0.2)] transition-all duration-[600ms] ease-out hover:scale-110 group cursor-pointer"
+        className="fixed bottom-20 right-4 sm:bottom-12 sm:right-12 z-40 p-3 sm:p-4 bg-[#0a0c10]/85 backdrop-blur-xl border border-white/15 hover:border-[#c9a875]/50 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.5)] hover:shadow-[0_0_40px_rgba(201,168,117,0.2)] transition-all duration-[600ms] ease-out hover:scale-110 group cursor-pointer"
         title="Leave a Poetic Note"
       >
-        <Feather className="w-6 h-6 text-white group-hover:text-[#c9a875] transition-colors" />
+        <Feather className="w-5 h-5 sm:w-6 sm:h-6 text-white group-hover:text-[#c9a875] transition-colors" />
       </button>
     </>
   );

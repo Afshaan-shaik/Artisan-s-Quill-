@@ -803,10 +803,11 @@ export default function App() {
         }}
         currentUser={currentUser}
         onLogout={handleLogout}
+        onOpenCinemaMode={() => setIsCinemaModeOpen(true)}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 space-y-8 relative z-10">
+      <main className="flex-1 w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-6 sm:pt-8 pb-24 md:pb-8 space-y-8 relative z-10">
         
 
 

@@ -18,7 +18,8 @@ import {
   Trash2,
   User,
   Camera,
-  HardDrive
+  HardDrive,
+  Menu
 } from 'lucide-react';
 import { ArtCategory, UserProfile } from '../types';
 import { Avatar } from './Avatar';
@@ -47,6 +48,7 @@ interface NavbarProps {
   onOpenLoginModal?: () => void;
   onLogout?: () => void;
   currentUser: UserProfile;
+  onOpenCinemaMode?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -69,10 +71,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenCreateProfile,
   onOpenLoginModal,
   onLogout,
-  currentUser
+  currentUser,
+  onOpenCinemaMode
 }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isMobileActionSheetOpen, setIsMobileActionSheetOpen] = useState(false);
 
   const categories: { id: ArtCategory; label: string; icon: React.ReactNode; desc: string }[] = [
     { id: 'all', label: 'All Works', icon: <Layers className="w-3.5 h-3.5" />, desc: 'Curated complete atelier' },
@@ -93,14 +99,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#06070a]/95 backdrop-blur-2xl border-b border-white/10 shadow-2xl transition-all">
+    <>
+      <header className="sticky top-0 z-40 bg-[#06070a]/95 backdrop-blur-2xl border-b border-white/10 shadow-2xl transition-all">
       
       {/* ─────────────────────────────────────────────────────────────
-          TIER 1: Primary Brand Header & Utility Suite
-          (The Artisan's Quill, Spacious Search Bar, Audio, DBMS, Upload, NEW ARTIST)
+          DESKTOP ATELIER NAVIGATION SUITE (md:block hidden)
          ───────────────────────────────────────────────────────────── */}
-      <div className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-3">
-        <div className="flex items-center justify-between gap-3 lg:gap-6">
+      <div className="hidden md:block">
+        {/* TIER 1: Primary Brand Header & Utility Suite
+            (The Artisan's Quill, Spacious Search Bar, Audio, DBMS, Upload, NEW ARTIST) */}
+        <div className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-3">
+          <div className="flex items-center justify-between gap-3 lg:gap-6">
           
           {/* Brand Logo & Tagline */}
           <div
@@ -531,6 +540,602 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         )}
       </div>
-    </header>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          MOBILE APPARATUS & ATELIER EXPERIENCE (block md:hidden)
+         ───────────────────────────────────────────────────────────── */}
+      <div className="block md:hidden">
+        {/* Mobile Top App Bar (56px) */}
+        <div className="flex items-center justify-between h-14 px-3.5 bg-[#06070a]/98 backdrop-blur-2xl border-b border-white/10">
+          
+          {/* Left Brand Logo & Title */}
+          <div
+            id="mobile-brand-logo-btn"
+            onClick={() => {
+              onSelectView('feed');
+              onSelectCategory('all');
+              onSearchChange('');
+            }}
+            className="flex items-center gap-2 cursor-pointer group shrink-0"
+            title="The Artisan's Quill — Home Atelier"
+          >
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-white/15 to-white/5 border border-[#c9a875]/40 shadow-sm">
+              <Feather className="w-4 h-4 text-[#c9a875]" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-serif-display text-base font-medium tracking-wide text-white leading-none">
+                The Artisan's Quill
+              </span>
+              <span className="text-[8px] uppercase tracking-[0.2em] text-[#c9a875]/80 font-mono-code mt-0.5">
+                Atelier Vault
+              </span>
+            </div>
+          </div>
+
+          {/* Right Action Suite: Search, Audio, Avatar/Profile, Drawer Menu */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Search Toggle Icon */}
+            <button
+              id="mobile-search-toggle-btn"
+              onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+              className={`p-2 rounded-full border transition-all cursor-pointer ${
+                isMobileSearchOpen || searchQuery
+                  ? 'bg-[#c9a875]/20 border-[#c9a875] text-[#dfbd87]'
+                  : 'bg-white/5 border-white/10 text-neutral-300 hover:text-white'
+              }`}
+              title="Toggle Search"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+
+            {/* Audio Ambience Player */}
+            <div className="relative">
+              <AudioAmbiencePlayer />
+            </div>
+
+            {/* Artist Profile Dropdown */}
+            <ArtistSwitcherDropdown
+              currentUser={currentUser}
+              onOpenCreateProfile={() => {
+                if (onOpenCreateProfile) onOpenCreateProfile();
+              }}
+              onOpenLoginModal={onOpenLoginModal}
+              onOpenEditProfile={onOpenEditProfile}
+              onSelectCurrentUserProfile={onSelectCurrentUser}
+              onLogout={onLogout}
+              onOpenCollectorVault={onOpenCollectorVault}
+            />
+
+            {/* Sanctuary Menu Drawer Hamburger Trigger */}
+            <button
+              id="mobile-menu-drawer-btn"
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className="p-2 rounded-full bg-white/5 border border-white/10 text-[#c9a875] hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+              title="Open Sanctuary Menu"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Collapsible Mobile Search Input Strip */}
+        {isMobileSearchOpen && (
+          <div className="px-3.5 py-2.5 bg-[#080a10] border-b border-[#c9a875]/30 flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="relative flex-1 flex items-center bg-black/60 border border-[#c9a875]/60 rounded-xl overflow-hidden shadow-inner">
+              <Search className="w-3.5 h-3.5 absolute left-3 text-[#c9a875] pointer-events-none" />
+              <input
+                type="text"
+                autoFocus
+                placeholder="Search paintings, poetry, artists..."
+                value={searchQuery}
+                onChange={(e) => handleSearchInput(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 text-xs text-white placeholder-neutral-400 focus:outline-none bg-transparent font-sans"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => handleSearchInput('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setIsMobileSearchOpen(false)}
+              className="text-xs text-neutral-400 hover:text-white px-2 py-1 font-mono-code cursor-pointer"
+            >
+              Done
+            </button>
+          </div>
+        )}
+
+        {/* Mobile Category Rail or Context Breadcrumb */}
+        <div className="bg-[#050609]/95 border-b border-white/[0.06] px-3 py-2 flex items-center justify-between gap-2">
+          {activeView === 'feed' || activeView === 'saved' ? (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 w-full">
+              {categories.map((cat) => {
+                const isSelected = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      onSelectCategory(cat.id);
+                      if (activeView !== 'feed' && activeView !== 'saved') {
+                        onSelectView('feed');
+                      }
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                      isSelected
+                        ? 'bg-[#c9a875]/20 text-white border border-[#c9a875] font-bold shadow-[0_0_12px_rgba(201,168,117,0.25)]'
+                        : 'text-neutral-400 hover:text-neutral-200 bg-white/5 border border-white/5'
+                    }`}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.label}</span>
+                  </button>
+                );
+              })}
+
+              {/* Filter Button */}
+              <button
+                id="mobile-date-filter-btn"
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-mono-code font-bold uppercase rounded-full border transition-all cursor-pointer shrink-0 ${
+                  showFilters || hasActiveDateFilter
+                    ? 'bg-[#c9a875]/25 border-[#c9a875] text-[#dfbd87]'
+                    : 'bg-white/5 border-white/10 text-neutral-300'
+                }`}
+                title="Toggle Filter"
+              >
+                <Filter className="w-3 h-3" />
+                <span>Filter</span>
+                {hasActiveDateFilter && <span className="w-1.5 h-1.5 rounded-full bg-[#c9a875]" />}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between w-full text-xs font-mono-code py-0.5">
+              <div className="flex items-center gap-1.5 text-neutral-300 truncate">
+                <span className="text-[#c9a875]">✦</span>
+                <span className="font-semibold text-white capitalize">
+                  {activeView === 'cosmos' && '3D Cosmos'}
+                  {activeView === 'exhibitions' && 'Exhibitions'}
+                  {activeView === 'about' && 'About & Vision'}
+                  {activeView === 'recycle-bin' && 'Recycle Bin'}
+                  {activeView === 'community' && 'Community Salon'}
+                  {activeView === 'vaults' && 'Collector Vaults'}
+                </span>
+              </div>
+              <button
+                onClick={() => onSelectView('feed')}
+                className="text-[10px] uppercase font-mono-code text-[#c9a875] hover:text-white px-2 py-1 rounded bg-[#c9a875]/10 border border-[#c9a875]/30 cursor-pointer shrink-0"
+              >
+                ← Atelier
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Collapsible Mobile Date Filter */}
+        {showFilters && (
+          <div className="px-4 py-3 bg-[#080a11] border-b border-white/10 text-xs text-neutral-300 space-y-2 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 font-mono-code text-[11px] text-[#c9a875] uppercase font-bold">
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Date Range</span>
+              </span>
+              {hasActiveDateFilter && (
+                <button
+                  onClick={() => onDateRangeChange({ start: undefined, end: undefined })}
+                  className="text-[10px] font-mono-code uppercase text-[#c9a875] hover:text-white underline cursor-pointer"
+                >
+                  Clear Filter
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={dateRange.start || ''}
+                onChange={(e) => onDateRangeChange({ ...dateRange, start: e.target.value })}
+                className="flex-1 bg-neutral-900 border border-white/20 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#c9a875]"
+              />
+              <span className="text-neutral-500 font-mono-code text-xs">to</span>
+              <input
+                type="date"
+                value={dateRange.end || ''}
+                onChange={(e) => onDateRangeChange({ ...dateRange, end: e.target.value })}
+                className="flex-1 bg-neutral-900 border border-white/20 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#c9a875]"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+      </header>
+
+      {/* ─────────────────────────────────────────────────────────────
+          MOBILE FIXED BOTTOM APP DOCK (block md:hidden)
+         ───────────────────────────────────────────────────────────── */}
+      <nav
+        id="mobile-bottom-app-dock"
+        aria-label="Mobile Navigation Dock"
+        className="block md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#06070a]/96 backdrop-blur-2xl border-t border-[#c9a875]/30 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] pb-[env(safe-area-inset-bottom,6px)]"
+      >
+        <div className="flex items-center justify-around h-15 px-2">
+          {/* 1. Feed / Atelier */}
+          <button
+            id="mobile-dock-feed-btn"
+            onClick={() => {
+              onSelectView('feed');
+              onSelectCategory('all');
+            }}
+            className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-all cursor-pointer ${
+              activeView === 'feed'
+                ? 'text-[#c9a875] font-bold'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            <Layers className="w-5 h-5" />
+            <span className="text-[9px] font-mono-code uppercase tracking-wider">Atelier</span>
+          </button>
+
+          {/* 2. 3D Cosmos */}
+          <button
+            id="mobile-dock-cosmos-btn"
+            onClick={() => onSelectView('cosmos')}
+            className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-all cursor-pointer ${
+              activeView === 'cosmos'
+                ? 'text-[#c9a875] font-bold'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-5 h-5" />
+            <span className="text-[9px] font-mono-code uppercase tracking-wider">Cosmos</span>
+          </button>
+
+          {/* 3. Center Elevated Gold '+' Button */}
+          <div className="relative -top-3.5 flex flex-col items-center shrink-0 px-1">
+            <button
+              id="mobile-dock-create-btn"
+              onClick={() => setIsMobileActionSheetOpen(true)}
+              className="w-13 h-13 rounded-full bg-gradient-to-tr from-[#c9a875] via-[#dfbd87] to-[#e4cb9c] text-black flex items-center justify-center shadow-[0_0_24px_rgba(201,168,117,0.7)] border-3 border-[#06070a] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              title="Create in Atelier"
+            >
+              <Plus className="w-6 h-6 stroke-[2.5]" />
+            </button>
+            <span className="text-[8px] font-mono-code uppercase tracking-widest text-[#dfbd87] font-bold mt-0.5">
+              Create
+            </span>
+          </div>
+
+          {/* 4. Exhibitions */}
+          <button
+            id="mobile-dock-exhibitions-btn"
+            onClick={() => onSelectView('exhibitions')}
+            className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-all cursor-pointer ${
+              activeView === 'exhibitions'
+                ? 'text-[#c9a875] font-bold'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            <Compass className="w-5 h-5" />
+            <span className="text-[9px] font-mono-code uppercase tracking-wider">Salons</span>
+          </button>
+
+          {/* 5. Saved Vault */}
+          <button
+            id="mobile-dock-saved-btn"
+            onClick={() => onSelectView('saved')}
+            className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-all cursor-pointer ${
+              activeView === 'saved'
+                ? 'text-[#c9a875] font-bold'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            <Bookmark className="w-5 h-5" />
+            <span className="text-[9px] font-mono-code uppercase tracking-wider">Saved</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* ─────────────────────────────────────────────────────────────
+          MOBILE SLIDING SANCTUARY DRAWER (Right-side sheet)
+         ───────────────────────────────────────────────────────────── */}
+      {isMobileDrawerOpen && (
+        <div
+          id="mobile-drawer-overlay"
+          onClick={() => setIsMobileDrawerOpen(false)}
+          className="block md:hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-md animate-in fade-in duration-200"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute top-0 bottom-0 right-0 w-[84%] max-w-xs bg-[#080a11] border-l border-[#c9a875]/40 shadow-2xl p-5 overflow-y-auto flex flex-col justify-between animate-in slide-in-from-right duration-300"
+          >
+            <div className="space-y-5">
+              {/* Drawer Top Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <Feather className="w-4 h-4 text-[#c9a875]" />
+                  <span className="font-serif-display text-base font-semibold text-white">
+                    Sanctuary Studio
+                  </span>
+                </div>
+                <button
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-white/10 text-neutral-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Persona / Account Card */}
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-[#c9a875]/30 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Avatar
+                    src={currentUser.avatar}
+                    name={currentUser.name}
+                    className="w-9 h-9 rounded-full border border-[#c9a875] shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-white truncate">{currentUser.name}</div>
+                    <div className="text-[10px] font-mono-code text-[#c9a875] truncate">{currentUser.handle}</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    onSelectCurrentUser();
+                  }}
+                  className="text-[10px] font-mono-code uppercase px-2 py-1 rounded bg-[#c9a875]/20 text-[#dfbd87] border border-[#c9a875]/40 shrink-0 cursor-pointer"
+                >
+                  Profile
+                </button>
+              </div>
+
+              {/* Curatorial Studios Section */}
+              <div className="space-y-1">
+                <div className="text-[9px] uppercase tracking-[0.2em] font-mono-code text-[#c9a875] px-2 py-1 font-bold">
+                  Curatorial Studios
+                </div>
+
+                {onOpenBardModal && (
+                  <button
+                    onClick={() => {
+                      setIsMobileDrawerOpen(false);
+                      onOpenBardModal();
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-neutral-200 hover:text-white hover:bg-white/5 transition-all text-left cursor-pointer"
+                  >
+                    <span className="text-base">🎙️</span>
+                    <span className="font-medium">Bard Symphony Studio</span>
+                  </button>
+                )}
+
+                {onOpenConstellationModal && (
+                  <button
+                    onClick={() => {
+                      setIsMobileDrawerOpen(false);
+                      onOpenConstellationModal();
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-neutral-200 hover:text-white hover:bg-white/5 transition-all text-left cursor-pointer"
+                  >
+                    <span className="text-base">🌌</span>
+                    <span className="font-medium">3D Constellation Starmap</span>
+                  </button>
+                )}
+
+                {onOpenCollectorVault && (
+                  <button
+                    onClick={() => {
+                      setIsMobileDrawerOpen(false);
+                      onOpenCollectorVault();
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-neutral-200 hover:text-white hover:bg-white/5 transition-all text-left cursor-pointer"
+                  >
+                    <span className="text-base">🏆</span>
+                    <span className="font-medium">3D Trophy Vault &amp; Certs</span>
+                  </button>
+                )}
+
+                {onOpenInkStudio && (
+                  <button
+                    onClick={() => {
+                      setIsMobileDrawerOpen(false);
+                      onOpenInkStudio();
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-neutral-200 hover:text-white hover:bg-white/5 transition-all text-left cursor-pointer"
+                  >
+                    <span className="text-base">✒️</span>
+                    <span className="font-medium">Fluid Ink &amp; Gold-Leaf Studio</span>
+                  </button>
+                )}
+
+                {onOpenCinemaMode && (
+                  <button
+                    onClick={() => {
+                      setIsMobileDrawerOpen(false);
+                      onOpenCinemaMode();
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-neutral-200 hover:text-white hover:bg-white/5 transition-all text-left cursor-pointer"
+                  >
+                    <span className="text-base">🎞️</span>
+                    <span className="font-medium">Cinema Slideshow Mode</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Sanctuary Ateliers Section */}
+              <div className="space-y-1">
+                <div className="text-[9px] uppercase tracking-[0.2em] font-mono-code text-[#c9a875] px-2 py-1 font-bold">
+                  Sanctuary Ateliers
+                </div>
+
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    onSelectView('exhibitions');
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-neutral-200 hover:text-white hover:bg-white/5 transition-all text-left cursor-pointer"
+                >
+                  <Compass className="w-4 h-4 text-[#c9a875]" />
+                  <span className="font-medium">Curated Exhibitions</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    onSelectView('community');
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-neutral-200 hover:text-white hover:bg-white/5 transition-all text-left cursor-pointer"
+                >
+                  <User className="w-4 h-4 text-[#8ed8b5]" />
+                  <span className="font-medium">Community Salon</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    onSelectView('about');
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-neutral-200 hover:text-white hover:bg-white/5 transition-all text-left cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-[#e0c49a]" />
+                  <span className="font-medium">About Us &amp; Vision</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    onSelectView('recycle-bin');
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-neutral-200 hover:text-red-400 hover:bg-red-500/10 transition-all text-left cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4 text-red-400" />
+                  <span className="font-medium">Recycle Bin Archive</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Drawer Bottom Infrastructure Footer */}
+            <div className="pt-4 border-t border-white/10 space-y-3">
+              <button
+                onClick={() => {
+                  setIsMobileDrawerOpen(false);
+                  onOpenBackendModal();
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/[0.04] border border-[#c9a875]/30 text-xs font-mono-code text-[#dfbd87] cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span>Live Cloud Sync</span>
+                </div>
+                <span className="text-[10px] text-neutral-400">500+ Active ↗</span>
+              </button>
+
+              {onLogout && currentUser.id !== 'guest' && (
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    onLogout();
+                  }}
+                  className="w-full py-2 text-center text-xs font-mono-code text-red-400 hover:text-red-300 cursor-pointer"
+                >
+                  Sign Out Session
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MOBILE QUICK CREATE / UPLOAD ACTION SHEET
+         ───────────────────────────────────────────────────────────── */}
+      {isMobileActionSheetOpen && (
+        <div
+          id="mobile-action-sheet-overlay"
+          onClick={() => setIsMobileActionSheetOpen(false)}
+          className="block md:hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-md animate-in fade-in duration-200"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-0 left-0 right-0 bg-[#0a0d16] border-t border-[#c9a875]/50 rounded-t-3xl p-5 space-y-3 pb-[calc(env(safe-area-inset-bottom,16px)+16px)] animate-in slide-in-from-bottom duration-300 shadow-2xl"
+          >
+            <div className="w-10 h-1 bg-neutral-600 rounded-full mx-auto mb-2" />
+            <h3 className="font-serif-display text-center text-lg text-white font-medium mb-3">
+              Create in Sanctuary
+            </h3>
+
+            <button
+              onClick={() => {
+                setIsMobileActionSheetOpen(false);
+                onOpenUpload(selectedCategory !== 'all' ? selectedCategory : 'digital');
+              }}
+              className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-[#c9a875]/60 text-left transition-all cursor-pointer"
+            >
+              <span className="text-xl">🖼️</span>
+              <div>
+                <div className="text-xs font-semibold text-white">Upload Artwork / Media</div>
+                <div className="text-[10px] font-mono-code text-neutral-400">Paintings, drawings, digital art &amp; motion loops</div>
+              </div>
+            </button>
+
+            {onOpenInkStudio && (
+              <button
+                onClick={() => {
+                  setIsMobileActionSheetOpen(false);
+                  onOpenInkStudio();
+                }}
+                className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-[#c9a875]/60 text-left transition-all cursor-pointer"
+              >
+                <span className="text-xl">✒️</span>
+                <div>
+                  <div className="text-xs font-semibold text-white">Fluid Ink &amp; Gold-Leaf Studio</div>
+                  <div className="text-[10px] font-mono-code text-neutral-400">Interactive parchment calligraphy &amp; foil stamping</div>
+                </div>
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                setIsMobileActionSheetOpen(false);
+                onOpenUpload('poetry', 'poetry card');
+              }}
+              className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-[#c9a875]/60 text-left transition-all cursor-pointer"
+            >
+              <span className="text-xl">🪶</span>
+              <div>
+                <div className="text-xs font-semibold text-white">Inscribe Poetry Card</div>
+                <div className="text-[10px] font-mono-code text-neutral-400">Coffee-stained lyrical verse archive</div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setIsMobileActionSheetOpen(false);
+                onOpenUpload('poetry', 'poetry session');
+              }}
+              className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-[#c9a875]/60 text-left transition-all cursor-pointer"
+            >
+              <span className="text-xl">✍️</span>
+              <div>
+                <div className="text-xs font-semibold text-white">Poetry Session</div>
+                <div className="text-[10px] font-mono-code text-neutral-400">Live spoken recital &amp; verse composition</div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setIsMobileActionSheetOpen(false)}
+              className="w-full py-3 rounded-xl bg-white/10 text-xs font-medium text-white text-center cursor-pointer mt-2"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 };

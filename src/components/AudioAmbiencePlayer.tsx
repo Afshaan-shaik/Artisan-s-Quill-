@@ -629,7 +629,7 @@ export const AudioAmbiencePlayer: React.FC = () => {
           <button
             id="toggle-ambience-music-btn"
             onClick={togglePlay}
-            className={`flex items-center gap-2 pl-3.5 pr-3 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:pl-3.5 sm:pr-3 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
               isPlaying && currentTrack
                 ? 'bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-extrabold shadow-[0_0_16px_rgba(201,168,117,0.6)]'
                 : 'text-[#e4be88] hover:text-white hover:bg-white/10'
@@ -658,7 +658,7 @@ export const AudioAmbiencePlayer: React.FC = () => {
               )}
             </div>
 
-            <span className="text-xs uppercase tracking-widest whitespace-nowrap font-bold max-w-[125px] truncate">
+            <span className="text-xs uppercase tracking-widest whitespace-nowrap font-bold max-w-[125px] truncate hidden md:inline">
               {isPlaying && currentTrack ? currentTrack.title : 'Music Sanctuary'}
             </span>
           </button>

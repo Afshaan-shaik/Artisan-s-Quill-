@@ -137,6 +137,28 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
   const isPoetry = currentWork.category === 'poetry';
   const poemFirstStanza = currentWork.poetryContent?.stanzas?.[0] || '';
 
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        // Swipe left -> next
+        setCurrentIndex((prev) => (prev + 1) % candidateSpotlights.length);
+      } else {
+        // Swipe right -> prev
+        setCurrentIndex((prev) => (prev - 1 + candidateSpotlights.length) % candidateSpotlights.length);
+      }
+    }
+    setTouchStartX(null);
+  };
+
   const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
   const romanIndex = romanNumerals[activeIndex] || `${activeIndex + 1}`;
 
@@ -146,6 +168,8 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
       aria-label="Curatorial Spotlight Hero Section"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-[#c9a875]/30 bg-[#06070a] shadow-[0_20px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(201,168,117,0.12)] transition-all duration-300 group"
     >
       {/* ─────────────────────────────────────────────────────────────
