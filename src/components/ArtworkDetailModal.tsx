@@ -113,7 +113,6 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   const [isSharedCopied, setIsSharedCopied] = useState(false);
   const [isStoryExporterOpen, setIsStoryExporterOpen] = useState(false);
   const [isMarginDrawerOpen, setIsMarginDrawerOpen] = useState(false);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [marginStanzaIdx, setMarginStanzaIdx] = useState<number>(0);
   const [marginVerseSnippet, setMarginVerseSnippet] = useState<string>('');
   const isAuthorAfshaan = artwork
@@ -636,7 +635,6 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   };
 
   return (
-    <>
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto bg-[#050608]/95 backdrop-blur-2xl">
       <div
         id="artwork-detail-modal"
@@ -739,7 +737,11 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                 )}
                 {isAuthor && onPermanentDelete && (
                   <button
-                    onClick={() => setIsDeleteConfirmOpen(true)}
+                    onClick={() => {
+                      if (window.confirm('Permanently purge this artwork? This cannot be undone.')) {
+                        onPermanentDelete(artwork.id);
+                      }
+                    }}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg bg-rose-950/90 border border-rose-500 text-rose-200 hover:bg-rose-600 hover:text-white shadow-[0_0_15px_rgba(244,63,94,0.4)] transition-all cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -763,7 +765,11 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                     )}
                     {onDelete && (
                       <button
-                        onClick={() => setIsDeleteConfirmOpen(true)}
+                        onClick={() => {
+                          if (window.confirm(`Move "${artwork.title}" to your Recycle Bin?`)) {
+                            onDelete(artwork.id);
+                          }
+                        }}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg bg-black/90 border border-rose-500/70 text-rose-300 hover:bg-rose-600 hover:text-white shadow-[0_0_15px_rgba(244,63,94,0.35)] transition-all cursor-pointer"
                         title="Delete this creation (Author privileges)"
                       >
@@ -775,10 +781,16 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                 ) : (
                   <div
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0e1017] border border-[#c9a875]/40 text-[#dfbd87] text-[11px] font-mono-code shadow-xs"
-                    title={`Created by ${artwork.artist.name}. Only the verified author has permission to edit or delete this artwork.`}
+                    title={
+                      currentUser.id === 'guest'
+                        ? 'Guest mode: Sign in or create an artist profile to manage creations.'
+                        : `Created by ${artwork.artist.name}. Only the verified author has permission to edit or delete this artwork.`
+                    }
                   >
                     <Lock className="w-3.5 h-3.5 text-[#c9a875]" />
-                    <span className="hidden sm:inline">Protected Creator Work</span>
+                    <span className="hidden sm:inline">
+                      {currentUser.id === 'guest' ? 'Protected Sanctuary Work' : 'Protected Creator Work'}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1234,7 +1246,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                     Circa {artwork.year}
                   </span>
                 )}
-                {isAuthor && (
+                {isAuthor && currentUser.id !== 'guest' && (
                   <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] uppercase font-bold tracking-widest font-mono-code ml-auto">
                     Your Artwork
                   </span>
@@ -1346,61 +1358,6 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                 </button>
               )}
             </div>
-
-            {/* Author Studio Controls Ribbon (Direct in-flow access for creator) */}
-            {isAuthor && (onEdit || onDelete || onRestore || onPermanentDelete) && (
-              <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-950/50 via-black/80 to-[#1c180a]/60 border border-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.2)] flex flex-col gap-3 animate-in fade-in duration-300">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-[11px] font-mono-code uppercase tracking-widest text-emerald-300 font-bold">
-                      Author Studio Privileges
-                    </span>
-                  </div>
-                  <span className="text-[9px] font-mono-code text-[#c9a875] px-2 py-0.5 rounded bg-[#c9a875]/10 border border-[#c9a875]/30">
-                    Your Creation
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2.5">
-                  {activeView !== 'recycle-bin' && onEdit && (
-                    <button
-                      id="details-panel-edit-btn"
-                      onClick={() => onEdit(artwork)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-black/90 hover:bg-gradient-to-r hover:from-[#c9a875] hover:to-[#dfbd87] text-[#e8c690] hover:text-black border border-[#c9a875]/80 hover:border-[#dfbd87] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md active:scale-95"
-                      title="Edit artwork details"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                      <span>Edit Artwork</span>
-                    </button>
-                  )}
-
-                  {activeView === 'recycle-bin' && onRestore && (
-                    <button
-                      id="details-panel-restore-btn"
-                      onClick={() => onRestore(artwork.id)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-emerald-950/90 hover:bg-emerald-600 text-emerald-200 hover:text-white border border-emerald-500/80 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md active:scale-95"
-                      title="Restore from recycle bin"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                      <span>Restore</span>
-                    </button>
-                  )}
-
-                  {(onDelete || onPermanentDelete) && (
-                    <button
-                      id="details-panel-delete-btn"
-                      onClick={() => setIsDeleteConfirmOpen(true)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-rose-950/90 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/80 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md active:scale-95"
-                      title="Delete creation"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span>{activeView === 'recycle-bin' ? 'Purge Forever' : 'Delete Artwork'}</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Artwork Specifications & Physical Medium */}
             <div className="space-y-4">
@@ -1630,143 +1587,5 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
         />
       )}
     </div>
-
-      {/* ── Mobile-Only Floating Author Action Bar ───────────────────────────────
-           Shown only on screens < md (768px) when this browser session authored
-           the artwork. Provides big touch-friendly Edit and Delete buttons that
-           are impossible to miss on a phone screen, replacing the cramped top-bar
-           controls which can overflow/hide on small viewports.
-      ────────────────────────────────────────────────────────────────────────── */}
-      {isAuthor && (onEdit || onDelete || onRestore || onPermanentDelete) && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-[140] pointer-events-none">
-          <div className="pointer-events-auto bg-[#08090e]/96 backdrop-blur-2xl border-t border-[#c9a875]/30 px-4 py-3 safe-area-bottom">
-            {/* Author Identity Pill */}
-            <div className="flex items-center justify-center gap-1.5 mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-mono-code uppercase tracking-widest text-emerald-300">
-                Your Creation · Author Controls
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Edit Button */}
-              {activeView !== 'recycle-bin' && onEdit && (
-                <button
-                  id="mobile-author-edit-btn"
-                  onClick={() => onEdit(artwork)}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-[#1a1408] to-[#1e180a] border border-[#c9a875]/70 text-[#e8c690] font-bold text-sm uppercase tracking-wider active:scale-95 transition-all shadow-[0_0_20px_rgba(201,168,117,0.2)]"
-                >
-                  <Edit3 className="w-4 h-4" />
-                  Edit Artwork
-                </button>
-              )}
-
-              {/* Restore Button (recycle-bin only) */}
-              {activeView === 'recycle-bin' && onRestore && (
-                <button
-                  id="mobile-author-restore-btn"
-                  onClick={() => onRestore(artwork.id)}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-emerald-950/80 to-emerald-900/60 border border-emerald-500/70 text-emerald-300 font-bold text-sm uppercase tracking-wider active:scale-95 transition-all"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Restore
-                </button>
-              )}
-
-              {/* Delete / Purge Button */}
-              {(onDelete || onPermanentDelete) && (
-                <button
-                  id="mobile-author-delete-btn"
-                  onClick={() => setIsDeleteConfirmOpen(true)}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-rose-950/80 to-rose-900/60 border border-rose-500/70 text-rose-300 font-bold text-sm uppercase tracking-wider active:scale-95 transition-all shadow-[0_0_20px_rgba(244,63,94,0.15)]"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  {activeView === 'recycle-bin' ? 'Purge Forever' : 'Delete'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── In-App Delete Confirmation Dialog ───────────────────────────────────
-           Replaces window.confirm() which can be blocked on iOS Safari.
-           Works on all devices including mobile browsers.
-      ────────────────────────────────────────────────────────────────────────── */}
-      {isDeleteConfirmOpen && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-          onClick={() => setIsDeleteConfirmOpen(false)}
-        >
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-
-          {/* Dialog Card */}
-          <div
-            className="relative w-full max-w-sm bg-[#0d0f14] border border-[#c9a875]/30 rounded-2xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.9)] z-10"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-white/10">
-              <div className="w-10 h-10 rounded-full bg-rose-950/80 border border-rose-500/50 flex items-center justify-center shrink-0">
-                <Trash2 className="w-5 h-5 text-rose-400" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold text-base">
-                  {activeView === 'recycle-bin' ? 'Permanently Purge?' : 'Delete Artwork?'}
-                </h3>
-                <p className="text-neutral-400 text-xs mt-0.5 font-mono-code">
-                  {activeView === 'recycle-bin' ? 'This cannot be undone.' : 'Moves to your Recycle Bin.'}
-                </p>
-              </div>
-            </div>
-
-            {/* Artwork Preview */}
-            <div className="px-6 py-4">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/10">
-                {artwork.mediaUrl && artwork.category !== 'poetry' && (
-                  <img
-                    src={artwork.thumbnailUrl || artwork.mediaUrl}
-                    alt={artwork.title}
-                    className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0"
-                  />
-                )}
-                <div className="min-w-0">
-                  <p className="text-white font-medium text-sm truncate">{artwork.title}</p>
-                  <p className="text-neutral-500 text-xs font-mono-code mt-0.5">
-                    by {artwork.artist.name} · {artwork.category}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 px-6 pb-6">
-              <button
-                id="delete-confirm-cancel-btn"
-                onClick={() => setIsDeleteConfirmOpen(false)}
-                className="flex-1 py-3 rounded-xl border border-white/20 text-neutral-300 font-semibold text-sm uppercase tracking-wider active:scale-95 transition-all hover:bg-white/5"
-              >
-                Cancel
-              </button>
-              <button
-                id="delete-confirm-proceed-btn"
-                onClick={() => {
-                  setIsDeleteConfirmOpen(false);
-                  if (activeView === 'recycle-bin') {
-                    if (onPermanentDelete) onPermanentDelete(artwork.id);
-                  } else {
-                    if (onDelete) onDelete(artwork.id);
-                  }
-                }}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-rose-700 to-rose-600 border border-rose-500 text-white font-bold text-sm uppercase tracking-wider active:scale-95 transition-all shadow-[0_0_20px_rgba(244,63,94,0.4)]"
-              >
-                {activeView === 'recycle-bin' ? '🗑️ Purge' : '🗑️ Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
   );
 };

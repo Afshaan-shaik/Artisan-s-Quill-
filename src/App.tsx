@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { Artwork, ArtCategory, UserProfile, Exhibition } from './types';
 import { DEFAULT_USER } from './data/initialData';
-import { GalleryService, isFounderUser, recordClientAuthoredArtwork } from './services/api';
+import { GalleryService, isFounderUser } from './services/api';
 import { useRealtimeGallery } from './hooks/useRealtimeGallery';
 import { useGalleryStore } from './store/useGalleryStore';
 import { Navbar } from './components/Navbar';
@@ -538,23 +538,7 @@ export default function App() {
   };
 
   const handleUploadSuccess = (newArtwork: Artwork) => {
-    // 1. Record client authorship so this browser can edit/delete in guest mode
-    recordClientAuthoredArtwork(newArtwork.id);
-
-    // 2. Prepend immediately to Zustand store so it shows up in real-time
-    useGalleryStore.getState().prependArtwork(newArtwork);
-
-    // 3. Persist to GalleryService stored artworks
-    try {
-      const currentStored = GalleryService.getStoredArtworks();
-      if (!currentStored.some((a) => a.id === newArtwork.id)) {
-        GalleryService.saveArtworks([newArtwork, ...currentStored]);
-      }
-    } catch {}
-
-    // 4. Broadcast across WebSocket and network channels
     realtimeBroker.broadcastArtwork(newArtwork);
-
     setIsUploadModalOpen(false);
     triggerNotification(`"${newArtwork.title}" successfully inaugurated into the sanctuary.`, 'success');
   };
@@ -566,6 +550,10 @@ export default function App() {
   };
 
   const handleEditArtwork = (artwork: Artwork) => {
+    if (currentUser.id === 'guest') {
+      triggerNotification('Guest visitors cannot edit artworks. Please sign in or create an artist profile to manage creations.', 'error');
+      return;
+    }
     if (!GalleryService.canUserManageArtwork(artwork, currentUser)) {
       triggerNotification(`Access Denied: "${artwork.title}" was created by ${artwork.artist.name}. Only the author can edit this artwork.`, 'error');
       return;
@@ -575,13 +563,15 @@ export default function App() {
   };
 
   const handleSaveEdit = (updatedArtwork: Artwork) => {
+    if (currentUser.id === 'guest') {
+      triggerNotification('Guest visitors cannot edit artworks. Please sign in or create an artist profile.', 'error');
+      return;
+    }
     const res = GalleryService.updateArtwork(updatedArtwork.id, updatedArtwork, currentUser);
     if (res.error) {
       triggerNotification(res.error, 'error');
       return;
     }
-    useGalleryStore.getState().updateArtwork(updatedArtwork.id, updatedArtwork);
-    realtimeBroker.broadcastArtworkUpdate(updatedArtwork.id, updatedArtwork);
     setIsEditModalOpen(false);
     setArtworkToEdit(null);
     refreshArtworks();
@@ -592,13 +582,15 @@ export default function App() {
   };
 
   const handleDeleteArtwork = (id: string) => {
+    if (currentUser.id === 'guest') {
+      triggerNotification('Guest visitors cannot delete artworks. Please sign in or create an artist profile to manage creations.', 'error');
+      return;
+    }
     const res = GalleryService.deleteArtwork(id, currentUser);
     if (!res.success) {
       triggerNotification(res.message, 'error');
       return;
     }
-    useGalleryStore.getState().removeArtwork(id);
-    realtimeBroker.broadcastDelete(id);
     setSelectedArtwork(null);
     refreshArtworks();
     triggerNotification(res.message, 'success');
@@ -612,6 +604,10 @@ export default function App() {
   };
 
   const handleEditPoem = (poem: Artwork) => {
+    if (currentUser.id === 'guest') {
+      triggerNotification('Guest visitors cannot edit poems. Please sign in or create an artist profile to manage creations.', 'error');
+      return;
+    }
     if (!GalleryService.canUserManageArtwork(poem, currentUser)) {
       triggerNotification(`Only the author can edit "${poem.title}".`, 'error');
       return;
@@ -621,6 +617,10 @@ export default function App() {
   };
 
   const handleDeletePoem = (poem: Artwork) => {
+    if (currentUser.id === 'guest') {
+      triggerNotification('Guest visitors cannot delete poems. Please sign in or create an artist profile to manage creations.', 'error');
+      return;
+    }
     const res = GalleryService.deleteArtwork(poem.id, currentUser);
     if (!res.success) {
       triggerNotification(res.message, 'error');
@@ -715,6 +715,10 @@ export default function App() {
   };
 
   const handlePermanentDeleteArtwork = (id: string) => {
+    if (currentUser.id === 'guest') {
+      triggerNotification('Guest visitors cannot purge artworks. Please sign in or create an artist profile.', 'error');
+      return;
+    }
     const res = GalleryService.permanentlyDeleteArtwork(id, currentUser);
     if (!res.success) {
       triggerNotification(res.message, 'error');

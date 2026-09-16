@@ -48,10 +48,16 @@ export const EditArtworkModal: React.FC<EditArtworkModalProps> = ({
 
   if (!isOpen || !artwork) return null;
 
-  const isAuthor = GalleryService.canUserManageArtwork(artwork, currentUser);
+  const isGuest = currentUser.id === 'guest';
+  const isAuthor = !isGuest && GalleryService.canUserManageArtwork(artwork, currentUser);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isGuest) {
+      setErrorMsg('Guest visitors cannot edit artworks. Please sign in or create an artist profile to manage creations.');
+      return;
+    }
 
     if (!isAuthor) {
       setErrorMsg(`Access Denied: You cannot modify "${artwork.title}" because it was created by ${artwork.artist.name}. Only the verified author has edit privileges.`);
@@ -115,18 +121,24 @@ export const EditArtworkModal: React.FC<EditArtworkModalProps> = ({
           </div>
         </div>
 
-        {/* Security Alert if not Author */}
-        {!isAuthor ? (
+        {/* Security Alert if not Author or if Guest */}
+        {!isAuthor || isGuest ? (
           <div className="p-6 rounded-xl bg-rose-950/80 border border-rose-500/50 space-y-3 text-center my-auto">
             <div className="w-12 h-12 rounded-full bg-rose-500/20 border border-rose-500 flex items-center justify-center mx-auto text-rose-300">
               <Lock className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-serif-display text-white font-bold">
-              Access Restricted to Author
+              {isGuest ? 'Sign In or Profile Required' : 'Access Restricted to Author'}
             </h3>
             <p className="text-xs text-rose-200 font-light leading-relaxed max-w-md mx-auto">
-              You are currently logged in as <span className="font-bold text-white">{currentUser.name}</span>, but this masterpiece belongs to <span className="font-bold text-white">{artwork.artist.name}</span>.
-              In accordance with Atelier sanctuary provenance rules, only the original creator may modify or delete their works.
+              {isGuest ? (
+                'Guest visitors cannot edit or delete artworks. Please sign in or create an artist profile to manage and curate your creations.'
+              ) : (
+                <>
+                  You are currently logged in as <span className="font-bold text-white">{currentUser.name}</span>, but this masterpiece belongs to <span className="font-bold text-white">{artwork.artist.name}</span>.
+                  In accordance with Atelier sanctuary provenance rules, only the original creator may modify or delete their works.
+                </>
+              )}
             </p>
             <div className="pt-2">
               <button
