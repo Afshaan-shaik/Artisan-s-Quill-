@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Upload, Feather, Palette, PenTool, Image as ImageIcon, Film, Sparkles, Check, RefreshCw, Music } from 'lucide-react';
 import { ArtCategory, Artwork, PoetryTheme, PoetryFont, AspectRatioType } from '../types';
 import { PoetryCard } from './PoetryCard';
-import { GalleryService } from '../services/api';
+import { GalleryService, recordClientAuthoredArtwork, getGuestAuthorSessionId } from '../services/api';
 import { uploadArtworkMediaToStorage } from '../services/supabaseClient';
 
 interface MediaUploadModalProps {
@@ -172,9 +172,10 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
       .filter((t) => t.length > 0);
 
     const isGuest = activeUser.id === 'guest';
+    const guestDevId = getGuestAuthorSessionId();
     const artistObj = isGuest
       ? {
-          id: `guest-${Date.now()}`,
+          id: guestDevId,
           name: guestName.trim() || 'Guest Artist',
           handle: guestHandle.startsWith('@') ? guestHandle.trim() : `@${guestHandle.trim() || 'guest'}`,
           avatar: '/curatorial-masterpiece.svg',
@@ -231,6 +232,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
           subtitle: poetrySubtitle.trim()
         }
       };
+      recordClientAuthoredArtwork(poetryArtwork.id);
       onSuccess(poetryArtwork);
     } else {
       const resolvedMediaUrl = mediaUrl.trim() || '/curatorial-masterpiece.svg';
@@ -268,6 +270,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
               }
             : undefined
       };
+      recordClientAuthoredArtwork(visualArtwork.id);
       onSuccess(visualArtwork);
     }
   };

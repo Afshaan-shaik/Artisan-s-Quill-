@@ -1347,6 +1347,61 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
               )}
             </div>
 
+            {/* Author Studio Controls Ribbon (Direct in-flow access for creator) */}
+            {isAuthor && (onEdit || onDelete || onRestore || onPermanentDelete) && (
+              <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-950/50 via-black/80 to-[#1c180a]/60 border border-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.2)] flex flex-col gap-3 animate-in fade-in duration-300">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[11px] font-mono-code uppercase tracking-widest text-emerald-300 font-bold">
+                      Author Studio Privileges
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono-code text-[#c9a875] px-2 py-0.5 rounded bg-[#c9a875]/10 border border-[#c9a875]/30">
+                    Your Creation
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  {activeView !== 'recycle-bin' && onEdit && (
+                    <button
+                      id="details-panel-edit-btn"
+                      onClick={() => onEdit(artwork)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-black/90 hover:bg-gradient-to-r hover:from-[#c9a875] hover:to-[#dfbd87] text-[#e8c690] hover:text-black border border-[#c9a875]/80 hover:border-[#dfbd87] text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md active:scale-95"
+                      title="Edit artwork details"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      <span>Edit Artwork</span>
+                    </button>
+                  )}
+
+                  {activeView === 'recycle-bin' && onRestore && (
+                    <button
+                      id="details-panel-restore-btn"
+                      onClick={() => onRestore(artwork.id)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-emerald-950/90 hover:bg-emerald-600 text-emerald-200 hover:text-white border border-emerald-500/80 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md active:scale-95"
+                      title="Restore from recycle bin"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Restore</span>
+                    </button>
+                  )}
+
+                  {(onDelete || onPermanentDelete) && (
+                    <button
+                      id="details-panel-delete-btn"
+                      onClick={() => setIsDeleteConfirmOpen(true)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-rose-950/90 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/80 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md active:scale-95"
+                      title="Delete creation"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>{activeView === 'recycle-bin' ? 'Purge Forever' : 'Delete Artwork'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Artwork Specifications & Physical Medium */}
             <div className="space-y-4">
               <h3 className="text-[10px] uppercase tracking-[0.3em] font-medium text-neutral-500">

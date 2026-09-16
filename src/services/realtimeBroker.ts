@@ -1,11 +1,12 @@
 import { Artwork, Comment, MarginReflection, UserProfile } from '../types';
-import { subscribeToCloudArtworks, subscribeToCloudComments, syncArtworkToCloud, syncArtworkLikeToCloud, syncCommentToCloud } from './firebase';
+import { subscribeToCloudArtworks, subscribeToCloudComments, syncArtworkToCloud, syncArtworkLikeToCloud, syncCommentToCloud, deleteArtworkFromCloud } from './firebase';
 import {
   getSupabaseClient,
   CloudArtworkRow,
   mapRowToArtwork,
   saveArtworkToSupabase,
   updateArtworkInSupabase,
+  deleteArtworkInSupabase,
   addCommentToSupabase,
   addMarginReflectionToSupabase,
   upsertProfileToSupabase
@@ -292,6 +293,18 @@ class RealtimeBroker {
     // Push to Supabase Postgres and Cloud
     saveArtworkToSupabase(artwork).catch(() => {});
     syncArtworkToCloud(artwork).catch(() => {});
+  }
+
+  public broadcastDelete(artworkId: string) {
+    this.emit({ type: 'ARTWORK_DELETED', payload: { id: artworkId } }, true);
+    deleteArtworkInSupabase(artworkId).catch(() => {});
+    deleteArtworkFromCloud(artworkId).catch(() => {});
+  }
+
+  public broadcastArtworkUpdate(artworkId: string, updates: Partial<Artwork>) {
+    this.emit({ type: 'ARTWORK_UPDATED', payload: { id: artworkId, updates } }, true);
+    updateArtworkInSupabase(artworkId, updates).catch(() => {});
+    syncArtworkToCloud({ id: artworkId, ...updates } as any).catch(() => {});
   }
 
   public broadcastLike(artworkId: string, likesCount: number) {

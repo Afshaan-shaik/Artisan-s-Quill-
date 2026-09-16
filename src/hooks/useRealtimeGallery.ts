@@ -3,6 +3,7 @@ import { useGalleryStore } from '../store/useGalleryStore';
 import { Artwork, ArtCategory, Comment } from '../types';
 import { realtimeBroker } from '../services/realtimeBroker';
 import { uploadMediaToSupabase } from '../services/supabaseClient';
+import { recordClientAuthoredArtwork, getGuestAuthorSessionId } from '../services/api';
 
 export function useRealtimeGallery() {
   const artworks = useGalleryStore((state) => state.artworks);
@@ -81,7 +82,7 @@ export function useRealtimeGallery() {
         id: `art-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         title: meta.title?.trim() || 'Untitled Creation',
         artist: {
-          id: `artist-${Date.now()}`,
+          id: getGuestAuthorSessionId(),
           name: meta.artistName?.trim() || 'Guest Artist',
           handle: meta.artistHandle?.trim().startsWith('@')
             ? meta.artistHandle.trim()
@@ -109,12 +110,18 @@ export function useRealtimeGallery() {
         poetryContent: meta.poetryContent
       };
 
+      // Record client authorship in persistent storage
+      recordClientAuthoredArtwork(newArtwork.id);
+
+      // Prepend to local Zustand store immediately
+      prependArtwork(newArtwork);
+
       // Broadcast globally (persists to Supabase Postgres + broadcasts to all tabs & clients)
       realtimeBroker.broadcastArtwork(newArtwork);
 
       return newArtwork;
     },
-    []
+    [prependArtwork]
   );
 
   // 4. Realtime Like & Save Actions with Instant Propagation

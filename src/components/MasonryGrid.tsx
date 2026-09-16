@@ -5,7 +5,7 @@ import { PoetryCard } from './PoetryCard';
 import confetti from 'canvas-confetti';
 import { motion } from 'motion/react';
 import { isVideoMedia, isAudioMedia, getMediaPoster } from '../utils/mediaUtils';
-import { isClientAuthor } from '../services/api';
+import { isClientAuthor, GalleryService } from '../services/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -90,6 +90,8 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+
+  const isAuthor = isClientAuthor(artwork.id) || GalleryService.canUserManageArtwork(artwork, GalleryService.getCurrentUser());
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -217,7 +219,7 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
              Shown only when this browser session uploaded the artwork.
              Gives guests a clear visual cue that they can edit/delete it.
         ────────────────────────────────────────────────────────────────── */}
-        {isClientAuthor(artwork.id) && (
+        {isAuthor && (
           <div className="md:hidden absolute top-3 right-3 z-20 flex items-center gap-1 px-2 py-1 bg-emerald-950/90 backdrop-blur-md border border-emerald-500/60 rounded-md shadow-[0_0_10px_rgba(52,211,153,0.3)]">
             <Edit3 className="w-3 h-3 text-emerald-400" />
             <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-300">Your Art</span>

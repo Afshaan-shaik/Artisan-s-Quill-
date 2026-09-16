@@ -21,6 +21,7 @@ import {
 } from './supabaseClient';
 import { syncArtworkToCloud, deleteArtworkFromCloud, syncUserProfileToCloud, syncArtworkLikeToCloud, syncCommentToCloud } from './firebase';
 import { realtimeBroker } from './realtimeBroker';
+import { useGalleryStore } from '../store/useGalleryStore';
 
 const COMMENTS_STORAGE_KEY = 'atelier_noir_comments_v1';
 const MARGINS_STORAGE_KEY = 'atelier_noir_margins_v1';
@@ -36,6 +37,66 @@ const READING_QUEUE_KEY = 'atelier_reading_queue_v1';
 const CREDENTIALS_STORAGE_KEY = 'atelier_noir_credentials_v1';
 /** Tracks artwork IDs created in this browser — enables guest/artist edit+delete of own works */
 const AUTHORED_ARTWORKS_KEY = 'atelier_authored_artworks_v1';
+const GUEST_AUTHORED_BACKUP_KEY = 'artisan_guest_authored_ids';
+const GUEST_DEVICE_SESSION_KEY = 'atelier_guest_device_token_v1';
+
+/**
+ * Returns a stable unique device author token stored in localStorage for this guest browser.
+ * This guarantees that even across multiple uploads without an account, the guest creator
+ * maintains consistent authorship provenance.
+ */
+export function getGuestAuthorSessionId(): string {
+  try {
+    if (typeof window === 'undefined') return 'guest-device-ephemeral';
+    let token = localStorage.getItem(GUEST_DEVICE_SESSION_KEY);
+    if (!token) {
+      token = `guest-author-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
+      localStorage.setItem(GUEST_DEVICE_SESSION_KEY, token);
+    }
+    return token;
+  } catch {
+    return 'guest-device-ephemeral';
+  }
+}
+
+/**
+ * Returns true if an artwork is part of the permanent sanctuary collection or core masterworks.
+ * These are preserved against any deletion or unauthorized modification.
+ */
+export function isPermanentCuratorialMasterwork(artworkId?: string | null): boolean {
+  if (!artworkId) return false;
+  if (
+    artworkId.startsWith('init-') ||
+    artworkId.startsWith('masterpiece-') ||
+    artworkId.startsWith('default-') ||
+    artworkId === 'spotlight-masterpiece-1' ||
+    artworkId === 'afshaan-poetry-1' ||
+    artworkId === 'coffee-poem-1' ||
+    artworkId === 'coffee-poem-2' ||
+    artworkId === 'coffee-poem-3'
+  ) {
+    return true;
+  }
+  return INITIAL_ARTWORKS.some((init) => init.id === artworkId);
+}
+
+/**
+ * Returns true if an artwork is authored by founder Afshaan Shaikh.
+ */
+export function isFounderArtwork(artwork?: Partial<Artwork> | null): boolean {
+  if (!artwork || !artwork.artist) return false;
+  const h = (artwork.artist.handle || '').toLowerCase();
+  const n = (artwork.artist.name || '').toLowerCase();
+  const id = (artwork.artist.id || '').toLowerCase();
+  return (
+    h === '@afshaanshaikh' ||
+    h === '@afshaan.creator' ||
+    h.includes('afshaan') ||
+    n.includes('afshaan') ||
+    id === DEFAULT_USER.id ||
+    id === 'user-my-atelier'
+  );
+}
 
 /** Email of the sanctuary founder — requires verified credentials or OAuth */
 export const FOUNDER_EMAIL = 'afshaan100@gmail.com';
@@ -64,15 +125,22 @@ export function isFounderUser(user?: Partial<UserProfile> | null): boolean {
 
 /**
  * Records an artwork ID as authored by this browser session.
- * Called immediately after createArtwork so the creator can always edit/delete it.
+ * Called immediately on upload so the creator can always edit/delete it, even in guest mode.
  */
 export function recordClientAuthoredArtwork(artworkId: string): void {
+  if (!artworkId) return;
   try {
     const raw = localStorage.getItem(AUTHORED_ARTWORKS_KEY);
     const ids: string[] = raw ? JSON.parse(raw) : [];
     if (!ids.includes(artworkId)) {
       ids.push(artworkId);
       localStorage.setItem(AUTHORED_ARTWORKS_KEY, JSON.stringify(ids));
+    }
+    const rawBackup = localStorage.getItem(GUEST_AUTHORED_BACKUP_KEY);
+    const backupIds: string[] = rawBackup ? JSON.parse(rawBackup) : [];
+    if (!backupIds.includes(artworkId)) {
+      backupIds.push(artworkId);
+      localStorage.setItem(GUEST_AUTHORED_BACKUP_KEY, JSON.stringify(backupIds));
     }
   } catch {
     // Silently ignore storage errors
@@ -84,11 +152,19 @@ export function recordClientAuthoredArtwork(artworkId: string): void {
  * Provides authorship provenance for guests and cross-session edge cases.
  */
 export function isClientAuthor(artworkId: string): boolean {
+  if (!artworkId) return false;
   try {
     const raw = localStorage.getItem(AUTHORED_ARTWORKS_KEY);
-    if (!raw) return false;
-    const ids: string[] = JSON.parse(raw);
-    return ids.includes(artworkId);
+    if (raw) {
+      const ids: string[] = JSON.parse(raw);
+      if (ids.includes(artworkId)) return true;
+    }
+    const rawBackup = localStorage.getItem(GUEST_AUTHORED_BACKUP_KEY);
+    if (rawBackup) {
+      const ids: string[] = JSON.parse(rawBackup);
+      if (ids.includes(artworkId)) return true;
+    }
+    return false;
   } catch {
     return false;
   }
@@ -244,11 +320,11 @@ export class GalleryService {
     }
   }
 
-  private static getStoredArtworks(): Artwork[] {
+  static getStoredArtworks(): Artwork[] {
     return this._artworksCache;
   }
 
-  private static saveArtworks(artworks: Artwork[]) {
+  static saveArtworks(artworks: Artwork[]) {
     this._artworksCache = [...artworks];
   }
 
@@ -420,30 +496,67 @@ export class GalleryService {
   }
 
   static canUserManageArtwork(artwork: Artwork | null | undefined, userOrId: UserProfile | string | null | undefined): boolean {
-    if (!artwork || !userOrId) return false;
-    const userId = typeof userOrId === 'string' ? userOrId : userOrId.id;
-    const userHandle = typeof userOrId === 'string' ? userOrId : userOrId.handle;
+    if (!artwork) return false;
 
-    const isUserFounder = isFounderUser(typeof userOrId === 'string' ? ({ id: userOrId, handle: userOrId } as any) : userOrId);
+    // 1. Curatorial masterworks are protected forever (only founder can manage)
+    if (isPermanentCuratorialMasterwork(artwork.id)) {
+      return isFounderUser(typeof userOrId === 'string' ? ({ id: userOrId, handle: userOrId } as any) : userOrId);
+    }
 
-    const isArtFounder =
-      artwork.artist.id === DEFAULT_USER.id ||
-      artwork.artist.id === 'user-my-atelier' ||
-      artwork.artist.handle === DEFAULT_USER.handle ||
-      artwork.artist.handle === '@afshaanshaikh' ||
-      artwork.artist.handle === '@afshaan.creator';
+    // 2. Founder artwork can only be edited/deleted by founder
+    if (isFounderArtwork(artwork)) {
+      return isFounderUser(typeof userOrId === 'string' ? ({ id: userOrId, handle: userOrId } as any) : userOrId);
+    }
 
-    if (isUserFounder && isArtFounder) return true;
+    // 3. Client-authored in this browser session (persistent dual localStorage)
+    if (isClientAuthor(artwork.id)) {
+      return true;
+    }
 
-    // Allow management if this browser session authored the artwork (guests included)
-    if (isClientAuthor(artwork.id)) return true;
+    // 4. Stable guest device author match
+    const guestDevToken = getGuestAuthorSessionId();
+    if (guestDevToken && artwork.artist?.id === guestDevToken) {
+      return true;
+    }
 
-    return (
-      artwork.artist.id === userId ||
-      artwork.artist.handle === userHandle ||
-      (userHandle && artwork.artist.handle?.toLowerCase() === userHandle.toLowerCase()) ||
-      (userId && artwork.artist.id?.toLowerCase() === userId.toLowerCase())
-    );
+    // 5. Authenticated user ID or handle match
+    if (userOrId) {
+      const isUserFounder = isFounderUser(typeof userOrId === 'string' ? ({ id: userOrId, handle: userOrId } as any) : userOrId);
+      if (isUserFounder) return true;
+
+      const userId = typeof userOrId === 'string' ? userOrId : userOrId.id;
+      const userHandle = typeof userOrId === 'string' ? userOrId : userOrId.handle;
+
+      if (userId && userId !== 'guest' && artwork.artist?.id === userId) return true;
+      if (
+        userHandle &&
+        userHandle !== '@visitor' &&
+        userHandle !== '@guest' &&
+        artwork.artist?.handle?.toLowerCase() === userHandle.toLowerCase()
+      ) {
+        return true;
+      }
+    }
+
+    // 6. GUEST MODE AUTHORSHIP FOR COMMUNITY/GUEST CREATIONS:
+    // When visiting in guest mode (no account), any guest-created piece (not masterwork,
+    // not founder, not verified artist) is manageable by the guest visitor.
+    // Also auto-records this artwork ID into client authorship so provenance is locked to this browser.
+    const isGuestVisitor = !userOrId || (typeof userOrId === 'object' ? userOrId.id === 'guest' : userOrId === 'guest');
+    const isGuestPiece =
+      artwork.artist?.id?.startsWith('guest') ||
+      artwork.artist?.id?.startsWith('artist-') ||
+      artwork.artist?.handle?.toLowerCase().includes('guest') ||
+      artwork.artist?.handle?.toLowerCase().includes('scribe') ||
+      artwork.artist?.name?.toLowerCase().includes('guest') ||
+      artwork.artist?.verified !== true;
+
+    if (isGuestVisitor && isGuestPiece) {
+      recordClientAuthoredArtwork(artwork.id);
+      return true;
+    }
+
+    return false;
   }
 
   static getArtworkById(id: string): Artwork | undefined {
@@ -458,21 +571,35 @@ export class GalleryService {
   }
 
   static deleteArtwork(id: string, requester?: UserProfile | string): { success: boolean; message: string } {
-    const list = this.getStoredArtworks();
-    const index = list.findIndex((a) => a.id === id);
-    if (index === -1) {
-      return { success: false, message: 'Artwork not found.' };
-    }
-
     // Strict Curatorial Protection: foundational masterworks cannot be deleted
-    if (INITIAL_ARTWORKS.some((init) => init.id === id) || id === 'spotlight-masterpiece-1' || id === 'afshaan-poetry-1' || id === 'coffee-poem-1' || id === 'coffee-poem-2' || id === 'coffee-poem-3') {
+    if (isPermanentCuratorialMasterwork(id)) {
       return {
         success: false,
         message: 'Curatorial Sanctuary Protection: Foundational sanctuary masterworks are preserved and cannot be deleted.'
       };
     }
 
-    const artwork = list[index];
+    const list = this.getStoredArtworks();
+    let index = list.findIndex((a) => a.id === id);
+    let artwork = list[index];
+
+    // If not in local cache, look in useGalleryStore
+    if (!artwork && typeof window !== 'undefined') {
+      try {
+        const storeArtworks = useGalleryStore.getState().artworks;
+        const found = storeArtworks.find((a) => a.id === id);
+        if (found) {
+          artwork = found;
+          list.push({ ...found });
+          index = list.length - 1;
+        }
+      } catch {}
+    }
+
+    if (!artwork || index === -1) {
+      return { success: false, message: 'Artwork not found.' };
+    }
+
     const currentRequester = requester || this.getCurrentUser();
 
     // Strict Ownership Check
@@ -486,7 +613,17 @@ export class GalleryService {
     list[index].isDeleted = true;
     this.saveArtworks(list);
 
-    // Persist deletion to Supabase Postgres
+    // Synchronize Zustand gallery store immediately
+    try {
+      if (typeof window !== 'undefined') {
+        useGalleryStore.getState().removeArtwork(id);
+      }
+    } catch {}
+
+    // Broadcast deletion across all edge realtime channels
+    realtimeBroker.broadcastDelete(id);
+
+    // Persist deletion to Supabase Postgres & Cloud
     deleteArtworkInSupabase(id).catch(() => {});
     deleteArtworkFromCloud(id).catch(() => {});
 
@@ -520,17 +657,23 @@ export class GalleryService {
   }
 
   static permanentlyDeleteArtwork(id: string, requester?: UserProfile | string): { success: boolean; message: string } {
-    const list = this.getStoredArtworks();
-    const target = list.find((a) => a.id === id);
-    if (!target) {
-      return { success: false, message: 'Artwork not found.' };
-    }
-
-    if (INITIAL_ARTWORKS.some((init) => init.id === id) || id === 'spotlight-masterpiece-1' || id === 'afshaan-poetry-1' || id === 'coffee-poem-1' || id === 'coffee-poem-2' || id === 'coffee-poem-3') {
+    if (isPermanentCuratorialMasterwork(id)) {
       return {
         success: false,
         message: 'Curatorial Sanctuary Protection: Permanent collection masterworks are preserved and cannot be purged.'
       };
+    }
+
+    const list = this.getStoredArtworks();
+    let target = list.find((a) => a.id === id);
+    if (!target && typeof window !== 'undefined') {
+      try {
+        target = useGalleryStore.getState().artworks.find((a) => a.id === id);
+      } catch {}
+    }
+
+    if (!target) {
+      return { success: false, message: 'Artwork not found.' };
     }
 
     const currentRequester = requester || this.getCurrentUser();
@@ -543,6 +686,16 @@ export class GalleryService {
 
     const filtered = list.filter((a) => a.id !== id);
     this.saveArtworks(filtered);
+
+    // Synchronize Zustand gallery store immediately
+    try {
+      if (typeof window !== 'undefined') {
+        useGalleryStore.getState().removeArtwork(id);
+      }
+    } catch {}
+
+    // Broadcast across edge realtime channels
+    realtimeBroker.broadcastDelete(id);
 
     // Permanently purge from Supabase Postgres & Cloud
     deleteArtworkInSupabase(id).catch(() => {});
@@ -557,7 +710,19 @@ export class GalleryService {
     requester?: UserProfile | string
   ): { artwork?: Artwork; error?: string } {
     const list = this.getStoredArtworks();
-    const index = list.findIndex((a) => a.id === id);
+    let index = list.findIndex((a) => a.id === id);
+
+    if (index === -1 && typeof window !== 'undefined') {
+      try {
+        const storeArtworks = useGalleryStore.getState().artworks;
+        const found = storeArtworks.find((a) => a.id === id);
+        if (found) {
+          list.push({ ...found });
+          index = list.length - 1;
+        }
+      } catch {}
+    }
+
     if (index === -1) {
       return { error: 'Artwork not found.' };
     }
@@ -574,6 +739,16 @@ export class GalleryService {
 
     list[index] = { ...list[index], ...updates };
     this.saveArtworks(list);
+
+    // Synchronize Zustand gallery store immediately
+    try {
+      if (typeof window !== 'undefined') {
+        useGalleryStore.getState().updateArtwork(id, updates);
+      }
+    } catch {}
+
+    // Broadcast update across edge realtime channels
+    realtimeBroker.broadcastArtworkUpdate(id, updates);
 
     // Sync to Supabase Postgres & Cloud
     updateArtworkInSupabase(id, updates).catch(() => {});
@@ -595,7 +770,7 @@ export class GalleryService {
       id: artworkData.id || `art-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       title: artworkData.title || 'Untitled Creation',
       artist: {
-        id: isGuest ? `guest-${Date.now()}` : currentUser.id,
+        id: isGuest ? getGuestAuthorSessionId() : currentUser.id,
         name: artistName,
         handle: artistHandle,
         avatar: artistAvatar,
@@ -633,12 +808,18 @@ export class GalleryService {
     saveArtworkToSupabase(newArtwork).catch(() => {});
     syncArtworkToCloud(newArtwork).catch(() => {});
 
+    // Sync to Zustand store immediately
+    try {
+      if (typeof window !== 'undefined') {
+        useGalleryStore.getState().prependArtwork(newArtwork);
+      }
+    } catch {}
+
     // Broadcast globally across edge WebSocket channels
     realtimeBroker.broadcastArtwork(newArtwork);
 
     // Record client-side authorship so the creator can edit/delete from this browser
     recordClientAuthoredArtwork(newArtwork.id);
-
     return newArtwork;
   }
 

@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { Artwork, ArtCategory, UserProfile, Exhibition } from './types';
 import { DEFAULT_USER } from './data/initialData';
-import { GalleryService, isFounderUser } from './services/api';
+import { GalleryService, isFounderUser, recordClientAuthoredArtwork } from './services/api';
 import { useRealtimeGallery } from './hooks/useRealtimeGallery';
 import { useGalleryStore } from './store/useGalleryStore';
 import { Navbar } from './components/Navbar';
@@ -538,7 +538,23 @@ export default function App() {
   };
 
   const handleUploadSuccess = (newArtwork: Artwork) => {
+    // 1. Record client authorship so this browser can edit/delete in guest mode
+    recordClientAuthoredArtwork(newArtwork.id);
+
+    // 2. Prepend immediately to Zustand store so it shows up in real-time
+    useGalleryStore.getState().prependArtwork(newArtwork);
+
+    // 3. Persist to GalleryService stored artworks
+    try {
+      const currentStored = GalleryService.getStoredArtworks();
+      if (!currentStored.some((a) => a.id === newArtwork.id)) {
+        GalleryService.saveArtworks([newArtwork, ...currentStored]);
+      }
+    } catch {}
+
+    // 4. Broadcast across WebSocket and network channels
     realtimeBroker.broadcastArtwork(newArtwork);
+
     setIsUploadModalOpen(false);
     triggerNotification(`"${newArtwork.title}" successfully inaugurated into the sanctuary.`, 'success');
   };
@@ -564,6 +580,8 @@ export default function App() {
       triggerNotification(res.error, 'error');
       return;
     }
+    useGalleryStore.getState().updateArtwork(updatedArtwork.id, updatedArtwork);
+    realtimeBroker.broadcastArtworkUpdate(updatedArtwork.id, updatedArtwork);
     setIsEditModalOpen(false);
     setArtworkToEdit(null);
     refreshArtworks();
@@ -579,6 +597,8 @@ export default function App() {
       triggerNotification(res.message, 'error');
       return;
     }
+    useGalleryStore.getState().removeArtwork(id);
+    realtimeBroker.broadcastDelete(id);
     setSelectedArtwork(null);
     refreshArtworks();
     triggerNotification(res.message, 'success');

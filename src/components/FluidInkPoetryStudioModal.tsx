@@ -21,7 +21,7 @@ import {
   PenTool
 } from 'lucide-react';
 import { Artwork, ArtCategory, UserProfile } from '../types';
-import { GalleryService } from '../services/api';
+import { GalleryService, recordClientAuthoredArtwork, getGuestAuthorSessionId } from '../services/api';
 import confetti from 'canvas-confetti';
 
 interface FluidInkPoetryStudioModalProps {
@@ -545,6 +545,7 @@ export const FluidInkPoetryStudioModal: React.FC<FluidInkPoetryStudioModalProps>
       const description = poemVerse.trim() || 'Hand-scribed in the Fluid Ink & Gold-Leaf Poetry Sanctuary Studio.';
 
       const isGuest = currentUser.id === 'guest';
+      const guestDevId = getGuestAuthorSessionId();
       const artistName = isGuest ? 'Guest Artist' : currentUser.name;
       const artistHandle = isGuest ? `@guest_${Date.now().toString(36).substring(2, 6)}` : currentUser.handle;
       const artistAvatar = isGuest ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80' : currentUser.avatar;
@@ -554,7 +555,7 @@ export const FluidInkPoetryStudioModal: React.FC<FluidInkPoetryStudioModalProps>
         title,
         description,
         artist: {
-          id: isGuest ? `guest-${Date.now()}` : currentUser.id,
+          id: isGuest ? guestDevId : currentUser.id,
           name: artistName,
           handle: artistHandle,
           avatar: artistAvatar,
@@ -595,6 +596,7 @@ export const FluidInkPoetryStudioModal: React.FC<FluidInkPoetryStudioModalProps>
         colors: ['#c9a875', '#ffffff', '#dfbd87', '#10b981']
       });
 
+      recordClientAuthoredArtwork(newArtwork.id);
       onPublishSuccess(newArtwork);
       onClose();
     } catch (err) {
