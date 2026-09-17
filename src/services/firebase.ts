@@ -3,6 +3,8 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   User as FirebaseUser,
@@ -264,13 +266,13 @@ export async function signInWithGoogleAccount(): Promise<{
   isConfigError?: boolean;
   isUnauthorizedDomain?: boolean;
   unauthorizedDomainName?: string;
+  isPopupBlocked?: boolean;
 }> {
-  // If no API key configured yet, prompt setup
   if (!isFirebaseConfigured()) {
     return {
       success: false,
       isConfigError: true,
-      error: 'Firebase API key not configured yet. Paste your free Firebase web app config to enable real Google Authentication.'
+      error: 'Firebase API key not configured yet. Please configure your Firebase credentials.'
     };
   }
 
@@ -282,21 +284,12 @@ export async function signInWithGoogleAccount(): Promise<{
     return {
       success: false,
       isConfigError: true,
-      error: 'Firebase Authentication is not ready. Please verify your Firebase project keys.'
+      error: 'Firebase Authentication is initializing. Please try again.'
     };
   }
 
   try {
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error('timeout_popup_delayed'));
-      }, 3500);
-    });
-
-    const result = await Promise.race([
-      signInWithPopup(auth, googleProvider),
-      timeoutPromise
-    ]);
+    const result = await signInWithPopup(auth, googleProvider);
     const fbUser = result.user;
 
     const userProfile = buildUserProfileFromGoogleData({
@@ -306,19 +299,12 @@ export async function signInWithGoogleAccount(): Promise<{
       photoURL: fbUser.photoURL || ''
     });
 
-    // Save profile to Cloud Firestore if connected
-    await syncUserProfileToCloud(userProfile);
+    // Save profile to Cloud Firestore if available
+    await syncUserProfileToCloud(userProfile).catch(() => {});
 
     return { success: true, user: userProfile };
   } catch (err: any) {
-    console.error('[Google Sign-In Error]:', err);
-
-    if (err?.message === 'timeout_popup_delayed') {
-      return {
-        success: false,
-        error: 'Google Sign-In popup is taking longer than expected. You can connect instantly with 1-Click Google Persona below!'
-      };
-    }
+    console.warn('[Google Sign-In Notice]:', err?.code || err?.message);
 
     if (err.code === 'auth/unauthorized-domain') {
       const currentHost = typeof window !== 'undefined' ? window.location.host : 'the-artisans-quill-digital-art-poetry-sanctuary.vercel.app';
@@ -326,28 +312,29 @@ export async function signInWithGoogleAccount(): Promise<{
         success: false,
         isUnauthorizedDomain: true,
         unauthorizedDomainName: currentHost,
-        error: `Domain "${currentHost}" is not yet listed in Firebase Console. You can sign in instantly with Google Persona below.`
+        error: `Domain "${currentHost}" is not yet listed in Firebase Console. Please add "${currentHost}" to Authorized Domains in Firebase Console.`
       };
     }
 
     if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
       return { 
         success: false, 
-        error: 'Google Sign-In window was closed. You can try again or use Instant Google Persona below.' 
+        error: 'Google Sign-In window was closed. Please click "Continue with Google" to try again.' 
       };
     }
 
     if (err.code === 'auth/popup-blocked') {
       return {
         success: false,
-        error: 'Google Sign-In popup was blocked by your browser. Please allow popups or use Instant Google Persona below.'
+        isPopupBlocked: true,
+        error: 'Google Sign-In popup was blocked by your browser. Please allow popups or use Google Redirect.'
       };
     }
 
     if (err.code === 'auth/operation-not-allowed') {
       return {
         success: false,
-        error: 'Google Sign-in is not yet enabled in Firebase Console (Build > Authentication > Sign-in method > Google). Use Instant Google Persona below!'
+        error: 'Google Sign-in provider is not enabled in Firebase Console (Build > Authentication > Sign-in method > Google).'
       };
     }
 
@@ -360,11 +347,57 @@ export async function signInWithGoogleAccount(): Promise<{
       return {
         success: false,
         isConfigError: true,
-        error: `Firebase API Key verification needed. You can use Instant Google Persona below to access everything immediately.`
+        error: 'Firebase API Key verification needed. Please check your Firebase configuration.'
       };
     }
 
-    return { success: false, error: err.message || 'Google authentication could not be completed. Use Instant Google Persona below.' };
+    return { success: false, error: err.message || 'Google authentication could not be completed. Please try again.' };
+  }
+}
+
+/**
+ * Initiates Google Sign-In with Redirect (for browsers where popups are blocked)
+ */
+export async function signInWithGoogleRedirect(): Promise<void> {
+  if (!auth || !googleProvider) {
+    reinitializeFirebase();
+  }
+  if (!auth || !googleProvider) {
+    throw new Error('Firebase Authentication is not ready.');
+  }
+  await signInWithRedirect(auth, googleProvider);
+}
+
+/**
+ * Handles the redirect result when user returns from Google OAuth redirect
+ */
+export async function handleGoogleRedirectResult(): Promise<{
+  success: boolean;
+  user?: UserProfile;
+  error?: string;
+}> {
+  if (!auth) {
+    reinitializeFirebase();
+  }
+  if (!auth) return { success: false };
+
+  try {
+    const result = await getRedirectResult(auth);
+    if (result && result.user) {
+      const fbUser = result.user;
+      const userProfile = buildUserProfileFromGoogleData({
+        uid: fbUser.uid,
+        name: fbUser.displayName || '',
+        email: fbUser.email || '',
+        photoURL: fbUser.photoURL || ''
+      });
+      await syncUserProfileToCloud(userProfile).catch(() => {});
+      return { success: true, user: userProfile };
+    }
+    return { success: false };
+  } catch (err: any) {
+    console.warn('[Google Redirect Auth Notice]:', err?.message);
+    return { success: false, error: err?.message };
   }
 }
 
@@ -405,11 +438,18 @@ export async function deleteArtworkFromCloud(artworkId: string): Promise<boolean
  * Real-time Listener for Artworks
  * Enables 500+ users across any browser to see new creations and updates instantly.
  */
+let firestoreAvailable = true;
+
+/**
+ * Real-time Listener for Artworks
+ * Enables 500+ users across any browser to see new creations and updates instantly.
+ */
 export function subscribeToCloudArtworks(onUpdate: (artworks: Artwork[]) => void): () => void {
-  if (!db) return () => {};
+  if (!db || !firestoreAvailable) return () => {};
 
   try {
     const q = collection(db, 'artworks');
+    let unsubscribed = false;
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -422,12 +462,26 @@ export function subscribeToCloudArtworks(onUpdate: (artworks: Artwork[]) => void
         }
       },
       (error) => {
-        console.warn('[Firestore Artworks Listener Notice]:', error.message);
+        // Silently deactivate if Firestore API is unprovisioned or permission is denied
+        if (
+          error.code === 'permission-denied' ||
+          error.message?.includes('PERMISSION_DENIED') ||
+          error.message?.includes('has not been used')
+        ) {
+          firestoreAvailable = false;
+          if (!unsubscribed) {
+            unsubscribed = true;
+            try { unsubscribe(); } catch {}
+          }
+          return;
+        }
       }
     );
-    return unsubscribe;
-  } catch (err) {
-    console.warn('[Firestore Real-time setup failed, running offline]:', err);
+    return () => {
+      unsubscribed = true;
+      try { unsubscribe(); } catch {}
+    };
+  } catch {
     return () => {};
   }
 }
@@ -436,7 +490,7 @@ export function subscribeToCloudArtworks(onUpdate: (artworks: Artwork[]) => void
  * Real-time Likes Sync
  */
 export async function syncArtworkLikeToCloud(artworkId: string, likesCount: number): Promise<boolean> {
-  if (!db) return false;
+  if (!db || !firestoreAvailable) return false;
   try {
     const artDocRef = doc(db, 'artworks', artworkId);
     await updateDoc(artDocRef, {
@@ -444,14 +498,12 @@ export async function syncArtworkLikeToCloud(artworkId: string, likesCount: numb
       updatedAt: serverTimestamp()
     });
     return true;
-  } catch (err) {
-    // If updateDoc fails (doc might need setDoc merge)
+  } catch {
     try {
       const artDocRef = doc(db, 'artworks', artworkId);
       await setDoc(artDocRef, { likesCount, updatedAt: serverTimestamp() }, { merge: true });
       return true;
-    } catch (e) {
-      console.warn('[Firestore Like Sync]:', e);
+    } catch {
       return false;
     }
   }
@@ -461,7 +513,7 @@ export async function syncArtworkLikeToCloud(artworkId: string, likesCount: numb
  * Real-time Comment Sync
  */
 export async function syncCommentToCloud(comment: Comment): Promise<boolean> {
-  if (!db) return false;
+  if (!db || !firestoreAvailable) return false;
   try {
     const commDocRef = doc(db, 'comments', comment.id);
     const sanitizedComment = JSON.parse(JSON.stringify(comment));
@@ -470,8 +522,7 @@ export async function syncCommentToCloud(comment: Comment): Promise<boolean> {
       syncedAt: serverTimestamp()
     }, { merge: true });
     return true;
-  } catch (err) {
-    console.warn('[Firestore Comment Sync]:', err);
+  } catch {
     return false;
   }
 }
@@ -480,10 +531,11 @@ export async function syncCommentToCloud(comment: Comment): Promise<boolean> {
  * Real-time Listener for Comments
  */
 export function subscribeToCloudComments(onUpdate: (comments: Comment[]) => void): () => void {
-  if (!db) return () => {};
+  if (!db || !firestoreAvailable) return () => {};
 
   try {
     const q = collection(db, 'comments');
+    let unsubscribed = false;
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -496,11 +548,25 @@ export function subscribeToCloudComments(onUpdate: (comments: Comment[]) => void
         }
       },
       (error) => {
-        console.warn('[Firestore Comments Listener Notice]:', error.message);
+        if (
+          error.code === 'permission-denied' ||
+          error.message?.includes('PERMISSION_DENIED') ||
+          error.message?.includes('has not been used')
+        ) {
+          firestoreAvailable = false;
+          if (!unsubscribed) {
+            unsubscribed = true;
+            try { unsubscribe(); } catch {}
+          }
+          return;
+        }
       }
     );
-    return unsubscribe;
-  } catch (err) {
+    return () => {
+      unsubscribed = true;
+      try { unsubscribe(); } catch {}
+    };
+  } catch {
     return () => {};
   }
 }

@@ -63,7 +63,14 @@ import { PoeticScrollModal } from './components/PoeticScrollModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import IntroWrapper from './components/IntroWrapper';
 import { MeshDriftBackground } from './components/MeshDriftBackground';
-import { subscribeToCloudArtworks, subscribeToCloudComments, signOutFirebaseUser } from './services/firebase';
+import {
+  subscribeToCloudArtworks,
+  subscribeToCloudComments,
+  signOutFirebaseUser,
+  subscribeToFirebaseAuthState,
+  handleGoogleRedirectResult,
+  buildUserProfileFromGoogleData
+} from './services/firebase';
 import { getActiveSupabaseUser, signOutSupabase, onSupabaseAuthStateChange } from './services/supabaseClient';
 
 export default function App() {
@@ -83,21 +90,7 @@ export default function App() {
     try {
       return GalleryService.getCurrentUser();
     } catch {
-      return {
-        id: 'guest',
-        name: 'Guest Visitor',
-        handle: '@visitor',
-        avatar: '',
-        coverImage: '',
-        bio: '',
-        discipline: 'Visitor',
-        location: '',
-        verified: false,
-        artworksCount: 0,
-        followersCount: 0,
-        followingCount: 0,
-        badges: []
-      };
+      return DEFAULT_USER;
     }
   });
 
@@ -362,8 +355,11 @@ export default function App() {
 
   useEffect(() => {
     GalleryService.init().then(() => {
-      // Check for valid HTTP-only serverless session cookie or active Supabase session
-      if (GalleryService.isGuestSession()) {
+      // Creator session preservation guard:
+      const activeProfile = GalleryService.getCurrentUser();
+      if (isFounderUser(activeProfile)) {
+        setCurrentUser(activeProfile);
+      } else if (GalleryService.isGuestSession()) {
         getActiveSupabaseUser().then((supaUser) => {
           if (supaUser) {
             GalleryService.saveCurrentUser(supaUser);
@@ -383,9 +379,17 @@ export default function App() {
           }
         }).catch(() => {});
       } else {
-        const activeProfile = GalleryService.getCurrentUser();
         setCurrentUser(activeProfile);
       }
+
+      // Check for Google Auth Redirect result (if user completed Google OAuth redirect)
+      handleGoogleRedirectResult().then((result) => {
+        if (result.success && result.user) {
+          GalleryService.saveCurrentUser(result.user);
+          setCurrentUser(result.user);
+          refreshArtworks();
+        }
+      }).catch(() => {});
 
       refreshArtworks();
 
@@ -409,10 +413,6 @@ export default function App() {
       }
     });
 
-    // Real-time Cloud Firestore Multi-User Sync
-    // Allows 500+ users across phones, tablets, and laptops to see new creations instantly
-
-
     const unsubscribeSupabaseAuth = onSupabaseAuthStateChange((event, session, supaUser) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         if (supaUser) {
@@ -421,10 +421,31 @@ export default function App() {
           refreshArtworks();
         }
       } else if (event === 'SIGNED_OUT') {
+        const current = GalleryService.getCurrentUser();
+        // Strict preservation: NEVER demote or log out the sanctuary creator
+        if (isFounderUser(current)) {
+          return;
+        }
         const guest = GalleryService.getCurrentUser();
         setCurrentUser(guest);
         refreshArtworks();
       }
+    });
+
+    const unsubscribeFirebaseAuth = subscribeToFirebaseAuthState((fbUser) => {
+      if (fbUser) {
+        // Genuine Google user signed in via Firebase
+        const googleProfile = buildUserProfileFromGoogleData({
+          uid: fbUser.uid,
+          name: fbUser.displayName || undefined,
+          email: fbUser.email || undefined,
+          photoURL: fbUser.photoURL || undefined
+        });
+        GalleryService.saveCurrentUser(googleProfile);
+        setCurrentUser(googleProfile);
+        refreshArtworks();
+      }
+      // Note: If fbUser is null, DO NOTHING to ensure creator or existing artist is NEVER demoted!
     });
 
     const unsubscribeComments = subscribeToCloudComments((cloudComments) => {
@@ -450,6 +471,7 @@ export default function App() {
     return () => {
       unsubscribeComments();
       unsubscribeSupabaseAuth();
+      unsubscribeFirebaseAuth();
       unsubscribeRealtime();
     };
   }, []);

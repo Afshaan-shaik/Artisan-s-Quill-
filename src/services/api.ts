@@ -1024,10 +1024,11 @@ export class GalleryService {
 
   static isGuestSession(): boolean {
     try {
-      if (typeof window === 'undefined') return true;
-      return !sessionStorage.getItem(SESSION_AUTH_KEY) && !localStorage.getItem(SESSION_KEY);
+      if (typeof window === 'undefined') return false;
+      const current = this.getCurrentUser();
+      return current.id === 'guest' || current.handle === '@visitor';
     } catch {
-      return true;
+      return false;
     }
   }
 
@@ -1037,7 +1038,8 @@ export class GalleryService {
         sessionStorage.removeItem(SESSION_AUTH_KEY);
         sessionStorage.removeItem(SESSION_USER_KEY);
         localStorage.removeItem(SESSION_KEY);
-        localStorage.removeItem(USER_STORAGE_KEY);
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(GUEST_USER));
+        sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(GUEST_USER));
 
         // Invalidate HTTP-only cookie on serverless layer
         fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
@@ -1065,7 +1067,9 @@ export class GalleryService {
     } catch {
       // Fallback
     }
-    return GUEST_USER;
+    // Sanctuary Creator / Founder session preservation:
+    // Default to DEFAULT_USER (Afshaan Shaikh) so the creator is always authenticated
+    return DEFAULT_USER;
   }
 
   static saveCurrentUser(user: UserProfile) {
@@ -1075,8 +1079,8 @@ export class GalleryService {
       if (typeof window !== 'undefined') {
         if (user.id === 'guest') {
           sessionStorage.removeItem(SESSION_AUTH_KEY);
-          sessionStorage.removeItem(SESSION_USER_KEY);
-          localStorage.removeItem(USER_STORAGE_KEY);
+          sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(GUEST_USER));
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(GUEST_USER));
           localStorage.removeItem(SESSION_KEY);
           fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
         } else {

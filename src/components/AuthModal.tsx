@@ -2,38 +2,23 @@ import React, { useState } from 'react';
 import {
   X,
   User,
-  Sparkles,
-  Lock,
-  Mail,
   ShieldCheck,
-  Camera,
-  Feather,
-  Palette,
   CheckCircle2,
   AlertCircle,
   ArrowRight,
   UserPlus,
   LogIn,
-  Copy,
-  Check,
-  Globe,
-  ExternalLink,
-  Zap,
-  KeyRound
+  KeyRound,
+  Eye,
+  EyeOff,
+  Loader2,
+  ExternalLink
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { GalleryService } from '../services/api';
 import {
-  signInWithSupabaseEmail,
-  signUpWithSupabaseEmail,
-  isSupabaseConfigured
-} from '../services/supabaseClient';
-import {
   signInWithGoogleAccount,
-  saveCustomFirebaseConfig,
-  isFirebaseConfigured,
-  buildUserProfileFromGoogleData,
-  syncUserProfileToCloud
+  signInWithGoogleRedirect
 } from '../services/firebase';
 import { Avatar } from './Avatar';
 
@@ -85,15 +70,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
 
-  // Login form state (strictly clean initial state)
+  // Login form state
   const [loginQuery, setLoginQuery] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
 
-  // Signup form state (strictly clean initial state)
+  // Signup form state
   const [name, setName] = useState('');
   const [handle, setHandle] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [discipline, setDiscipline] = useState('');
   const [email, setEmail] = useState('');
   const [location, setLocation] = useState('');
@@ -101,31 +89,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [avatar, setAvatar] = useState(AVATAR_PRESETS[0].url);
   const [customAvatarUrl, setCustomAvatarUrl] = useState('');
   const [signupError, setSignupError] = useState<string | null>(null);
+  const [isSignupSubmitting, setIsSignupSubmitting] = useState(false);
+
+  // Google OAuth State
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [popupBlocked, setPopupBlocked] = useState(false);
 
-  // Google Quick-Connect Fallback State (strictly empty initially)
-  const [showGoogleQuickConnect, setShowGoogleQuickConnect] = useState(false);
-  const [googleName, setGoogleName] = useState('');
-  const [googleEmail, setGoogleEmail] = useState('');
-  const [googleAvatar, setGoogleAvatar] = useState(AVATAR_PRESETS[0].url);
-  const [unauthorizedDomain, setUnauthorizedDomain] = useState<string>('');
-  const [copiedDomain, setCopiedDomain] = useState(false);
-
-  // In-App Firebase Config setup
-  const [showFirebaseSetup, setShowFirebaseSetup] = useState(false);
-  const [rawFirebaseInput, setRawFirebaseInput] = useState('');
-  const [configSaveMessage, setConfigSaveMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-
-  const currentHost = typeof window !== 'undefined' ? window.location.host : 'the-artisans-quill-digital-art-poetry-sanctuary.vercel.app';
-
-  // Helper to cleanly reset all inputs and errors on tab switch or open
+  // Reset form state on mode switch or open
   const resetFormState = () => {
     setLoginQuery('');
     setLoginPassword('');
+    setShowLoginPassword(false);
     setLoginError(null);
+    setIsLoginSubmitting(false);
+
     setName('');
     setHandle('');
     setSignupPassword('');
+    setShowSignupPassword(false);
     setDiscipline('');
     setEmail('');
     setLocation('');
@@ -133,11 +114,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setAvatar(AVATAR_PRESETS[0].url);
     setCustomAvatarUrl('');
     setSignupError(null);
-    setGoogleName('');
-    setGoogleEmail('');
-    setShowGoogleQuickConnect(false);
-    setConfigSaveMessage(null);
-    setShowFirebaseSetup(false);
+    setIsSignupSubmitting(false);
+
+    setIsGoogleLoading(false);
+    setPopupBlocked(false);
   };
 
   React.useEffect(() => {
@@ -149,14 +129,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const switchTab = (newMode: 'login' | 'signup') => {
     setMode(newMode);
-    resetFormState();
+    setLoginError(null);
+    setSignupError(null);
+    setPopupBlocked(false);
   };
 
   const handleGoogleAuth = async () => {
     setIsGoogleLoading(true);
     setLoginError(null);
     setSignupError(null);
-    setConfigSaveMessage(null);
+    setPopupBlocked(false);
 
     try {
       const res = await signInWithGoogleAccount();
@@ -165,108 +147,88 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onSuccess(res.user);
         onClose();
       } else {
-        const errorMsg = res.error || 'Google Sign-In could not be completed.';
-        
-        // If domain is unauthorized or config needs attention, smoothly open the Google Quick-Connect interface
-        if (res.isUnauthorizedDomain || res.isConfigError || errorMsg.includes('Authorized Domains')) {
-          setUnauthorizedDomain(res.unauthorizedDomainName || currentHost);
-          setShowGoogleQuickConnect(true);
-        } else {
-          if (mode === 'login') setLoginError(errorMsg);
-          else setSignupError(errorMsg);
+        if (res.isPopupBlocked) {
+          setPopupBlocked(true);
         }
-      }
-    } catch (err: any) {
-      const errorMsg = err?.message || 'Authentication error.';
-      if (errorMsg.includes('unauthorized-domain') || errorMsg.includes('Authorized Domains')) {
-        setUnauthorizedDomain(currentHost);
-        setShowGoogleQuickConnect(true);
-      } else {
+        const errorMsg = res.error || 'Google Sign-In could not be completed.';
         if (mode === 'login') setLoginError(errorMsg);
         else setSignupError(errorMsg);
       }
+    } catch (err: any) {
+      const errorMsg = err?.message || 'Authentication error.';
+      if (mode === 'login') setLoginError(errorMsg);
+      else setSignupError(errorMsg);
     } finally {
       setIsGoogleLoading(false);
     }
   };
 
-  const handleCreateGooglePersona = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!googleName.trim() || !googleEmail.trim()) {
-      if (mode === 'login') setLoginError('Please enter your Google name and email address.');
-      else setSignupError('Please enter your Google name and email address.');
-      return;
-    }
-
-    const cleanName = googleName.trim();
-    const cleanEmail = googleEmail.trim();
-    
-    const userProfile = buildUserProfileFromGoogleData({
-      name: cleanName,
-      email: cleanEmail,
-      photoURL: googleAvatar
-    });
-
-    // Save and register user
-    GalleryService.createUserProfile(userProfile);
-    GalleryService.saveCurrentUser(userProfile);
-    syncUserProfileToCloud(userProfile).catch(() => {});
-
-    onSuccess(userProfile);
-    onClose();
-  };
-
-  const handleCopyDomain = () => {
-    const domain = unauthorizedDomain || currentHost;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(domain);
-      setCopiedDomain(true);
-      setTimeout(() => setCopiedDomain(false), 2000);
-    }
-  };
-
-  const handleSaveFirebaseConfig = (e: React.FormEvent) => {
-    e.preventDefault();
-    setConfigSaveMessage(null);
-    if (!rawFirebaseInput.trim()) {
-      setConfigSaveMessage({ text: 'Please paste your Firebase configuration object.', type: 'error' });
-      return;
-    }
-
-    const res = saveCustomFirebaseConfig(rawFirebaseInput);
-    if (res.success) {
-      setConfigSaveMessage({ text: 'Firebase Project successfully connected! Initializing Google Auth...', type: 'success' });
-      setTimeout(() => {
-        handleGoogleAuth();
-      }, 600);
-    } else {
-      setConfigSaveMessage({ text: res.error || 'Invalid Firebase configuration format.', type: 'error' });
+  const handleGoogleRedirect = async () => {
+    try {
+      setIsGoogleLoading(true);
+      await signInWithGoogleRedirect();
+    } catch (err: any) {
+      setIsGoogleLoading(false);
+      const errorMsg = err?.message || 'Could not initiate redirect.';
+      if (mode === 'login') setLoginError(errorMsg);
+      else setSignupError(errorMsg);
     }
   };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
+    setIsLoginSubmitting(true);
 
-    // If query is an email and password is provided, attempt Supabase Auth first
-    if (loginQuery.includes('@') && loginPassword && isSupabaseConfigured()) {
+    try {
+      // 1. Try serverless login endpoint first (handles Supabase Auth + cookies across devices)
       try {
-        const supaRes = await signInWithSupabaseEmail(loginQuery.trim(), loginPassword.trim());
-        if (supaRes.success && supaRes.user) {
-          GalleryService.saveCurrentUser(supaRes.user);
-          onSuccess(supaRes.user);
-          onClose();
-          return;
-        }
-      } catch {}
-    }
+        const resp = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            identifier: loginQuery.trim(),
+            password: loginPassword.trim()
+          })
+        });
 
-    const res = GalleryService.authenticate(loginQuery, loginPassword);
-    if (res.success && res.user) {
-      onSuccess(res.user);
-      onClose();
-    } else {
-      setLoginError(res.message || 'Authentication failed. Please verify your handle/email and security passcode.');
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.success && data.user) {
+            GalleryService.saveCurrentUser(data.user);
+            onSuccess(data.user);
+            onClose();
+            return;
+          }
+        } else {
+          const errData = await resp.json().catch(() => ({}));
+          if (errData.error && !errData.error.includes('unavailable')) {
+            // Check local fallback before showing error
+            const localRes = GalleryService.authenticate(loginQuery, loginPassword);
+            if (localRes.success && localRes.user) {
+              GalleryService.saveCurrentUser(localRes.user);
+              onSuccess(localRes.user);
+              onClose();
+              return;
+            }
+            setLoginError(errData.error);
+            return;
+          }
+        }
+      } catch {
+        // Network or offline fallback
+      }
+
+      // 2. Client-side local authentication fallback (handles founder passcodes and local credentials)
+      const res = GalleryService.authenticate(loginQuery, loginPassword);
+      if (res.success && res.user) {
+        onSuccess(res.user);
+        onClose();
+      } else {
+        setLoginError(res.message || 'Authentication failed. Please verify your handle/email and security passcode.');
+      }
+    } finally {
+      setIsLoginSubmitting(false);
     }
   };
 
@@ -292,8 +254,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setSignupError('The handle @afshaanshaikh and founder email are reserved exclusively for Sanctuary Founder Afshaan Shaikh. Please switch to "Sign In" instead.');
       return;
     }
-    
-    // Check if handle is already registered locally
+
+    // Check if handle is already registered
     const existing = GalleryService.getAllUserProfiles().find(
       (p) => p.handle.toLowerCase() === cleanHandle.toLowerCase()
     );
@@ -307,44 +269,58 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const finalEmail = email.trim() || `${cleanHandle.replace('@', '')}@atelier.art`;
     const finalPassword = signupPassword.trim() || 'atelier2026';
 
-    // Attempt Supabase Auth registration if configured
-    if (isSupabaseConfigured()) {
+    setIsSignupSubmitting(true);
+
+    try {
+      // 1. Try serverless registration endpoint (auto-confirms email and stores in Supabase)
       try {
-        const supaRes = await signUpWithSupabaseEmail(finalEmail, finalPassword, {
-          name: name.trim(),
-          handle: cleanHandle,
-          discipline: discipline.trim() || 'Visual Arts & Creative Writing',
-          avatar: finalAvatar,
-          bio: bio.trim() || 'Fine art creator exploring classical techniques and digital mediums.',
-          location: location.trim() || 'Studio Atelier'
+        const resp = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim(),
+            handle: cleanHandle,
+            email: finalEmail,
+            password: finalPassword,
+            discipline: discipline.trim() || 'Visual Arts & Creative Writing',
+            bio: bio.trim() || 'Fine art creator on The Artisan’s Quill.',
+            location: location.trim() || 'Studio Atelier',
+            avatar: finalAvatar
+          })
         });
 
-        if (supaRes.success && supaRes.user) {
-          GalleryService.saveCurrentUser(supaRes.user);
-          onSuccess(supaRes.user);
-          onClose();
-          return;
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.success && data.user) {
+            GalleryService.saveCredential(cleanHandle, finalPassword);
+            if (finalEmail) GalleryService.saveCredential(finalEmail, finalPassword);
+            GalleryService.saveCurrentUser(data.user);
+            onSuccess(data.user);
+            onClose();
+            return;
+          }
         }
-      } catch (err: any) {
-        console.warn('[Supabase SignUp Warning]:', err);
+      } catch {
+        // Fallback to local profile creation
       }
+
+      // 2. Client-side local profile creation fallback
+      const newProfile = GalleryService.createUserProfile({
+        name: name.trim(),
+        handle: cleanHandle,
+        passcode: finalPassword,
+        discipline: discipline.trim() || 'Visual Arts & Creative Writing',
+        email: finalEmail,
+        location: location.trim() || 'Studio Atelier',
+        bio: bio.trim() || 'Fine art creator on The Artisan’s Quill.',
+        avatar: finalAvatar
+      });
+
+      onSuccess(newProfile);
+      onClose();
+    } finally {
+      setIsSignupSubmitting(false);
     }
-
-    const newProfile = GalleryService.createUserProfile({
-      name: name.trim(),
-      handle: cleanHandle,
-      passcode: signupPassword.trim() || undefined,
-      discipline: discipline.trim() || 'Visual Arts & Creative Writing',
-      email: finalEmail,
-      location: location.trim() || 'Studio Atelier',
-      bio: bio.trim() || 'Fine art creator exploring classical techniques and digital mediums.',
-      avatar: finalAvatar
-    });
-
-    syncUserProfileToCloud(newProfile).catch(() => {});
-
-    onSuccess(newProfile);
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -357,6 +333,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white rounded-full border border-white/10 transition-colors cursor-pointer z-10"
+          title="Close Modal"
         >
           <X className="w-4 h-4" />
         </button>
@@ -371,7 +348,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {mode === 'signup' ? 'Create Artist ID' : 'Sign In to Atelier'}
             </h2>
             <p className="text-[10px] text-[#c9a875] font-mono-code">
-              Private &amp; Secure Atelier Identity
+              Verified &amp; Secure Atelier Identity
             </p>
           </div>
         </div>
@@ -406,134 +383,38 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* ─────────────────────────────────────────────────────────────
-            GOOGLE QUICK-CONNECT PERSONA CONNECTOR
-           ───────────────────────────────────────────────────────────── */}
-        {showGoogleQuickConnect && (
-          <div className="p-4.5 rounded-2xl bg-gradient-to-br from-[#121622] to-[#0a0d14] border border-[#c9a875] shadow-[0_0_30px_rgba(201,168,117,0.2)] mb-4 text-xs space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-white/10">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-                  </svg>
-                </div>
-                <div>
-                  <span className="font-bold text-white text-xs font-mono-code block">
-                    Instant Google Artist Connect
-                  </span>
-                  <span className="text-[10px] text-[#c9a875] font-mono-code">
-                    Universal Verified Connection
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowGoogleQuickConnect(false)}
-                className="text-neutral-400 hover:text-white text-xs p-1 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-[11px] text-neutral-300 leading-relaxed font-sans">
-              Enter your Google Account details below to initialize or connect your verified Artist Identity:
-            </p>
-
-            {/* Form */}
-            <form onSubmit={handleCreateGooglePersona} className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[#c9a875] font-mono-code block mb-1">
-                    Google Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={googleName}
-                    onChange={(e) => setGoogleName(e.target.value)}
-                    placeholder="e.g. Your Full Name"
-                    className="w-full bg-black/80 border border-white/20 focus:border-[#c9a875] rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[#c9a875] font-mono-code block mb-1">
-                    Google Email *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={googleEmail}
-                    onChange={(e) => setGoogleEmail(e.target.value)}
-                    placeholder="your.email@gmail.com"
-                    className="w-full bg-black/80 border border-white/20 focus:border-[#c9a875] rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-gradient-to-r from-[#c9a875] to-[#dfbd87] hover:from-[#dfbd87] hover:to-[#ebd1a6] text-black font-mono-code font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-[0_0_15px_rgba(201,168,117,0.4)] hover:scale-[1.01] active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-              >
-                <Zap className="w-3.5 h-3.5 fill-black" />
-                <span>Connect Google Account &amp; Enter Atelier</span>
-              </button>
-            </form>
-
-            {/* Domain Whitelist Instructions Helper */}
-            <div className="pt-2 border-t border-white/10 text-[10px] text-neutral-400 font-mono-code space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[#c9a875]">Firebase Authorized Domain:</span>
-                <button
-                  type="button"
-                  onClick={handleCopyDomain}
-                  className="flex items-center gap-1 text-[#dfbd87] hover:underline cursor-pointer"
-                >
-                  {copiedDomain ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedDomain ? 'Copied!' : 'Copy Domain'}</span>
-                </button>
-              </div>
-              <div className="p-1.5 rounded bg-black/60 border border-white/10 text-neutral-300 select-all truncate">
-                {unauthorizedDomain || currentHost}
-              </div>
-              <p className="text-[9px] text-neutral-400">
-                To enable automatic Google OAuth popups on this domain, add the above URL in Firebase Console &gt; Authentication &gt; Settings &gt; Authorized domains.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* ─────────────────────────────────────────────────────────────
             MODE 1: SIGN IN (LOG IN)
            ───────────────────────────────────────────────────────────── */}
         {mode === 'login' ? (
           <div className="space-y-4">
-            {/* Google One-Click Sign In */}
+            {/* Real Google One-Click Sign In */}
             <button
               type="button"
               onClick={handleGoogleAuth}
               disabled={isGoogleLoading}
               className="w-full py-3 px-4 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-[#c9a875] text-white font-mono-code font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-3 shadow-md hover:scale-[1.01] active:scale-95 disabled:opacity-50"
             >
-              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-              </svg>
-              <span>{isGoogleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+              {isGoogleLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-[#c9a875]" />
+              ) : (
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                  <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                </svg>
+              )}
+              <span>{isGoogleLoading ? 'Authenticating with Google...' : 'Continue with Google'}</span>
             </button>
 
-            {!showGoogleQuickConnect && (
+            {popupBlocked && (
               <button
                 type="button"
-                onClick={() => setShowGoogleQuickConnect(true)}
-                className="w-full py-2 px-3 bg-black/40 hover:bg-black/60 border border-[#c9a875]/30 hover:border-[#c9a875] text-[#dfbd87] hover:text-white text-[11px] font-mono-code rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                onClick={handleGoogleRedirect}
+                className="w-full py-2 px-3 bg-[#c9a875]/15 hover:bg-[#c9a875]/25 border border-[#c9a875]/60 text-[#dfbd87] text-[11px] font-mono-code rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Zap className="w-3 h-3 text-[#c9a875] fill-[#c9a875]" />
-                <span>⚡ Instant Google Connect (Manual Entry)</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Popup blocked? Click to Sign In with Redirect</span>
               </button>
             )}
 
@@ -542,68 +423,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <span className="text-[9px] uppercase font-mono-code text-neutral-500 tracking-widest">or email / handle</span>
               <div className="h-px flex-1 bg-white/10" />
             </div>
-
-            {/* In-App Firebase Setup Assistant Banner if config is needed */}
-            {showFirebaseSetup && (
-              <div className="p-4 rounded-xl bg-[#0f131c] border border-[#c9a875]/60 text-xs space-y-3 animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-white text-xs font-mono-code flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-[#c9a875]" />
-                    Connect Free Firebase Project
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setShowFirebaseSetup(false)}
-                    className="text-neutral-500 hover:text-white text-[11px] cursor-pointer"
-                  >
-                    × Close
-                  </button>
-                </div>
-
-                <div className="text-[11px] text-neutral-300 font-sans space-y-1 leading-relaxed">
-                  <p>1. Go to <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="text-[#c9a875] underline">Firebase Console</a> &amp; create a free project.</p>
-                  <p>2. In <strong>Build &gt; Authentication &gt; Sign-in method</strong>, enable <strong>Google</strong>.</p>
-                  <p>3. Under <strong>Project Settings &gt; General &gt; Your apps</strong>, copy the <code className="text-amber-300">firebaseConfig</code> object and paste it below:</p>
-                </div>
-
-                <form onSubmit={handleSaveFirebaseConfig} className="space-y-2">
-                  <textarea
-                    rows={3}
-                    value={rawFirebaseInput}
-                    onChange={(e) => setRawFirebaseInput(e.target.value)}
-                    placeholder='const firebaseConfig = { apiKey: "AIzaSy...", projectId: "..." };'
-                    className="w-full bg-black/80 border border-white/20 focus:border-[#c9a875] rounded-lg p-2.5 text-[11px] font-mono-code text-neutral-200 focus:outline-none"
-                  />
-
-                  {configSaveMessage && (
-                    <div className={`p-2 rounded text-[11px] font-mono-code ${
-                      configSaveMessage.type === 'success' ? 'bg-emerald-950/80 border border-emerald-500 text-emerald-200' : 'bg-rose-950/80 border border-rose-500 text-rose-200'
-                    }`}>
-                      {configSaveMessage.text}
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-[#c9a875] hover:bg-[#dfbd87] text-black font-bold font-mono-code text-[11px] uppercase rounded-lg transition-all cursor-pointer shadow-md"
-                    >
-                      Connect &amp; Authenticate
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowFirebaseSetup(false);
-                        switchTab('signup');
-                      }}
-                      className="px-3 py-2 text-neutral-400 hover:text-white text-[11px] font-mono-code cursor-pointer"
-                    >
-                      Use Custom Handle Instead
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
 
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               {loginError && (
@@ -631,15 +450,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="space-y-1.5">
                 <label className="text-[10px] uppercase tracking-widest text-[#c9a875] font-mono-code font-bold flex items-center gap-1.5">
                   <KeyRound className="w-3 h-3 text-[#c9a875]" />
-                  <span>Security Passcode / Password</span>
+                  <span>Security Passcode / Password *</span>
                 </label>
-                <input
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="Enter your security passcode"
-                  className="w-full bg-black/60 border border-white/15 focus:border-[#c9a875] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none transition-colors font-mono-code"
-                />
+                <div className="relative">
+                  <input
+                    required
+                    type={showLoginPassword ? 'text' : 'password'}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Enter your security passcode"
+                    className="w-full bg-black/60 border border-white/15 focus:border-[#c9a875] rounded-lg px-4 py-2.5 pr-10 text-white text-sm focus:outline-none transition-colors font-mono-code"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 <p className="text-[9px] text-neutral-500 font-mono-code">
                   Enter your artist credentials to access your private studio session.
                 </p>
@@ -648,10 +477,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3 bg-gradient-to-r from-[#c9a875] to-[#dfbd87] hover:from-[#dfbd87] hover:to-[#e8cb9a] text-black font-mono-code font-bold text-xs uppercase tracking-[0.2em] rounded-full shadow-[0_0_20px_rgba(201,168,117,0.4)] transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                  disabled={isLoginSubmitting}
+                  className="w-full py-3 bg-gradient-to-r from-[#c9a875] to-[#dfbd87] hover:from-[#dfbd87] hover:to-[#e8cb9a] text-black font-mono-code font-bold text-xs uppercase tracking-[0.2em] rounded-full shadow-[0_0_20px_rgba(201,168,117,0.4)] transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  <span>Sign In to Atelier</span>
-                  <ArrowRight className="w-4 h-4" />
+                  {isLoginSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  ) : (
+                    <>
+                      <span>Sign In to Atelier</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </div>
 
@@ -671,30 +507,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               MODE 2: SIGN UP (CREATE NEW PROFILE FROM SCRATCH)
              ───────────────────────────────────────────────────────────── */
           <div className="space-y-4 overflow-y-auto pr-1">
-            {/* Google One-Click Quick Signup */}
+            {/* Real Google One-Click Sign Up */}
             <button
               type="button"
               onClick={handleGoogleAuth}
               disabled={isGoogleLoading}
               className="w-full py-3 px-4 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-[#c9a875] text-white font-mono-code font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-3 shadow-md hover:scale-[1.01] active:scale-95 disabled:opacity-50"
             >
-              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-              </svg>
-              <span>{isGoogleLoading ? 'Connecting to Google...' : 'Instant Sign Up with Google'}</span>
+              {isGoogleLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-[#c9a875]" />
+              ) : (
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                  <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                </svg>
+              )}
+              <span>{isGoogleLoading ? 'Authenticating with Google...' : 'Instant Sign Up with Google'}</span>
             </button>
 
-            {!showGoogleQuickConnect && (
+            {popupBlocked && (
               <button
                 type="button"
-                onClick={() => setShowGoogleQuickConnect(true)}
-                className="w-full py-2 px-3 bg-black/40 hover:bg-black/60 border border-[#c9a875]/30 hover:border-[#c9a875] text-[#dfbd87] hover:text-white text-[11px] font-mono-code rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                onClick={handleGoogleRedirect}
+                className="w-full py-2 px-3 bg-[#c9a875]/15 hover:bg-[#c9a875]/25 border border-[#c9a875]/60 text-[#dfbd87] text-[11px] font-mono-code rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Zap className="w-3 h-3 text-[#c9a875] fill-[#c9a875]" />
-                <span>⚡ Instant Google Sign Up (Manual Entry)</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Popup blocked? Click to Sign Up with Redirect</span>
               </button>
             )}
 
@@ -793,15 +633,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="space-y-1">
                 <label className="text-[10px] uppercase tracking-widest text-[#c9a875] font-mono-code font-bold flex items-center gap-1.5">
                   <KeyRound className="w-3 h-3 text-[#c9a875]" />
-                  <span>Security Passcode / Password</span>
+                  <span>Security Passcode / Password *</span>
                 </label>
-                <input
-                  type="password"
-                  placeholder="Create an atelier passcode for future sign in"
-                  value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
-                  className="w-full bg-black/60 border border-white/15 focus:border-[#c9a875] rounded-lg px-3.5 py-2 text-white text-sm font-mono-code focus:outline-none transition-colors"
-                />
+                <div className="relative">
+                  <input
+                    required
+                    type={showSignupPassword ? 'text' : 'password'}
+                    placeholder="Create a password for your account"
+                    value={signupPassword}
+                    onChange={(e) => setSignupPassword(e.target.value)}
+                    className="w-full bg-black/60 border border-white/15 focus:border-[#c9a875] rounded-lg px-3.5 py-2 pr-10 text-white text-sm font-mono-code focus:outline-none transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupPassword(!showSignupPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {showSignupPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               {/* Discipline */}
@@ -822,9 +672,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] uppercase tracking-widest text-[#c9a875] font-mono-code font-bold">
-                    Email Address
+                    Email Address *
                   </label>
                   <input
+                    required
                     type="email"
                     placeholder="artist@sanctuary.art"
                     value={email}
@@ -865,10 +716,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3 bg-gradient-to-r from-[#c9a875] to-[#dfbd87] hover:from-[#dfbd87] hover:to-[#e8cb9a] text-black font-mono-code font-bold text-xs uppercase tracking-[0.2em] rounded-full shadow-[0_0_20px_rgba(201,168,117,0.4)] transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                  disabled={isSignupSubmitting}
+                  className="w-full py-3 bg-gradient-to-r from-[#c9a875] to-[#dfbd87] hover:from-[#dfbd87] hover:to-[#e8cb9a] text-black font-mono-code font-bold text-xs uppercase tracking-[0.2em] rounded-full shadow-[0_0_20px_rgba(201,168,117,0.4)] transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  <span>Initialize My Artist Identity</span>
-                  <CheckCircle2 className="w-4 h-4" />
+                  {isSignupSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  ) : (
+                    <>
+                      <span>Initialize My Artist Identity</span>
+                      <CheckCircle2 className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </div>
 

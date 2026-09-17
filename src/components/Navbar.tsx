@@ -19,7 +19,8 @@ import {
   User,
   Camera,
   HardDrive,
-  Menu
+  Menu,
+  LogIn
 } from 'lucide-react';
 import { ArtCategory, UserProfile } from '../types';
 import { Avatar } from './Avatar';
@@ -248,6 +249,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Explicit Sign In button when visitor is in Guest Mode */}
+            {currentUser.id === 'guest' && onOpenLoginModal && (
+              <button
+                id="navbar-guest-signin-btn"
+                onClick={onOpenLoginModal}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] border border-[#c9a875]/70 bg-gradient-to-r from-[#c9a875]/20 to-[#c9a875]/40 hover:from-[#c9a875] hover:to-[#dfbd87] text-[#f8ebd5] hover:text-black rounded-sm transition-all cursor-pointer shadow-[0_0_12px_rgba(201,168,117,0.3)] hover:scale-105 active:scale-95"
+                title="Sign in with Google or Artist Credentials"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </button>
+            )}
 
             {/* Private User Account Capsule & Options */}
             <ArtistSwitcherDropdown
