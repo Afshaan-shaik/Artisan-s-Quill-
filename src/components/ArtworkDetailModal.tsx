@@ -836,7 +836,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
         <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 min-h-0">
           {/* Left Viewport: Artwork or Poetry Presentation */}
           <div
-            className={`lg:col-span-7 xl:col-span-8 relative flex flex-col items-center justify-start p-6 sm:p-8 md:p-12 overflow-y-auto transition-all duration-700 ${getLightingBackground()}`}
+            className={`lg:col-span-7 xl:col-span-8 relative flex items-center justify-center p-6 sm:p-8 md:p-10 overflow-hidden transition-all duration-700 ${getLightingBackground()}`}
           >
             {/* Dynamic Curatorial Medium Backdrop (Aceternity UI & 21st.dev) */}
             <ModalMediumBackdrop
@@ -1189,43 +1189,45 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
               </div>
             ) : (
               /* High Resolution Visual Artwork (Painting / Drawing / Digital) */
-              <div className="relative z-10 group max-h-[75vh] w-full flex items-center justify-center my-auto">
-                <img
-                  key={`${artwork.id}-${activeImageSrc}`}
-                  src={activeImageSrc}
-                  alt={artwork.title}
-                  referrerPolicy="no-referrer"
-                  onError={() => {
-                    if (activeImageSrc !== artwork.thumbnailUrl && artwork.thumbnailUrl) {
-                      setActiveImageSrc(artwork.thumbnailUrl);
-                    } else if (activeImageSrc !== '/curatorial-masterpiece.svg') {
-                      setActiveImageSrc('/curatorial-masterpiece.svg');
-                    }
-                  }}
-                  className={`w-auto h-auto max-w-full max-h-[72vh] object-contain border border-[#c9a875]/25 shadow-2xl rounded-lg transition-transform duration-500 cursor-zoom-in ${
-                    isZoomed ? 'scale-150 cursor-zoom-out' : 'scale-100'
-                  }`}
-                  onClick={() => setIsZoomed(!isZoomed)}
-                />
+              <div className="relative z-10 flex items-center justify-center max-w-full max-h-full my-auto">
+                <div className="relative group inline-flex items-center justify-center max-w-full max-h-[70vh] sm:max-h-[74vh] rounded-xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.9)] border border-[#c9a875]/35 bg-black/40">
+                  <img
+                    key={`${artwork.id}-${activeImageSrc}`}
+                    src={activeImageSrc}
+                    alt={artwork.title}
+                    referrerPolicy="no-referrer"
+                    onError={() => {
+                      if (activeImageSrc !== artwork.thumbnailUrl && artwork.thumbnailUrl) {
+                        setActiveImageSrc(artwork.thumbnailUrl);
+                      } else if (activeImageSrc !== '/curatorial-masterpiece.svg') {
+                        setActiveImageSrc('/curatorial-masterpiece.svg');
+                      }
+                    }}
+                    className={`w-auto h-auto max-w-full max-h-[68vh] sm:max-h-[72vh] object-contain transition-transform duration-500 cursor-zoom-in block ${
+                      isZoomed ? 'scale-150 cursor-zoom-out' : 'scale-100'
+                    }`}
+                    onClick={() => setIsZoomed(!isZoomed)}
+                  />
 
-                {/* Interactive Deep View Fragment Button */}
-                <button
-                  id="view-fragment-btn"
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onOpenFragmentInspector) {
-                      onOpenFragmentInspector(artwork);
-                    } else {
-                      setIsZoomed(!isZoomed);
-                    }
-                  }}
-                  className="absolute bottom-6 right-6 flex items-center gap-2 text-xs uppercase tracking-widest text-[#dfbd87] bg-black/90 hover:bg-[#c9a875] hover:text-black backdrop-blur-md px-4 py-2.5 border border-[#c9a875]/60 hover:border-[#dfbd87] rounded-xl shadow-[0_0_25px_rgba(201,168,117,0.35)] transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95 z-20 group"
-                  title="Open High-Resolution Deep Fragment Inspector"
-                >
-                  <Maximize2 className="w-4 h-4 text-[#c9a875] group-hover:text-black transition-colors" />
-                  <span className="font-bold font-mono-code">{isZoomed ? 'MINIMIZE' : 'VIEW FRAGMENT'}</span>
-                </button>
+                  {/* Interactive Deep View Fragment Button - Neatly anchored inside image frame */}
+                  <button
+                    id="view-fragment-btn"
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onOpenFragmentInspector) {
+                        onOpenFragmentInspector(artwork);
+                      } else {
+                        setIsZoomed(!isZoomed);
+                      }
+                    }}
+                    className="absolute bottom-3 right-3 flex items-center gap-1.5 text-[11px] font-mono-code font-bold uppercase tracking-wider text-[#dfbd87] bg-black/85 hover:bg-[#c9a875] hover:text-black backdrop-blur-md px-3 py-1.5 border border-[#c9a875]/60 hover:border-[#dfbd87] rounded-lg shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95 z-20 group"
+                    title="Open High-Resolution Deep Fragment Inspector"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5 text-[#c9a875] group-hover:text-black transition-colors" />
+                    <span className="font-bold font-mono-code">{isZoomed ? 'MINIMIZE' : 'VIEW FRAGMENT'}</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
