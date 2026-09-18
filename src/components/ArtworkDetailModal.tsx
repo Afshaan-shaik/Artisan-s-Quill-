@@ -836,7 +836,13 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
         <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 min-h-0">
           {/* Left Viewport: Artwork or Poetry Presentation */}
           <div
-            className={`lg:col-span-7 xl:col-span-8 relative flex items-center justify-center p-6 sm:p-8 md:p-10 overflow-hidden transition-all duration-700 ${getLightingBackground()}`}
+            className={`lg:col-span-7 xl:col-span-8 relative flex ${
+              artwork.category === 'poetry'
+                ? 'flex-col items-center justify-start p-6 sm:p-8 md:p-12 overflow-y-auto'
+                : isZoomed
+                ? 'items-center justify-center p-4 sm:p-8 md:p-10 overflow-auto'
+                : 'items-center justify-center p-6 sm:p-8 md:p-10 overflow-hidden'
+            } transition-all duration-700 ${getLightingBackground()}`}
           >
             {/* Dynamic Curatorial Medium Backdrop (Aceternity UI & 21st.dev) */}
             <ModalMediumBackdrop
