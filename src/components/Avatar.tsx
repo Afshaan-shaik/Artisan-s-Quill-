@@ -12,6 +12,8 @@ interface AvatarProps {
   shape?: 'square' | 'circle' | 'rounded';
 }
 
+const FOUNDER_SELFIE = 'https://uskuzbtvbhfqlxvbbrvw.supabase.co/storage/v1/object/public/avatars/profiles/avatars-1788606890329-suv7gl.jpeg';
+
 export const Avatar: React.FC<AvatarProps> = ({
   src,
   name = 'Artist',
@@ -24,7 +26,16 @@ export const Avatar: React.FC<AvatarProps> = ({
   shape
 }) => {
   const [hasError, setHasError] = useState(false);
-  const cleanSrc = src?.trim();
+  const [triedFounderFallback, setTriedFounderFallback] = useState(false);
+
+  const cleanName = (name || '').trim();
+  const isFounder = cleanName.toLowerCase().includes('afshaan') || Boolean(alt && alt.toLowerCase().includes('afshaan'));
+
+  let cleanSrc = src?.trim();
+  if (hasError && isFounder && !triedFounderFallback && cleanSrc !== FOUNDER_SELFIE) {
+    cleanSrc = FOUNDER_SELFIE;
+  }
+
   const hasValidSrc = Boolean(cleanSrc && cleanSrc.length > 0 && !hasError);
 
   // Size mapping if size prop is explicitly provided
@@ -45,15 +56,23 @@ export const Avatar: React.FC<AvatarProps> = ({
   // Reset error when src prop changes
   useEffect(() => {
     setHasError(false);
-  }, [cleanSrc]);
+    setTriedFounderFallback(false);
+  }, [src]);
 
   // Extract first letter initial
-  const cleanName = (name || '').trim();
   const initial = cleanName.length > 0 ? cleanName.charAt(0).toUpperCase() : 'A';
 
   // Apply optional shape modifier
   const shapeClass =
     shape === 'circle' ? 'rounded-full' : shape === 'rounded' ? 'rounded-sm' : shape === 'square' ? 'rounded-none' : '';
+
+  const handleImageError = () => {
+    if (isFounder && !triedFounderFallback && cleanSrc !== FOUNDER_SELFIE) {
+      setTriedFounderFallback(true);
+    } else {
+      setHasError(true);
+    }
+  };
 
   return (
     <div
@@ -64,9 +83,10 @@ export const Avatar: React.FC<AvatarProps> = ({
         <img
           src={cleanSrc}
           alt={alt || name || 'Artist Avatar'}
-          onError={() => setHasError(true)}
+          onError={handleImageError}
           className={`w-full h-full object-cover transition-opacity duration-200 ${imageClassName}`}
           loading="eager"
+          decoding="async"
         />
       ) : (
         /* 2. Sleek Dark-Themed Premium Initial Placeholder */

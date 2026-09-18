@@ -77,7 +77,7 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
   // State
   const [name, setName] = useState(effectiveUser.name || 'Artist');
   const [handle, setHandle] = useState((effectiveUser.handle || '@artist').replace(/^@/, ''));
-  const [avatar, setAvatar] = useState(effectiveUser.avatar || DEFAULT_USER.avatar);
+  const [avatar, setAvatar] = useState(effectiveUser.avatar || (isFounderUser(effectiveUser) ? DEFAULT_USER.avatar : ''));
   const [urlInput, setUrlInput] = useState('');
   const [discipline, setDiscipline] = useState(effectiveUser.discipline || 'Visual Artist & Poet');
   const [isDragOver, setIsDragOver] = useState(false);
@@ -90,7 +90,7 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
       const active = targetUser || currentUser;
       setName(active.name || 'Artist');
       setHandle((active.handle || '@artist').replace(/^@/, ''));
-      setAvatar(active.avatar || DEFAULT_USER.avatar);
+      setAvatar(active.avatar || (isFounderUser(active) ? DEFAULT_USER.avatar : ''));
       setDiscipline(active.discipline || 'Visual Artist & Poet');
       setUrlInput('');
       setSavedSuccess(false);
@@ -164,17 +164,17 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
         effectiveUser.id === 'user-my-atelier' ||
         cleanName.toLowerCase().includes('afshaan');
 
-      const isFounder = isFounderUser(currentUser) || isFounderUser(effectiveUser) || isTargetingFounder;
+      const isFounder = isFounderUser(currentUser);
 
-      // Only reject if an unauthorized external user tries to overwrite founder details
-      if (isTargetingFounder && !isFounder && currentUser.id !== 'guest' && currentUser.id !== effectiveUser.id) {
-        alert('Access Denied: Only Sanctuary Creator Afshaan Shaikh has permission to edit visionary details.');
+      // Strictly verify that only the sanctuary creator can edit founder details
+      if (isTargetingFounder && !isFounder) {
+        alert('Access Denied: Only Sanctuary Creator Afshaan Shaikh has permission to edit founder details.');
         setIsSaving(false);
         return;
       }
 
       const cleanHandle = isFounder ? 'afshaanshaikh' : (handle.trim().replace(/^@/, '') || effectiveUser.handle.replace(/^@/, '') || 'artist');
-      const finalAvatar = avatar ? avatar.trim() : '/curatorial-masterpiece.svg';
+      const finalAvatar = avatar ? avatar.trim() : (isFounder ? DEFAULT_USER.avatar : '');
 
       const updatedUser: UserProfile = {
         ...effectiveUser,
@@ -192,6 +192,8 @@ export const ProfilePictureModal: React.FC<ProfilePictureModalProps> = ({
         GalleryService.saveCurrentUser(updatedUser);
         await upsertProfileToSupabase(updatedUser);
       }
+
+      GalleryService.syncProfileToArtworks(updatedUser);
 
       // Universal Realtime Broadcast to update all active browser sessions & devices
       realtimeBroker.broadcastProfile(updatedUser);

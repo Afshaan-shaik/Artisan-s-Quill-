@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Artwork } from '../types';
 import { Avatar } from './Avatar';
+import { DEFAULT_USER } from '../data/initialData';
 
 import { isVideoMedia, isAudioMedia, getMediaPoster } from '../utils/mediaUtils';
 
@@ -283,7 +284,11 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
             title={`View profile of ${currentWork.artist.name}`}
           >
             <Avatar
-              src={currentWork.artist.avatar}
+              src={
+                currentWork.artist.avatar && currentWork.artist.avatar !== '/curatorial-masterpiece.svg'
+                  ? currentWork.artist.avatar
+                  : (currentWork.artist.name?.toLowerCase().includes('afshaan') || currentWork.artist.handle?.toLowerCase().includes('afshaan') ? DEFAULT_USER.avatar : currentWork.artist.avatar)
+              }
               name={currentWork.artist.name}
               size="sm"
               className="border border-[#c9a875]/50 group-hover/artist:border-[#c9a875]"

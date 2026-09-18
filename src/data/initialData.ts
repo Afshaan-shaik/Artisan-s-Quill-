@@ -169,7 +169,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       id: 'user-my-atelier',
       name: 'Afshaan Shaikh',
       handle: '@afshaanshaikh',
-      avatar: '/curatorial-masterpiece.svg',
+      avatar: DEFAULT_USER.avatar,
       verified: true,
       location: 'Atelier Studio • Global Digital Sanctuary'
     },
@@ -216,7 +216,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       id: 'user-my-atelier',
       name: 'Afshaan Shaikh',
       handle: '@afshaanshaikh',
-      avatar: '/curatorial-masterpiece.svg',
+      avatar: DEFAULT_USER.avatar,
       verified: true,
       location: 'Atelier Studio • Global Digital Sanctuary'
     },
@@ -263,7 +263,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       id: 'user-my-atelier',
       name: 'Afshaan Shaikh',
       handle: '@afshaanshaikh',
-      avatar: '/curatorial-masterpiece.svg',
+      avatar: DEFAULT_USER.avatar,
       verified: true,
       location: 'Atelier Studio • Global Digital Sanctuary'
     },
@@ -310,7 +310,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       id: 'user-my-atelier',
       name: 'Afshaan Shaikh',
       handle: '@afshaanshaikh',
-      avatar: '/curatorial-masterpiece.svg',
+      avatar: DEFAULT_USER.avatar,
       verified: true,
       location: 'Atelier Studio • Global Digital Sanctuary'
     },
@@ -346,7 +346,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       id: 'user-my-atelier',
       name: 'Afshaan Shaikh',
       handle: '@afshaanshaikh',
-      avatar: '/curatorial-masterpiece.svg',
+      avatar: DEFAULT_USER.avatar,
       verified: true,
       location: 'Atelier Studio • Global Digital Sanctuary'
     },
@@ -378,7 +378,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       id: 'user-my-atelier',
       name: 'Afshaan Shaikh',
       handle: '@afshaanshaikh',
-      avatar: '/curatorial-masterpiece.svg',
+      avatar: DEFAULT_USER.avatar,
       verified: true,
       location: 'Atelier Studio • Global Digital Sanctuary'
     },
@@ -419,7 +419,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       id: 'user-my-atelier',
       name: 'Afshaan Shaikh',
       handle: '@afshaanshaikh',
-      avatar: '/curatorial-masterpiece.svg',
+      avatar: DEFAULT_USER.avatar,
       verified: true,
       location: 'Atelier Studio • Global Digital Sanctuary'
     },

@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { Artwork, Comment, UserProfile, VoiceAccentOption } from '../types';
 import { GalleryService } from '../services/api';
+import { DEFAULT_USER } from '../data/initialData';
 import { useGalleryStore } from '../store/useGalleryStore';
 import { realtimeBroker } from '../services/realtimeBroker';
 import { Avatar } from './Avatar';
@@ -274,6 +275,41 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   const [activeImageSrc, setActiveImageSrc] = useState<string>(() => resolveArtworkImage(artwork));
   const [liveLikesCount, setLiveLikesCount] = useState<number>(() => artwork?.likesCount || 0);
   const [isLikedState, setIsLikedState] = useState<boolean>(() => Boolean(artwork?.isLiked));
+
+  const isFounderArt = artwork ? (
+    artwork.artist.id === 'user-my-atelier' ||
+    artwork.artist.id === DEFAULT_USER.id ||
+    artwork.id === 'art-1787665037985-nnxxg' ||
+    artwork.id === 'spotlight-masterpiece-1' ||
+    Boolean(artwork.id?.startsWith('coffee-poem-')) ||
+    artwork.id === 'afshaan-poetry-1' ||
+    artwork.id === 'urdu-ghazal-ghalib' ||
+    Boolean(artwork.artist.handle && (artwork.artist.handle.toLowerCase().includes('afshaan') || artwork.artist.handle.toLowerCase().includes('@afshaanshaikh'))) ||
+    Boolean(artwork.artist.name && artwork.artist.name.toLowerCase().includes('afshaan'))
+  ) : false;
+
+  const resolvedArtistAvatar = React.useMemo(() => {
+    if (!artwork) return DEFAULT_USER.avatar;
+    if (isFounderArt) {
+      return (DEFAULT_USER.avatar && DEFAULT_USER.avatar !== '/curatorial-masterpiece.svg')
+        ? DEFAULT_USER.avatar
+        : 'https://uskuzbtvbhfqlxvbbrvw.supabase.co/storage/v1/object/public/avatars/profiles/avatars-1788606890329-suv7gl.jpeg';
+    }
+    const profiles = GalleryService.getAllUserProfiles();
+    const cleanHandle = (artwork.artist.handle || '').toLowerCase().replace(/^@/, '');
+    const cleanId = (artwork.artist.id || '').toLowerCase();
+    const matched = profiles.find((p) => {
+      const pHandle = (p.handle || '').toLowerCase().replace(/^@/, '');
+      const pId = (p.id || '').toLowerCase();
+      return (cleanId && pId === cleanId) || (cleanHandle && pHandle === cleanHandle);
+    });
+    if (matched?.avatar && matched.avatar !== '/curatorial-masterpiece.svg') {
+      return matched.avatar;
+    }
+    return (artwork.artist.avatar && artwork.artist.avatar !== '/curatorial-masterpiece.svg')
+      ? artwork.artist.avatar
+      : DEFAULT_USER.avatar;
+  }, [artwork, isFounderArt]);
 
   useEffect(() => {
     if (artwork) {
@@ -1290,9 +1326,9 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                 onClick={(e) => onSelectArtist(artwork.artist.id, e)}
               >
                 <Avatar
-                  src={artwork.artist.avatar}
+                  src={resolvedArtistAvatar}
                   name={artwork.artist.name}
-                  className="w-12 h-12 rounded-full border border-[#c9a875]/50 grayscale opacity-90"
+                  className="w-12 h-12 rounded-full border-2 border-[#c9a875]/80 shadow-[0_0_15px_rgba(201,168,117,0.35)]"
                   textSize="text-lg"
                 />
                 <div>

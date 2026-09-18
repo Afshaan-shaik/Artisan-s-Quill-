@@ -462,9 +462,16 @@ export default function App() {
       GalleryService.mergeCloudComments(cloudComments);
     });
 
+    const handleAvatarsUpdated = () => {
+      useGalleryStore.getState().setArtworks(GalleryService.getArtworks());
+    };
+    window.addEventListener('atelier_artworks_avatars_updated', handleAvatarsUpdated);
+
     const unsubscribeRealtime = realtimeBroker.subscribe((event) => {
       if (event.type === 'PROFILE_UPDATED') {
         const updatedProfile = event.payload;
+        GalleryService.handleProfileUpdate(updatedProfile);
+
         const current = GalleryService.getCurrentUser();
         const isCurrentMatch =
           current.id === updatedProfile.id ||
@@ -475,10 +482,12 @@ export default function App() {
           setCurrentUser(updatedProfile);
         }
         refreshArtworks();
+        useGalleryStore.getState().setArtworks(GalleryService.getArtworks());
       }
     });
 
     return () => {
+      window.removeEventListener('atelier_artworks_avatars_updated', handleAvatarsUpdated);
       unsubscribeComments();
       unsubscribeSupabaseAuth();
       unsubscribeRealtime();

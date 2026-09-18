@@ -203,15 +203,31 @@ export interface CloudArtworkRow {
 }
 
 export function mapRowToArtwork(row: CloudArtworkRow): Artwork {
+  const isFounderWork =
+    row.id === 'art-1787665037985-nnxxg' ||
+    row.id === 'spotlight-masterpiece-1' ||
+    Boolean(row.id?.startsWith('coffee-poem-')) ||
+    row.id === 'afshaan-poetry-1' ||
+    row.id === 'urdu-ghazal-ghalib' ||
+    row.user_id === 'user-my-atelier' ||
+    row.user_id === DEFAULT_USER.id ||
+    Boolean(row.artist_handle && (row.artist_handle.toLowerCase().includes('afshaan') || row.artist_handle.toLowerCase().includes('@afshaanshaikh'))) ||
+    Boolean(row.artist_name && row.artist_name.toLowerCase().includes('afshaan'));
+
+  // Ensure founder works always display founder's permanent uploaded selfie
+  const resolvedAvatar = isFounderWork
+    ? (row.artist_avatar && row.artist_avatar !== '/curatorial-masterpiece.svg' ? row.artist_avatar : DEFAULT_USER.avatar)
+    : (row.artist_avatar || '/curatorial-masterpiece.svg');
+
   return {
     id: row.id,
     title: row.title || 'Untitled Masterpiece',
     artist: {
-      id: row.user_id || `artist-${row.id}`,
-      name: row.artist_name || 'Guest Artist',
-      handle: row.artist_handle || '@guest',
-      avatar: row.artist_avatar || '/curatorial-masterpiece.svg',
-      verified: row.artist_name?.toLowerCase().includes('afshaan') || false
+      id: row.user_id || (isFounderWork ? DEFAULT_USER.id : `artist-${row.id}`),
+      name: row.artist_name || (isFounderWork ? DEFAULT_USER.name : 'Guest Artist'),
+      handle: row.artist_handle || (isFounderWork ? DEFAULT_USER.handle : '@guest'),
+      avatar: resolvedAvatar,
+      verified: isFounderWork ? true : Boolean(row.artist_name?.toLowerCase().includes('afshaan'))
     },
     category: (row.category as any) || 'digital',
     mediaUrl: row.media_url || '/curatorial-masterpiece.svg',
@@ -239,17 +255,28 @@ export function mapRowToArtwork(row: CloudArtworkRow): Artwork {
 }
 
 export function mapArtworkToRow(artwork: Artwork): CloudArtworkRow {
-  const isGuest = !artwork.artist?.id || 
+  const isFounder =
+    artwork.artist?.id === 'user-my-atelier' ||
+    artwork.artist?.id === DEFAULT_USER.id ||
+    artwork.id === 'art-1787665037985-nnxxg' ||
+    Boolean(artwork.artist?.handle && (artwork.artist.handle.toLowerCase().includes('afshaan') || artwork.artist.handle.toLowerCase().includes('@afshaanshaikh'))) ||
+    Boolean(artwork.artist?.name && artwork.artist.name.toLowerCase().includes('afshaan'));
+
+  const resolvedAvatar = isFounder
+    ? (artwork.artist?.avatar && artwork.artist.avatar !== '/curatorial-masterpiece.svg' ? artwork.artist.avatar : DEFAULT_USER.avatar)
+    : (artwork.artist?.avatar || '/curatorial-masterpiece.svg');
+
+  const isGuest = !isFounder && (!artwork.artist?.id || 
                   artwork.artist.id.startsWith('guest') || 
                   artwork.artist.id.startsWith('artist-') || 
-                  artwork.artist.id === 'guest';
+                  artwork.artist.id === 'guest');
 
   return {
     id: artwork.id,
-    user_id: isGuest ? undefined : artwork.artist.id,
-    artist_name: artwork.artist?.name || 'Guest Artist',
-    artist_handle: artwork.artist?.handle || '@guest',
-    artist_avatar: artwork.artist?.avatar || '/curatorial-masterpiece.svg',
+    user_id: isFounder ? DEFAULT_USER.id : (isGuest ? undefined : artwork.artist.id),
+    artist_name: isFounder ? DEFAULT_USER.name : (artwork.artist?.name || 'Guest Artist'),
+    artist_handle: isFounder ? DEFAULT_USER.handle : (artwork.artist?.handle || '@guest'),
+    artist_avatar: resolvedAvatar,
     title: artwork.title || 'Untitled Masterpiece',
     category: artwork.category || 'digital',
     media_url: artwork.mediaUrl || '/curatorial-masterpiece.svg',

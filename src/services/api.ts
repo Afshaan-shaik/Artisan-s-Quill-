@@ -54,7 +54,8 @@ export const FOUNDER_PASSCODES = ['atelier2026', 'sanctuary2026', 'afshaan2026',
  * Guests, unauthenticated visitors, and newly registered or other artist accounts are strictly rejected.
  */
 export function isFounderUser(user?: Partial<UserProfile> | null): boolean {
-  if (!user || !user.id || user.id === 'guest') return false;
+  if (!user) return false;
+  if (user.id === 'guest') return false;
 
   const email = (user.email || '').trim().toLowerCase();
   const handle = (user.handle || '').trim().toLowerCase().replace(/^@/, '');
@@ -62,10 +63,10 @@ export function isFounderUser(user?: Partial<UserProfile> | null): boolean {
   const name = (user.name || '').trim().toLowerCase();
 
   // Match against authentic founder identity
-  const isFounderEmail = email === FOUNDER_EMAIL;
+  const isFounderEmail = Boolean(email && email === FOUNDER_EMAIL);
   const isFounderHandle = handle === 'afshaanshaikh' || handle === 'afshaan.creator' || handle === 'afshaan';
   const isFounderId = id === 'user-my-atelier' || id === DEFAULT_USER.id;
-  const isFounderName = name.includes('afshaan');
+  const isFounderName = Boolean(name && name.includes('afshaan'));
 
   return isFounderEmail || isFounderHandle || isFounderId || isFounderName;
 }
@@ -201,6 +202,9 @@ export class GalleryService {
           .filter(Boolean);
 
         this._profilesCache = uniqueProfiles;
+        for (const p of uniqueProfiles) {
+          this.syncProfileToArtworks(p);
+        }
         if (typeof window !== 'undefined') {
           localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(uniqueProfiles));
         }
@@ -252,12 +256,147 @@ export class GalleryService {
     }
   }
 
+  /**
+   * Universal resolver for artwork artist avatar.
+   * Guarantees:
+   * 1. Founder Afshaan Shaikh's artworks always display his authentic uploaded selfie (DEFAULT_USER.avatar).
+   * 2. Any registered creator's artworks dynamically resolve to their authoritative uploaded profile picture.
+   * 3. No avatar ever displays as empty string or broken image.
+   */
+  static resolveArtworkArtistAvatar(artwork: Artwork): Artwork {
+    if (!artwork || !artwork.artist) return artwork;
+
+    const isFounderArt =
+      artwork.artist.id === 'user-my-atelier' ||
+      artwork.artist.id === DEFAULT_USER.id ||
+      artwork.id === 'art-1787665037985-nnxxg' ||
+      artwork.id === 'spotlight-masterpiece-1' ||
+      Boolean(artwork.id?.startsWith('coffee-poem-')) ||
+      artwork.id === 'afshaan-poetry-1' ||
+      artwork.id === 'urdu-ghazal-ghalib' ||
+      Boolean(artwork.artist.handle && (artwork.artist.handle.toLowerCase().includes('afshaan') || artwork.artist.handle.toLowerCase().includes('@afshaanshaikh'))) ||
+      Boolean(artwork.artist.name && artwork.artist.name.toLowerCase().includes('afshaan'));
+
+    if (isFounderArt) {
+      const founderAvatar = (DEFAULT_USER.avatar && DEFAULT_USER.avatar !== '/curatorial-masterpiece.svg')
+        ? DEFAULT_USER.avatar
+        : 'https://uskuzbtvbhfqlxvbbrvw.supabase.co/storage/v1/object/public/avatars/profiles/avatars-1788606890329-suv7gl.jpeg';
+
+      return {
+        ...artwork,
+        artist: {
+          ...artwork.artist,
+          id: DEFAULT_USER.id,
+          name: DEFAULT_USER.name,
+          handle: DEFAULT_USER.handle,
+          avatar: founderAvatar,
+          verified: true
+        }
+      };
+    }
+
+    // For other artists: check authoritative profiles cache
+    try {
+      const profiles = this._profilesCache || [];
+      const cleanHandle = (artwork.artist.handle || '').toLowerCase().replace(/^@/, '');
+      const cleanId = (artwork.artist.id || '').toLowerCase();
+
+      const matchedProfile = profiles.find((p) => {
+        const pHandle = (p.handle || '').toLowerCase().replace(/^@/, '');
+        const pId = (p.id || '').toLowerCase();
+        return (cleanId && pId === cleanId) || (cleanHandle && pHandle === cleanHandle);
+      });
+
+      if (matchedProfile && matchedProfile.avatar && matchedProfile.avatar !== '/curatorial-masterpiece.svg') {
+        return {
+          ...artwork,
+          artist: {
+            ...artwork.artist,
+            avatar: matchedProfile.avatar,
+            name: matchedProfile.name || artwork.artist.name,
+            handle: matchedProfile.handle || artwork.artist.handle,
+            verified: matchedProfile.verified ?? artwork.artist.verified
+          }
+        };
+      }
+    } catch {
+      // Fallback cleanly
+    }
+
+    return artwork;
+  }
+
+  /**
+   * Synchronizes an updated user profile's avatar and name across all artworks in memory.
+   * Ensures that once a user creates or updates a profile picture, all their masterpieces immediately display it.
+   */
+  static syncProfileToArtworks(profile: UserProfile): void {
+    if (!profile) return;
+    const isFounder = isFounderUser(profile);
+    const targetAvatar = profile.avatar;
+    if (!targetAvatar) return;
+
+    let hasChanges = false;
+    const updatedArtworks = this._artworksCache.map((art) => {
+      const isArtFounder =
+        art.artist?.id === 'user-my-atelier' ||
+        art.artist?.id === DEFAULT_USER.id ||
+        art.id === 'art-1787665037985-nnxxg' ||
+        art.id === 'spotlight-masterpiece-1' ||
+        Boolean(art.id?.startsWith('coffee-poem-')) ||
+        Boolean(art.artist?.handle && art.artist.handle.toLowerCase().includes('afshaan'));
+
+      const isTargetArt = isFounder
+        ? isArtFounder
+        : (art.artist?.id === profile.id || (art.artist?.handle && profile.handle && art.artist.handle.toLowerCase() === profile.handle.toLowerCase()));
+
+      if (isTargetArt) {
+        hasChanges = true;
+        return {
+          ...art,
+          artist: {
+            ...art.artist,
+            name: profile.name || art.artist.name,
+            handle: profile.handle || art.artist.handle,
+            avatar: targetAvatar,
+            verified: isFounder ? true : (profile.verified ?? art.artist.verified)
+          }
+        };
+      }
+      return art;
+    });
+
+    if (hasChanges) {
+      this._artworksCache = updatedArtworks;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('atelier_artworks_avatars_updated', { detail: { profile, artworks: updatedArtworks } }));
+      }
+    }
+  }
+
+  static handleProfileUpdate(updatedProfile: UserProfile): void {
+    if (!updatedProfile || !updatedProfile.id) return;
+    const profiles = this.getAllUserProfiles();
+    const idx = profiles.findIndex((p) => p.id === updatedProfile.id || (p.handle && p.handle.toLowerCase() === updatedProfile.handle.toLowerCase()));
+    if (idx >= 0) {
+      profiles[idx] = { ...profiles[idx], ...updatedProfile };
+    } else {
+      profiles.push(updatedProfile);
+    }
+    this._profilesCache = [...profiles];
+    if (isFounderUser(updatedProfile)) {
+      DEFAULT_USER.avatar = updatedProfile.avatar || DEFAULT_USER.avatar;
+      DEFAULT_USER.name = updatedProfile.name || DEFAULT_USER.name;
+    }
+    this.syncProfileToArtworks(updatedProfile);
+  }
+
   private static getStoredArtworks(): Artwork[] {
-    return this._artworksCache;
+    return this._artworksCache.map((a) => this.resolveArtworkArtistAvatar(a));
   }
 
   private static saveArtworks(artworks: Artwork[]) {
-    this._artworksCache = [...artworks];
+    this._artworksCache = artworks.map((a) => this.resolveArtworkArtistAvatar(a));
   }
 
   /**
@@ -270,14 +409,14 @@ export class GalleryService {
     // 1. Add cloud artworks from Supabase Postgres first (ordered by newest created)
     for (const a of cloudArtworks) {
       if (a?.id) {
-        mergedMap.set(a.id, a);
+        mergedMap.set(a.id, this.resolveArtworkArtistAvatar(a));
       }
     }
 
     // 2. Add foundational artworks if not present
     for (const a of existing) {
       if (a?.id && !mergedMap.has(a.id)) {
-        mergedMap.set(a.id, a);
+        mergedMap.set(a.id, this.resolveArtworkArtistAvatar(a));
       }
     }
 
@@ -487,8 +626,9 @@ export class GalleryService {
     try {
       const supaArtwork = await fetchArtworkByIdFromSupabase(cleanId);
       if (supaArtwork) {
-        this.mergeCloudArtworks([supaArtwork]);
-        return supaArtwork;
+        const resolved = this.resolveArtworkArtistAvatar(supaArtwork);
+        this.mergeCloudArtworks([resolved]);
+        return resolved;
       }
     } catch (err) {
       console.warn('[GalleryService] Supabase single-artwork fetch note:', err);
@@ -498,8 +638,9 @@ export class GalleryService {
     try {
       const fireArtwork = await fetchArtworkByIdFromFirestore(cleanId);
       if (fireArtwork) {
-        this.mergeCloudArtworks([fireArtwork]);
-        return fireArtwork;
+        const resolved = this.resolveArtworkArtistAvatar(fireArtwork);
+        this.mergeCloudArtworks([resolved]);
+        return resolved;
       }
     } catch (err) {
       console.warn('[GalleryService] Firestore single-artwork fetch note:', err);
@@ -1035,7 +1176,7 @@ export class GalleryService {
    * local vault storage, in-memory defaults, and notifies all open views.
    */
   static async updateFounderProfile(profileData: Partial<UserProfile>, invokingUser?: UserProfile | null): Promise<UserProfile> {
-    const isAllowed = !invokingUser || isFounderUser(invokingUser) || isFounderUser(profileData);
+    const isAllowed = invokingUser ? isFounderUser(invokingUser) : isFounderUser(this.getCurrentUser());
     if (!isAllowed) {
       throw new Error('Unauthorized: Only sanctuary creator Afshaan Shaikh can modify founder profile details.');
     }
@@ -1061,6 +1202,8 @@ export class GalleryService {
       localStorage.setItem(FOUNDER_STORAGE_KEY, JSON.stringify(updatedFounder));
       window.dispatchEvent(new CustomEvent('atelier_founder_profile_updated', { detail: updatedFounder }));
     }
+
+    this.syncProfileToArtworks(updatedFounder);
 
     // Update active current user session and HTTP-only cookie on server
     this.saveCurrentUser(updatedFounder);
@@ -1184,6 +1327,7 @@ export class GalleryService {
         // Sync to Supabase Postgres
         upsertProfileToSupabase(user).catch(() => {});
         syncUserProfileToCloud(user).catch(() => {});
+        this.syncProfileToArtworks(user);
       }
     } catch {
       // Ignore
