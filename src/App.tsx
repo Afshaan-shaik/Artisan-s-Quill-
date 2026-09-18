@@ -66,10 +66,7 @@ import { MeshDriftBackground } from './components/MeshDriftBackground';
 import {
   subscribeToCloudArtworks,
   subscribeToCloudComments,
-  signOutFirebaseUser,
-  subscribeToFirebaseAuthState,
-  handleGoogleRedirectResult,
-  buildUserProfileFromGoogleData
+  signOutFirebaseUser
 } from './services/firebase';
 import { getActiveSupabaseUser, signOutSupabase, onSupabaseAuthStateChange } from './services/supabaseClient';
 
@@ -382,15 +379,6 @@ export default function App() {
         setCurrentUser(activeProfile);
       }
 
-      // Check for Google Auth Redirect result (if user completed Google OAuth redirect)
-      handleGoogleRedirectResult().then((result) => {
-        if (result.success && result.user) {
-          GalleryService.saveCurrentUser(result.user);
-          setCurrentUser(result.user);
-          refreshArtworks();
-        }
-      }).catch(() => {});
-
       refreshArtworks();
 
       // Deep linking: Immediately open the requested artwork if shared via direct link / WhatsApp / social
@@ -432,22 +420,6 @@ export default function App() {
       }
     });
 
-    const unsubscribeFirebaseAuth = subscribeToFirebaseAuthState((fbUser) => {
-      if (fbUser) {
-        // Genuine Google user signed in via Firebase
-        const googleProfile = buildUserProfileFromGoogleData({
-          uid: fbUser.uid,
-          name: fbUser.displayName || undefined,
-          email: fbUser.email || undefined,
-          photoURL: fbUser.photoURL || undefined
-        });
-        GalleryService.saveCurrentUser(googleProfile);
-        setCurrentUser(googleProfile);
-        refreshArtworks();
-      }
-      // Note: If fbUser is null, DO NOTHING to ensure creator or existing artist is NEVER demoted!
-    });
-
     const unsubscribeComments = subscribeToCloudComments((cloudComments) => {
       GalleryService.mergeCloudComments(cloudComments);
     });
@@ -471,7 +443,6 @@ export default function App() {
     return () => {
       unsubscribeComments();
       unsubscribeSupabaseAuth();
-      unsubscribeFirebaseAuth();
       unsubscribeRealtime();
     };
   }, []);
