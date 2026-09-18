@@ -129,7 +129,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else if (authError?.message?.includes('already been registered') || authError?.message?.includes('already exists')) {
         // User exists — look up their existing Supabase Auth ID
         const { data: existing } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-        const existingUser = existing?.users?.find(u => u.email?.toLowerCase() === cleanEmail);
+        const existingUser = existing?.users?.find((u: { email?: string; id: string }) => u.email?.toLowerCase() === cleanEmail);
         if (existingUser) {
           authUserId = existingUser.id;
           // Update their metadata to ensure it's current

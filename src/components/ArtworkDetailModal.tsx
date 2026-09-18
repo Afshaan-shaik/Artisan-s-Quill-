@@ -44,6 +44,7 @@ import { PoetryCardExporterModal } from './PoetryCardExporterModal';
 import { MarginReflectionsDrawer } from './MarginReflectionsDrawer';
 import { VoiceRecitalStudioModal } from './VoiceRecitalStudioModal';
 import { SpotifyRecitalPlayer } from './SpotifyRecitalPlayer';
+import { YouTubeVideoPlayer } from './YouTubeVideoPlayer';
 import confetti from 'canvas-confetti';
 import { getSoothingFemaleVoice, detectPoemLanguage, preparePoeticTextForVoice, getVoiceIdentityLabel } from '../utils/speechUtils';
 import { VOICE_ACCENT_PROFILES, resolvePoeticVoice, isAfshaanShaikh } from '../utils/afshaanVoiceEngine';
@@ -1148,29 +1149,16 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                 </div>
               </div>
             ) : isVideoMedia(artwork) ? (
-              /* High-Res Video / Digital Motion Loop with Ambient Video Glow */
-              <div className="relative w-full max-w-4xl rounded-xl overflow-hidden border border-[#c9a875]/40 shadow-[0_0_50px_rgba(201,168,117,0.25)] bg-black my-auto">
-                {/* Ambient Backdrop Video Reflection */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40 z-0 bg-black">
-                  <video
-                    src={artwork.mediaUrl}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload="auto"
-                    className="w-full h-full object-cover filter blur-2xl scale-125 pointer-events-none bg-black"
-                  />
-                </div>
-                <video
+              /* High-Res Video / Digital Motion Cinema with YouTube-Style Scrubber & Down Volume */
+              <div className="w-full max-w-4xl my-auto animate-fadeIn">
+                <YouTubeVideoPlayer
                   src={artwork.mediaUrl}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  controls
-                  preload="auto"
-                  className="w-full h-auto max-h-[72vh] object-contain mx-auto relative z-10 bg-black"
+                  title={artwork.title}
+                  artist={artwork.artist?.name}
+                  aspectRatio={artwork.aspectRatio}
+                  autoPlay={true}
+                  loop={true}
+                  initialMuted={false}
                 />
               </div>
             ) : isAudioMedia(artwork) ? (

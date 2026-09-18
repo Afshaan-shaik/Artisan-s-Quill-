@@ -1,10 +1,17 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Heart, Bookmark, Play, Sparkles, Image, Film, Palette, PenTool, Share2, Layers } from 'lucide-react';
+import { Heart, Bookmark, Play, Pause, Volume2, VolumeX, Sparkles, Image, Film, Palette, PenTool, Share2, Layers } from 'lucide-react';
 import { Artwork, ArtCategory } from '../types';
 import { PoetryCard } from './PoetryCard';
 import confetti from 'canvas-confetti';
 import { motion } from 'motion/react';
 import { isVideoMedia, isAudioMedia, getMediaPoster } from '../utils/mediaUtils';
+
+const formatCardVideoTime = (seconds: number): string => {
+  if (isNaN(seconds) || seconds < 0) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -90,6 +97,41 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  // Video playback & scrubber states for uploaded videos
+  const isVideo = isVideoMedia(artwork);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const cardProgressRef = useRef<HTMLDivElement | null>(null);
+  const [isMuted, setIsMuted] = useState(true);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+
+  // Smooth dragging across timeline
+  useEffect(() => {
+    if (!isScrubbing) return;
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!cardProgressRef.current || duration <= 0) return;
+      const rect = cardProgressRef.current.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min((e.clientX - rect.left) / rect.width, 1));
+      const target = ratio * duration;
+      if (videoRef.current) {
+        videoRef.current.currentTime = target;
+        setCurrentTime(target);
+      }
+    };
+    const handleGlobalMouseUp = () => {
+      setIsScrubbing(false);
+    };
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isScrubbing, duration]);
+
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'painting': return <Palette className="w-3 h-3 text-[#e8b482]" />;
@@ -172,19 +214,149 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
           </div>
         )}
 
-        {isVideoMedia(artwork) ? (
-          <video
-            src={artwork.mediaUrl}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700 pointer-events-none scale-105 bg-[#030407]"
-            style={{
-              transform: `scale(${isHovered ? 1.08 : 1.04}) translate3d(${-parallaxOffset.x}px, ${-parallaxOffset.y}px, 0)`
-            }}
-          />
+        {isVideo ? (
+          <div className="relative w-full h-full overflow-hidden">
+            <video
+              ref={videoRef}
+              src={artwork.mediaUrl}
+              autoPlay
+              muted={isMuted}
+              loop
+              playsInline
+              preload="auto"
+              onLoadedMetadata={() => {
+                if (videoRef.current?.duration) {
+                  setDuration(videoRef.current.duration);
+                }
+              }}
+              onTimeUpdate={() => {
+                if (videoRef.current && !isScrubbing) {
+                  setCurrentTime(videoRef.current.currentTime);
+                }
+              }}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-700 pointer-events-none scale-105 bg-[#030407]"
+              style={{
+                transform: `scale(${isHovered ? 1.08 : 1.04}) translate3d(${-parallaxOffset.x}px, ${-parallaxOffset.y}px, 0)`
+              }}
+            />
+
+            {/* Down Audio / Volume On or Off & YouTube-Style Scrubber for Uploaded Videos */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="absolute bottom-0 inset-x-0 z-30 p-2.5 bg-gradient-to-t from-black/95 via-black/75 to-transparent flex flex-col gap-1.5 transition-opacity duration-200 pointer-events-auto"
+            >
+              {/* YouTube-Style Mini Scrubber Track */}
+              <div
+                ref={cardProgressRef}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setIsScrubbing(true);
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const ratio = Math.max(0, Math.min((e.clientX - rect.left) / rect.width, 1));
+                  const target = ratio * (duration || 1);
+                  if (videoRef.current) {
+                    videoRef.current.currentTime = target;
+                    setCurrentTime(target);
+                  }
+                }}
+                onMouseMove={(e) => {
+                  if (!cardProgressRef.current || duration <= 0) return;
+                  const rect = cardProgressRef.current.getBoundingClientRect();
+                  const ratio = Math.max(0, Math.min((e.clientX - rect.left) / rect.width, 1));
+                  setHoverTime(ratio * duration);
+                }}
+                onMouseLeave={() => setHoverTime(null)}
+                className="relative h-4 flex items-center cursor-pointer group/cardtrack"
+                title="Scroll or click to seek forward/backward"
+              >
+                <div className="w-full h-1 group-hover/cardtrack:h-1.5 rounded-full bg-white/25 overflow-hidden relative transition-all">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#ff0000] via-[#df3838] to-[#c9a875] rounded-full shadow-[0_0_8px_rgba(255,0,0,0.8)] transition-all duration-75"
+                    style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                  />
+                </div>
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-[#ff0000] border border-white shadow scale-0 group-hover/cardtrack:scale-100 transition-transform pointer-events-none"
+                  style={{ left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                />
+                {hoverTime !== null && (
+                  <div
+                    className="absolute -top-5 -translate-x-1/2 px-1.5 py-0.5 rounded bg-black/95 border border-white/20 text-[8px] font-mono-code text-white pointer-events-none z-30"
+                    style={{ left: `${duration > 0 ? (hoverTime / duration) * 100 : 0}%` }}
+                  >
+                    {formatCardVideoTime(hoverTime)}
+                  </div>
+                )}
+              </div>
+
+              {/* Down Controls Row: Play/Pause, Down Audio / Volume On or Off Button, Timestamp */}
+              <div className="flex items-center justify-between text-white text-[10px] font-mono-code">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!videoRef.current) return;
+                      if (videoRef.current.paused) {
+                        videoRef.current.play().catch(() => {});
+                        setIsPlaying(true);
+                      } else {
+                        videoRef.current.pause();
+                        setIsPlaying(false);
+                      }
+                    }}
+                    className="p-1 rounded hover:bg-white/20 text-neutral-200 hover:text-white transition-colors cursor-pointer"
+                    title={isPlaying ? 'Pause video' : 'Play video'}
+                  >
+                    {isPlaying ? <Pause className="w-3 h-3 fill-current" /> : <Play className="w-3 h-3 fill-current ml-0.5" />}
+                  </button>
+
+                  {/* DOWN AUDIO / VOLUME ON OR OFF BUTTON */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!videoRef.current) return;
+                      const nextMuted = !isMuted;
+                      videoRef.current.muted = nextMuted;
+                      if (!nextMuted) {
+                        videoRef.current.volume = 1;
+                        videoRef.current.play().catch(() => {});
+                      }
+                      setIsMuted(nextMuted);
+                    }}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full backdrop-blur-md transition-all cursor-pointer ${
+                      !isMuted
+                        ? 'bg-[#c9a875] text-black font-bold shadow-[0_0_12px_rgba(201,168,117,0.7)]'
+                        : 'bg-black/70 hover:bg-black/90 text-neutral-300 hover:text-white border border-white/20'
+                    }`}
+                    title={isMuted ? 'Turn Audio On (🔊)' : 'Turn Audio Off (🔇)'}
+                  >
+                    {isMuted ? (
+                      <>
+                        <VolumeX className="w-3 h-3 text-red-400" />
+                        <span className="text-[8px] uppercase tracking-wider font-semibold">Sound Off</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-3 h-3 text-black" />
+                        <span className="text-[8px] uppercase tracking-wider font-semibold">Sound On</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="text-[9px] text-neutral-300 select-none">
+                  <span>{formatCardVideoTime(currentTime)}</span>
+                  <span className="text-neutral-500 mx-0.5">/</span>
+                  <span>{formatCardVideoTime(duration)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         ) : (
           <img
             src={artwork.thumbnailUrl || artwork.mediaUrl}

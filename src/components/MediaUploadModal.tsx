@@ -4,6 +4,7 @@ import { ArtCategory, Artwork, PoetryTheme, PoetryFont, AspectRatioType } from '
 import { PoetryCard } from './PoetryCard';
 import { GalleryService } from '../services/api';
 import { uploadArtworkMediaToStorage } from '../services/supabaseClient';
+import { YouTubeVideoPlayer } from './YouTubeVideoPlayer';
 
 interface MediaUploadModalProps {
   isOpen: boolean;
@@ -506,14 +507,29 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                     />
 
                     {mediaUrl ? (
-                      <div className="space-y-3 w-full">
-                        <img
-                          src={mediaUrl}
-                          alt="Uploaded Preview"
-                          className="max-h-48 rounded-xl mx-auto object-cover border border-white/20"
-                        />
-                        <p className="text-xs text-[#c9a875] font-mono-code">
-                          Click to select a different file
+                      <div className="space-y-3 w-full" onClick={(e) => e.stopPropagation()}>
+                        {visualCategory === 'video' || mediaUrl.match(/\.(mp4|webm|mov|m4v|ogv)/i) || mediaUrl.startsWith('data:video') ? (
+                          <div className="rounded-xl overflow-hidden max-h-60 mx-auto border border-white/20">
+                            <YouTubeVideoPlayer
+                              src={mediaUrl}
+                              title={title || 'Motion Cinema Preview'}
+                              autoPlay={true}
+                              loop={true}
+                              initialMuted={false}
+                            />
+                          </div>
+                        ) : (
+                          <img
+                            src={mediaUrl}
+                            alt="Uploaded Preview"
+                            className="max-h-48 rounded-xl mx-auto object-cover border border-white/20"
+                          />
+                        )}
+                        <p
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-xs text-[#c9a875] font-mono-code cursor-pointer hover:underline text-center"
+                        >
+                          Click here to choose a different file
                         </p>
                       </div>
                     ) : (
