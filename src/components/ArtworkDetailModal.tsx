@@ -49,6 +49,7 @@ import confetti from 'canvas-confetti';
 import { getSoothingFemaleVoice, detectPoemLanguage, preparePoeticTextForVoice, getVoiceIdentityLabel } from '../utils/speechUtils';
 import { VOICE_ACCENT_PROFILES, resolvePoeticVoice, isAfshaanShaikh } from '../utils/afshaanVoiceEngine';
 import { isVideoMedia, isAudioMedia, getMediaPoster } from '../utils/mediaUtils';
+import { ModalMediumBackdrop } from './backdrops';
 
 interface ArtworkDetailModalProps {
   artwork: Artwork | null;
@@ -837,6 +838,13 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
           <div
             className={`lg:col-span-7 xl:col-span-8 relative flex flex-col items-center justify-start p-6 sm:p-8 md:p-12 overflow-y-auto transition-all duration-700 ${getLightingBackground()}`}
           >
+            {/* Dynamic Curatorial Medium Backdrop (Aceternity UI & 21st.dev) */}
+            <ModalMediumBackdrop
+              category={artwork.category}
+              isVideo={isVideoMedia(artwork)}
+              lightingMode={lightingMode}
+            />
+
             {/* Floating Left/Right Chevron Navigation Over Viewport */}
             {allArtworks.length > 1 && (
               <>
@@ -858,7 +866,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
             )}
             {artwork.category === 'poetry' && poetry ? (
               /* Dedicated Poetry Reading Chamber */
-              <div className="w-full max-w-2xl bg-neutral-900/95 border border-[#c9a875]/20 rounded-xl p-8 sm:p-12 md:p-14 shadow-2xl flex flex-col items-center text-center my-auto">
+              <div className="relative z-10 w-full max-w-2xl bg-neutral-900/95 border border-[#c9a875]/20 rounded-xl p-8 sm:p-12 md:p-14 shadow-2xl flex flex-col items-center text-center my-auto">
                 <div className="mb-8 w-full flex flex-col items-center">
                   <span className="px-3 py-1 mb-4 rounded-full bg-[#c9a875]/15 border border-[#c9a875]/40 text-[#dfbd87] text-[10px] uppercase font-bold tracking-[0.25em] shadow-[0_0_12px_rgba(201,168,117,0.2)]">
                     Poetry Masterpiece
@@ -1150,7 +1158,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
               </div>
             ) : isVideoMedia(artwork) ? (
               /* High-Res Video / Digital Motion Cinema with YouTube-Style Scrubber & Down Volume */
-              <div className="w-full max-w-4xl my-auto animate-fadeIn">
+              <div className="relative z-10 w-full max-w-4xl my-auto animate-fadeIn">
                 <YouTubeVideoPlayer
                   src={artwork.mediaUrl}
                   title={artwork.title}
@@ -1163,7 +1171,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
               </div>
             ) : isAudioMedia(artwork) ? (
               /* Audio / Sound Art Composition with Visual Equalizer */
-              <div className="relative w-full max-w-2xl rounded-2xl p-8 sm:p-12 bg-black/80 border border-[#c9a875]/40 shadow-2xl my-auto text-center space-y-6">
+              <div className="relative z-10 w-full max-w-2xl rounded-2xl p-8 sm:p-12 bg-black/80 border border-[#c9a875]/40 shadow-2xl my-auto text-center space-y-6">
                 <div className="w-24 h-24 rounded-full bg-[#c9a875]/20 border-2 border-[#c9a875] flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(201,168,117,0.3)] animate-pulse">
                   <Volume2 className="w-10 h-10 text-[#c9a875]" />
                 </div>
@@ -1179,7 +1187,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
               </div>
             ) : (
               /* High Resolution Visual Artwork (Painting / Drawing / Digital) */
-              <div className="relative group max-h-[75vh] w-full flex items-center justify-center my-auto">
+              <div className="relative z-10 group max-h-[75vh] w-full flex items-center justify-center my-auto">
                 <img
                   key={`${artwork.id}-${activeImageSrc}`}
                   src={activeImageSrc}

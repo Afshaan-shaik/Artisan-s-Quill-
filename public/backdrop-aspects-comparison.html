@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Curatorial Studio: Maximized Modal vs Gallery Grid Backdrops</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Cinzel', 'serif'],
+            serif: ['Playfair Display', 'serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['Space Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #030406;
+      color: #e5e7eb;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    .bg-noise {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+    .view-container {
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    input[type=range] {
+      accent-color: #06b6d4;
+    }
+  </style>
+</head>
+<body class="relative min-h-screen selection:bg-[#c9a875]/30 selection:text-white">
+  <!-- Subtle Global Ambient Noise -->
+  <div class="fixed inset-0 pointer-events-none opacity-[0.035] bg-noise z-50"></div>
+
+  <!-- Top Navigation & Control Studio Bar -->
+  <header class="sticky top-0 z-40 bg-[#06080d]/95 backdrop-blur-xl border-b border-white/10 px-4 sm:px-8 py-3.5 shadow-2xl">
+    <div class="max-w-[96rem] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c9a875] via-[#dfbd87] to-[#8c6b38] flex items-center justify-center text-black font-display font-black text-xl shadow-[0_0_20px_rgba(201,168,117,0.4)]">
+          AQ
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-[#c9a875]/20 text-[#dfbd87] border border-[#c9a875]/40 font-bold">
+              Curatorial Studio
+            </span>
+            <span class="text-xs text-neutral-400 font-mono">Real-Time Comparison</span>
+          </div>
+          <h1 class="text-base sm:text-lg font-display font-bold tracking-wide text-white">
+            Maximized Modal <span class="text-[#06b6d4]">vs</span> Gallery Grid Cards
+          </h1>
+        </div>
+      </div>
+
+      <!-- Tab Switcher (Aspect 1 vs Aspect 2 vs Side-by-Side vs Verdict) -->
+      <div class="flex items-center bg-black/80 p-1 rounded-xl border border-white/10">
+        <button id="tab-modal" onclick="switchView('modal')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all bg-[#06b6d4] text-black shadow-[0_0_15px_rgba(6,182,212,0.6)]">
+          1. Maximized Modal (Image 1)
+        </button>
+        <button id="tab-grid" onclick="switchView('grid')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition-all">
+          2. Gallery Grid (Image 2)
+        </button>
+        <button id="tab-splitscreen" onclick="switchView('splitscreen')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition-all">
+          3. Side-by-Side Split
+        </button>
+        <button id="tab-verdict" onclick="switchView('verdict')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition-all">
+          4. Curatorial Verdict
+        </button>
+      </div>
+
+      <!-- Interactive Global Backdrop Controls -->
+      <div class="flex items-center gap-3 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] font-mono uppercase tracking-wider text-neutral-400">Backdrop:</span>
+          <button id="btn-toggle-backdrop" onclick="toggleBackdrop()" class="px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all">
+            ACTIVE (ON)
+          </button>
+        </div>
+        <div class="h-4 w-[1px] bg-white/10 hidden sm:block"></div>
+        <div class="hidden sm:flex items-center gap-2">
+          <label for="intensity-slider" class="text-[11px] font-mono text-neutral-400 uppercase">Glow:</label>
+          <input id="intensity-slider" type="range" min="10" max="100" value="65" oninput="setBackdropOpacity(this.value)" class="w-20 cursor-pointer">
+          <span id="intensity-val" class="text-[11px] font-mono text-[#06b6d4] w-7">65%</span>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-[96rem] mx-auto px-4 sm:px-8 py-6">
+
+    <!-- =============================================================== -->
+    <!-- VIEW 1: ASPECT 1 - MAXIMIZED MODAL VIEW (Exact Replica of Image 1) -->
+    <!-- =============================================================== -->
+    <section id="view-modal" class="view-container block">
+      
+      <!-- Informational Banner -->
+      <div class="mb-4 p-4 rounded-xl bg-gradient-to-r from-[#06b6d4]/15 via-black to-[#c9a875]/15 border border-[#06b6d4]/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <div class="p-2 rounded-lg bg-[#06b6d4]/20 text-[#06b6d4] font-bold text-sm font-mono mt-0.5 shrink-0">
+            ASPECT A
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-white flex items-center gap-2">
+              <span>Maximized Modal Presentation View</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-normal">RECOMMENDED FOR DEEP IMMERSION</span>
+            </h2>
+            <p class="text-xs text-neutral-300 leading-relaxed mt-0.5">
+              Replicating your exact <span class="text-white font-semibold">"childhood"</span> modal from Image 1. Notice how the left viewport transforms from a flat black void into a responsive <span class="text-[#06b6d4] font-semibold">Aceternity 3D Coordinate Grid & Cyan Nodes</span> reacting to your cursor in real-time!
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="toggleBackdrop()" class="text-xs font-mono px-3 py-1.5 rounded-lg border border-white/20 bg-black/60 hover:bg-white/10 text-neutral-200 transition-all">
+            Toggle [Flat Void ⇄ Creative Grid]
+          </button>
+        </div>
+      </div>
+
+      <!-- The Modal Replica Container -->
+      <div class="relative w-full rounded-2xl border border-white/10 bg-[#050608] shadow-[0_0_50px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col font-sans">
+        
+        <!-- Modal Top Bar -->
+        <div class="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-white/10 bg-[#080a10]/95 backdrop-blur-xl z-20">
+          <div class="flex items-center gap-3">
+            <span class="px-2.5 py-0.5 rounded bg-[#c9a875]/20 border border-[#c9a875]/50 text-[10px] uppercase font-bold tracking-widest text-[#dfbd87]">
+              DIGITAL
+            </span>
+            <h3 class="font-serif text-lg font-medium tracking-wide text-white uppercase truncate">
+              CHILDHOOD...
+            </h3>
+            <span class="hidden sm:inline-flex px-2 py-0.5 bg-black/60 border border-[#c9a875]/30 text-[10px] font-mono text-neutral-400 rounded-md">
+              <span class="text-[#dfbd87] font-bold">1</span> OF 13
+            </span>
+          </div>
+
+          <!-- Middle Lighting Mode Toggles -->
+          <div class="hidden md:flex items-center gap-1.5 bg-black/90 border border-[#c9a875]/40 px-2.5 py-1 rounded-lg">
+            <span class="text-[10px] font-mono font-bold text-[#e8c690] mr-1">☀ LIGHT:</span>
+            <button class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#c9a875] text-black">DARK</button>
+            <button class="px-2 py-0.5 rounded text-[10px] text-neutral-400 hover:text-white">SPOT</button>
+            <button class="px-2 py-0.5 rounded text-[10px] text-neutral-400 hover:text-white">TWILIGHT</button>
+          </div>
+
+          <!-- Right Action Pills -->
+          <div class="flex items-center gap-2">
+            <button class="hidden lg:flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-black/80 border border-white/20 text-neutral-300">
+              🛠 CURATORIAL TOOLKIT ▾
+            </button>
+            <button class="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-black/80 border border-[#c9a875]/50 text-[#e8c690]">
+              ↗ SHARE
+            </button>
+            <div class="hidden sm:flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-lg bg-white/5 border border-white/10 text-neutral-400 font-mono">
+              🔒 Protected Creator Work
+            </div>
+            <div class="flex items-center gap-1 text-neutral-400">
+              <button class="p-1 rounded bg-black/50 border border-white/10 hover:text-white">❮</button>
+              <button class="p-1 rounded bg-black/50 border border-white/10 hover:text-white">❯</button>
+              <button class="p-1 rounded bg-black/50 border border-white/10 hover:text-rose-400 text-neutral-400 ml-1">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Body Grid (Artwork Stage Left + Metadata Right) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[640px] relative">
+          
+          <!-- LEFT STAGE: ARTWORK VIEWPORT WITH DYNAMIC ACETERNITY GRID BACKDROP -->
+          <div id="modal-stage-left" class="lg:col-span-8 relative flex items-center justify-center p-6 sm:p-10 overflow-hidden bg-[#08090d] transition-colors duration-500">
+            
+            <!-- LIVE INTERACTIVE CANVAS: Aceternity 3D Grid & Cyan Cursor Distortion -->
+            <canvas id="modal-grid-canvas" class="absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-700 opacity-65 z-0"></canvas>
+            
+            <!-- Radial Vignette Mask -->
+            <div id="modal-vignette" class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_35%,rgba(5,6,8,0.85)_80%,#050608_100%)] z-1"></div>
+
+            <!-- Floating Stage Chevrons -->
+            <button class="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/70 border border-[#c9a875]/40 text-[#dfbd87] flex items-center justify-center hover:bg-[#c9a875] hover:text-black transition-all">
+              ❮
+            </button>
+            <button class="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/70 border border-[#c9a875]/40 text-[#dfbd87] flex items-center justify-center hover:bg-[#c9a875] hover:text-black transition-all">
+              ❯
+            </button>
+
+            <!-- THE ARTWORK ITSELF (childhood - exact image from Image 1) -->
+            <div class="relative z-10 max-w-lg w-full rounded-xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9)] border border-white/10 group cursor-crosshair">
+              
+              <!-- Artwork Image Container -->
+              <div class="relative overflow-hidden bg-black aspect-[4/3]">
+                <!-- Using the exact uploaded childhood picture -->
+                <img src="/preview-assets/aspect-modal-original.png" alt="childhood artwork preview" class="w-full h-full object-cover object-left" />
+                
+                <!-- Hover Glow Rim around the artwork -->
+                <div class="absolute inset-0 ring-1 ring-white/15 group-hover:ring-[#06b6d4]/50 transition-all pointer-events-none"></div>
+
+                <!-- Floating Top Right Info Pip -->
+                <div class="absolute top-3 right-3 w-6 h-6 rounded-full bg-black/70 border border-[#c9a875]/60 flex items-center justify-center text-[10px] text-[#dfbd87]">
+                  ●
+                </div>
+
+                <!-- Floating Bottom Pill "VIEW FRAGMENT" -->
+                <div class="absolute bottom-4 right-4">
+                  <button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/85 border border-[#c9a875]/50 text-[11px] font-mono font-bold tracking-wider text-[#dfbd87] hover:bg-[#c9a875] hover:text-black shadow-lg transition-all">
+                    ⤢ VIEW FRAGMENT
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Stage Footer Helper Pill -->
+            <div class="absolute bottom-3 left-6 z-20 flex items-center gap-2 text-[10px] font-mono text-neutral-400 bg-black/60 px-3 py-1 rounded-full border border-white/10 backdrop-blur-md">
+              <span class="w-2 h-2 rounded-full bg-[#06b6d4] animate-ping"></span>
+              Move your mouse across this area to see the 3D grid distort and ignite cyan nodes!
+            </div>
+
+          </div>
+
+          <!-- RIGHT SIDEBAR: METADATA, CURATORIAL INFO & ACTIONS -->
+          <div class="lg:col-span-4 p-6 sm:p-8 bg-[#07090e] border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col justify-between z-10">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-white/5 border border-white/10 text-neutral-400">
+                  DIGITAL
+                </span>
+                <span class="text-xs text-neutral-500 font-mono">Circa 2026</span>
+              </div>
+              
+              <h2 class="font-serif text-3xl font-bold text-white tracking-tight mb-6">
+                childhood
+              </h2>
+
+              <!-- Artist Card -->
+              <div class="flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.03] border border-white/10 mb-6">
+                <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-neutral-800 to-neutral-700 border border-white/20 flex items-center justify-center font-bold text-white text-xs">
+                  GA
+                </div>
+                <div>
+                  <div class="text-sm font-bold text-white tracking-wide">GUEST ARTIST</div>
+                  <div class="text-[11px] font-mono text-neutral-500">@guest_artist</div>
+                </div>
+              </div>
+
+              <!-- Engagement Row (Likes, Save, Share) -->
+              <div class="flex items-center gap-2 mb-6">
+                <button class="flex-1 py-2 rounded-lg bg-black/60 border border-white/15 text-xs font-mono text-neutral-300 hover:border-white/30 flex items-center justify-center gap-1.5">
+                  ♡ 0
+                </button>
+                <button class="flex-1 py-2 rounded-lg bg-black/60 border border-white/15 text-xs font-mono text-neutral-300 hover:border-white/30 flex items-center justify-center gap-1.5">
+                  🔖 SAVE
+                </button>
+                <button class="flex-1 py-2 rounded-lg bg-black/60 border border-white/15 text-xs font-mono text-neutral-300 hover:border-white/30 flex items-center justify-center gap-1.5">
+                  ↗ SHARE
+                </button>
+              </div>
+
+              <!-- Curatorial Salon Buttons -->
+              <div class="grid grid-cols-3 gap-2 mb-6">
+                <button class="py-2 px-1 rounded-lg bg-black/80 border border-[#c9a875]/40 text-[10px] font-mono font-bold text-[#dfbd87] text-center hover:bg-[#c9a875] hover:text-black transition-all">
+                  👁 WALL SALON
+                </button>
+                <button class="py-2 px-1 rounded-lg bg-black/80 border border-[#c9a875]/40 text-[10px] font-mono font-bold text-[#dfbd87] text-center hover:bg-[#c9a875] hover:text-black transition-all">
+                  🏆 CERTIFICATE
+                </button>
+                <button class="py-2 px-1 rounded-lg bg-black/80 border border-[#c9a875]/40 text-[10px] font-mono font-bold text-[#dfbd87] text-center hover:bg-[#c9a875] hover:text-black transition-all">
+                  🎨 COLOR STUDIO
+                </button>
+              </div>
+
+              <!-- Specifications -->
+              <div class="border-t border-white/10 pt-4 space-y-3">
+                <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500">SPECIFICATIONS</div>
+                <div class="grid grid-cols-2 gap-4 text-xs font-mono">
+                  <div>
+                    <div class="text-neutral-500 text-[10px]">MEDIUM</div>
+                    <div class="text-neutral-300 font-semibold mt-0.5">Generative Shader & 3D Render</div>
+                  </div>
+                  <div>
+                    <div class="text-neutral-500 text-[10px]">DIMENSIONS</div>
+                    <div class="text-neutral-300 font-semibold mt-0.5">120 × 160 cm</div>
+                  </div>
+                  <div>
+                    <div class="text-neutral-500 text-[10px]">YEAR</div>
+                    <div class="text-neutral-300 font-semibold mt-0.5">2026</div>
+                  </div>
+                  <div>
+                    <div class="text-neutral-500 text-[10px]">EXHIBITION</div>
+                    <div class="text-neutral-300 font-semibold mt-0.5">Permanent Archive</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Bottom Shortcuts HUD -->
+            <div class="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-500">
+              <div>⌘ SHORTCUTS: ← / → Browse • L Like • Esc Close</div>
+              <div class="text-[#c9a875]">SEQUENTIAL EXHIBITION MODE</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- =============================================================== -->
+    <!-- VIEW 2: ASPECT 2 - GALLERY GRID CARDS (Exact Replica of Image 2) -->
+    <!-- =============================================================== -->
+    <section id="view-grid" class="view-container hidden">
+      
+      <!-- Informational Banner -->
+      <div class="mb-4 p-4 rounded-xl bg-gradient-to-r from-amber-500/15 via-black to-[#c9a875]/15 border border-amber-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <div class="p-2 rounded-lg bg-amber-500/20 text-amber-300 font-bold text-sm font-mono mt-0.5 shrink-0">
+            ASPECT B
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-white flex items-center gap-2">
+              <span>Gallery Feed Cards (Masonry Grid)</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono font-normal">BROWSING & SCANNABILITY</span>
+            </h2>
+            <p class="text-xs text-neutral-300 leading-relaxed mt-0.5">
+              Replicating your exact gallery cards from Image 2 (<span class="text-white">Spidy in black</span>, <span class="text-white">or aesthetic</span>, <span class="text-white">goa</span>, <span class="text-white">Bully Maguire</span>). Test how individual hover auras highlight the medium vs full backgrounds.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <button id="btn-grid-mode" onclick="toggleGridMode()" class="text-xs font-mono px-3 py-1.5 rounded-lg border border-[#c9a875]/40 bg-[#c9a875]/20 text-[#dfbd87] hover:bg-[#c9a875] hover:text-black transition-all">
+            Current Mode: [Hover Aura Only]
+          </button>
+        </div>
+      </div>
+
+      <!-- Gallery Grid Container (Simulating the sanctuary textured wall salon) -->
+      <div class="relative w-full rounded-2xl border border-white/10 bg-[#0d0f14] p-6 sm:p-10 shadow-2xl overflow-hidden">
+        
+        <!-- Background Wallpaper Texture (matching the subtle grain in Image 2) -->
+        <div class="absolute inset-0 bg-noise opacity-[0.06] pointer-events-none"></div>
+
+        <!-- Masonry Grid Columns -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
+
+          <!-- Card 1: Spidy in Black (Generative / Digital Art) -->
+          <div class="group relative rounded-2xl overflow-hidden bg-[#06080d] border border-white/10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_15px_35px_rgba(6,182,212,0.25)]">
+            <!-- Dynamic Medium Aura (Awakens on hover) -->
+            <div class="grid-card-aura absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(circle_at_top_right,rgba(6,182,212,0.35),transparent_70%)] pointer-events-none"></div>
+            
+            <div class="relative aspect-[4/3] bg-neutral-900 overflow-hidden">
+              <div class="w-full h-full bg-gradient-to-tr from-black via-zinc-900 to-zinc-800 flex items-center justify-center text-neutral-600 font-mono text-xs">
+                <!-- Spider-Man Web Graphic Representation -->
+                <div class="text-center p-6">
+                  <div class="text-3xl mb-2">🕷️🕸️</div>
+                  <div class="text-[11px] text-neutral-400 font-mono">Spidy in black render</div>
+                </div>
+              </div>
+              <div class="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/80 border border-white/10 text-[9px] font-mono text-[#06b6d4] font-bold">
+                DIGITAL
+              </div>
+            </div>
+
+            <div class="p-4 bg-[#06080d] border-t border-white/10 relative z-10">
+              <div class="flex items-center justify-between text-[10px] font-mono text-neutral-500 mb-1">
+                <span>#AQ-2026-14BV</span>
+                <span>Generative Shader & 3D Render</span>
+              </div>
+              <h3 class="font-serif text-base font-bold text-white group-hover:text-[#06b6d4] transition-colors">
+                Spidy in black 🕷️ 🕸️
+              </h3>
+              <div class="flex items-center justify-between mt-2 pt-2 border-t border-white/5 text-[11px] text-neutral-400 font-mono">
+                <span>Afshaan Shaikh</span>
+                <span>♡ 3 🔖 0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: or aesthetic (Calligraphy / Poetry / Traditional) -->
+          <div class="group relative rounded-2xl overflow-hidden bg-[#06080d] border border-white/10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_15px_35px_rgba(201,168,117,0.3)]">
+            <!-- Dynamic Medium Aura (Awakens on hover with Burning Gold) -->
+            <div class="grid-card-aura absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(circle_at_top_right,rgba(201,168,117,0.35),transparent_70%)] pointer-events-none"></div>
+            
+            <div class="relative aspect-[4/3] bg-amber-950 overflow-hidden flex items-center justify-center p-6 text-center">
+              <div class="font-serif italic text-2xl sm:text-3xl text-amber-200 tracking-wider">
+                نیت شوق بھر نہ جائے کہیں
+              </div>
+              <div class="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/80 border border-[#c9a875]/40 text-[9px] font-mono text-[#dfbd87] font-bold">
+                POETRY
+              </div>
+            </div>
+
+            <div class="p-4 bg-[#06080d] border-t border-white/10 relative z-10">
+              <div class="flex items-center justify-between text-[10px] font-mono text-neutral-500 mb-1">
+                <span>#AQ-2026-AG6S</span>
+                <span>Urdu Calligraphy & Verse</span>
+              </div>
+              <h3 class="font-serif text-base font-bold text-white group-hover:text-[#dfbd87] transition-colors">
+                or aesthetic
+              </h3>
+              <div class="flex items-center justify-between mt-2 pt-2 border-t border-white/5 text-[11px] text-neutral-400 font-mono">
+                <span>Afshaan Shaikh</span>
+                <span>♡ 1 🔖 0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Bully Maguire (Fluid Video Loop) -->
+          <div class="group relative rounded-2xl overflow-hidden bg-[#06080d] border border-white/10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_15px_35px_rgba(168,85,247,0.3)]">
+            <!-- Dynamic Medium Aura (Awakens on hover with Iridescent Oil Slick) -->
+            <div class="grid-card-aura absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,0.4),rgba(79,70,229,0.3),transparent_75%)] pointer-events-none"></div>
+            
+            <div class="relative aspect-[4/3] bg-zinc-900 overflow-hidden flex items-center justify-center">
+              <div class="text-center p-6">
+                <div class="text-4xl mb-2">🕺🎬</div>
+                <div class="text-xs text-neutral-300 font-mono">Fluid Volumetric Loop</div>
+              </div>
+              <div class="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/80 border border-purple-500/40 text-[9px] font-mono text-purple-400 font-bold">
+                VIDEO
+              </div>
+            </div>
+
+            <div class="p-4 bg-[#06080d] border-t border-white/10 relative z-10">
+              <div class="flex items-center justify-between text-[10px] font-mono text-neutral-500 mb-1">
+                <span>#AQ-2026-B13H</span>
+                <span>Generative Shader & 3D Render</span>
+              </div>
+              <h3 class="font-serif text-base font-bold text-white group-hover:text-purple-300 transition-colors">
+                Bully Maguire 🕷️ 😈
+              </h3>
+              <div class="flex items-center justify-between mt-2 pt-2 border-t border-white/5 text-[11px] text-neutral-400 font-mono">
+                <span>Afshaan Shaikh</span>
+                <span>♡ 0 🔖 0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: goa (Digital Photography & Render) -->
+          <div class="group relative rounded-2xl overflow-hidden bg-[#06080d] border border-white/10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_15px_35px_rgba(6,182,212,0.25)]">
+            <div class="grid-card-aura absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(circle_at_top_right,rgba(6,182,212,0.35),transparent_70%)] pointer-events-none"></div>
+            
+            <div class="relative aspect-[4/3] bg-sky-950 overflow-hidden flex items-center justify-center">
+              <div class="text-center p-6">
+                <div class="text-4xl mb-2">🏖️🌊</div>
+                <div class="text-xs text-sky-200 font-mono">Goa Coastline Study</div>
+              </div>
+              <div class="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/80 border border-white/10 text-[9px] font-mono text-[#06b6d4] font-bold">
+                DIGITAL
+              </div>
+            </div>
+
+            <div class="p-4 bg-[#06080d] border-t border-white/10 relative z-10">
+              <div class="flex items-center justify-between text-[10px] font-mono text-neutral-500 mb-1">
+                <span>#AQ-2026-P8EE</span>
+                <span>Generative Shader & 3D Render</span>
+              </div>
+              <h3 class="font-serif text-base font-bold text-white group-hover:text-[#06b6d4] transition-colors">
+                goa
+              </h3>
+              <div class="flex items-center justify-between mt-2 pt-2 border-t border-white/5 text-[11px] text-neutral-400 font-mono">
+                <span>Afshaan Shaikh</span>
+                <span>♡ 1 🔖 0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 5: Masterpiece Waves -->
+          <div class="group relative rounded-2xl overflow-hidden bg-[#06080d] border border-[#c9a875]/40 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_15px_35px_rgba(201,168,117,0.35)]">
+            <div class="grid-card-aura absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(circle_at_top_right,rgba(201,168,117,0.4),transparent_70%)] pointer-events-none"></div>
+            
+            <div class="relative aspect-[4/3] bg-gradient-to-tr from-blue-950 via-indigo-950 to-purple-950 overflow-hidden flex items-center justify-center">
+              <div class="text-center p-6">
+                <div class="text-4xl mb-2">🌊✨</div>
+                <div class="text-xs text-neutral-300 font-mono">Parametric Curvature</div>
+              </div>
+              <div class="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/80 border border-white/10 text-[9px] font-mono text-[#06b6d4] font-bold">
+                DIGITAL
+              </div>
+              <div class="absolute top-3 right-3 px-2.5 py-0.5 rounded bg-[#c9a875] text-black text-[9px] font-mono font-extrabold tracking-wider">
+                ✨ #1 MASTERPIECE
+              </div>
+            </div>
+
+            <div class="p-4 bg-[#06080d] border-t border-white/10 relative z-10">
+              <div class="flex items-center justify-between text-[10px] font-mono text-neutral-500 mb-1">
+                <span>#AQ-2026-MST1</span>
+                <span>Permanent Masterpiece Salon</span>
+              </div>
+              <h3 class="font-serif text-base font-bold text-[#dfbd87]">
+                Harmonic Resonance
+              </h3>
+              <div class="flex items-center justify-between mt-2 pt-2 border-t border-white/5 text-[11px] text-neutral-400 font-mono">
+                <span>Afshaan Shaikh</span>
+                <span>♡ 12 🔖 4</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- =============================================================== -->
+    <!-- VIEW 3: SPLIT SCREEN DIRECT COMPARISON (Modal vs Grid Side-by-Side) -->
+    <!-- =============================================================== -->
+    <section id="view-splitscreen" class="view-container hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Left Column: Aspect 1 Summary -->
+        <div class="p-6 rounded-2xl bg-[#06080e] border border-[#06b6d4]/40 flex flex-col justify-between shadow-2xl">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-2.5 py-0.5 rounded bg-[#06b6d4]/20 text-[#06b6d4] text-[10px] font-mono font-bold uppercase tracking-wider">
+                ASPECT 1 (IMAGE 1)
+              </span>
+              <span class="text-xs text-neutral-400 font-mono">Maximized Modal</span>
+            </div>
+            <h3 class="text-lg font-serif font-bold text-white mb-2">
+              Full-Screen Curatorial Pavilion
+            </h3>
+            <p class="text-xs text-neutral-300 leading-relaxed mb-4">
+              When the viewer clicks to view "childhood", the entire background surrounding the artwork dissolves the flat black void into an animated, interactive 3D coordinate grid with cyan magnetic distortion.
+            </p>
+
+            <div class="rounded-xl overflow-hidden border border-white/10 relative aspect-[16/10] bg-black group mb-4">
+              <img src="/preview-assets/aspect-modal-original.png" alt="Modal original" class="w-full h-full object-cover opacity-60 group-hover:opacity-90 transition-all">
+              <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+              <div class="absolute bottom-3 left-3 right-3 p-3 rounded-lg bg-black/80 backdrop-blur-md border border-[#06b6d4]/40">
+                <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-[#06b6d4]"></span>
+                  Active 3D Canvas in Left Viewport Stage
+                </div>
+                <div class="text-[10px] text-neutral-400 font-mono mt-0.5">
+                  Zero visual clutter, 100% emotional spotlight on single artwork.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-white/10 flex items-center justify-between">
+            <span class="text-xs font-mono text-emerald-400">Score: 10 / 10 Immersion</span>
+            <button onclick="switchView('modal')" class="text-xs font-mono px-3 py-1 rounded-lg bg-[#06b6d4] text-black font-bold">
+              Test Maximized View →
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Column: Aspect 2 Summary -->
+        <div class="p-6 rounded-2xl bg-[#06080e] border border-amber-500/40 flex flex-col justify-between shadow-2xl">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-mono font-bold uppercase tracking-wider">
+                ASPECT 2 (IMAGE 2)
+              </span>
+              <span class="text-xs text-neutral-400 font-mono">Gallery Masonry Grid</span>
+            </div>
+            <h3 class="text-lg font-serif font-bold text-white mb-2">
+              Masonry Feed & Card Auras
+            </h3>
+            <p class="text-xs text-neutral-300 leading-relaxed mb-4">
+              In the multi-card feed, applying full persistent animated backgrounds to every card creates visual noise. But applying a <span class="text-amber-300 font-semibold">Hover Backdrop Aura</span> elevates discovery without chaotic visual fighting!
+            </p>
+
+            <div class="rounded-xl overflow-hidden border border-white/10 relative aspect-[16/10] bg-black group mb-4">
+              <img src="/preview-assets/aspect-grid-original.png" alt="Grid original" class="w-full h-full object-cover opacity-60 group-hover:opacity-90 transition-all">
+              <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+              <div class="absolute bottom-3 left-3 right-3 p-3 rounded-lg bg-black/80 backdrop-blur-md border border-amber-500/40">
+                <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                  Tactile Hover Auras on Grid Cards
+                </div>
+                <div class="text-[10px] text-neutral-400 font-mono mt-0.5">
+                  Gentle medium color bloom on cursor hover.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-white/10 flex items-center justify-between">
+            <span class="text-xs font-mono text-emerald-400">Score: 9.5 / 10 Scannability</span>
+            <button onclick="switchView('grid')" class="text-xs font-mono px-3 py-1 rounded-lg bg-amber-400 text-black font-bold">
+              Test Grid Cards →
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =============================================================== -->
+    <!-- VIEW 4: CURATORIAL VERDICT & ARCHITECTURAL RECOMMENDATION -->
+    <!-- =============================================================== -->
+    <section id="view-verdict" class="view-container hidden">
+      <div class="p-6 sm:p-10 rounded-2xl bg-[#07090e] border border-[#c9a875]/40 shadow-2xl">
+        
+        <!-- Header -->
+        <div class="max-w-3xl mb-8">
+          <span class="px-2.5 py-0.5 rounded bg-[#c9a875]/20 border border-[#c9a875]/40 text-[#dfbd87] text-[10px] font-mono font-bold uppercase tracking-wider">
+            Curatorial Architecture Analysis
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-serif font-bold text-white tracking-tight mt-2">
+            Which Is Best? The Architect's Verdict
+          </h2>
+          <p class="text-sm text-neutral-300 leading-relaxed mt-2">
+            You asked: <span class="italic text-amber-200">"Which is good? When we maximize the view, or in the gallery feed, where should it be implemented?"</span>
+            Here is the definitive architectural breakdown:
+          </p>
+        </div>
+
+        <!-- Comparative Matrix Table -->
+        <div class="overflow-x-auto rounded-xl border border-white/10 mb-8 bg-black/60">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-white/5 border-b border-white/10 text-neutral-400 uppercase text-[10px]">
+              <tr>
+                <th class="p-3.5">Curatorial Dimension</th>
+                <th class="p-3.5 text-[#06b6d4]">Aspect 1: Maximized Modal</th>
+                <th class="p-3.5 text-amber-300">Aspect 2: Gallery Grid Cards</th>
+                <th class="p-3.5 text-emerald-400">The Golden Standard</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5 text-neutral-300">
+              <tr>
+                <td class="p-3.5 font-bold text-white font-sans">1. Artwork Respect & Focus</td>
+                <td class="p-3.5 text-emerald-400">★★★★★ Perfect (Artwork is single hero)</td>
+                <td class="p-3.5 text-amber-400">★★★☆☆ Risky if persistent (cards fight)</td>
+                <td class="p-3.5 font-bold text-white">Full immersion in Modal; Hover only in Grid</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-white font-sans">2. Emotional Atmospheric Wow</td>
+                <td class="p-3.5 text-emerald-400">★★★★★ Museum-grade pavilion feeling</td>
+                <td class="p-3.5 text-neutral-400">★★★☆☆ Fragmented into tiny boxes</td>
+                <td class="p-3.5 font-bold text-white">Modal provides the true cinematic theater</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-white font-sans">3. 60 FPS Performance</td>
+                <td class="p-3.5 text-emerald-400">★★★★★ 1 single canvas loop running</td>
+                <td class="p-3.5 text-rose-400">★★☆☆☆ 30 loops at once can lag laptops</td>
+                <td class="p-3.5 font-bold text-white">CSS blur/auras in grid; Heavy canvas in Modal</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-white font-sans">4. Medium Discoverability</td>
+                <td class="p-3.5 text-neutral-400">★★★☆☆ Discovered only after clicking</td>
+                <td class="p-3.5 text-emerald-400">★★★★★ Immediate signal on hover</td>
+                <td class="p-3.5 font-bold text-white">Grid hover aura reveals medium intuitively</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- The Final Recommendation Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <div class="p-5 rounded-xl bg-white/[0.02] border border-white/10">
+            <div class="text-xs font-mono uppercase text-neutral-400 mb-1">Option 1</div>
+            <h4 class="font-serif font-bold text-white text-base mb-2">Modal Only</h4>
+            <p class="text-xs text-neutral-400 leading-relaxed">
+              Backdrops only activate when an artwork is maximized. The grid stays 100% traditional and quiet.
+            </p>
+            <div class="mt-4 text-[11px] font-mono text-neutral-500">Very safe, highly focused.</div>
+          </div>
+
+          <div class="p-5 rounded-xl bg-white/[0.02] border border-white/10">
+            <div class="text-xs font-mono uppercase text-neutral-400 mb-1">Option 2</div>
+            <h4 class="font-serif font-bold text-white text-base mb-2">Grid Only</h4>
+            <p class="text-xs text-neutral-400 leading-relaxed">
+              Backdrops stay on the feed cards. The maximized modal remains the dark/black void.
+            </p>
+            <div class="mt-4 text-[11px] font-mono text-rose-400">Misses the biggest immersion opportunity.</div>
+          </div>
+
+          <div class="p-5 rounded-xl bg-gradient-to-b from-[#c9a875]/20 to-black border-2 border-[#c9a875] shadow-[0_0_30px_rgba(201,168,117,0.25)] relative">
+            <div class="absolute -top-3 right-4 px-2 py-0.5 rounded bg-[#c9a875] text-black font-mono font-bold text-[9px] uppercase">
+              RECOMMENDED
+            </div>
+            <div class="text-xs font-mono uppercase text-[#dfbd87] mb-1">Option 3 (Masterpiece)</div>
+            <h4 class="font-serif font-bold text-white text-base mb-2">The Curatorial Synergy</h4>
+            <p class="text-xs text-neutral-200 leading-relaxed">
+              <strong>1. Maximized Modal</strong>: Full reactive canvas environment for that medium (Digital Grid, Liquid Aurora, Canvas Reveal).
+              <br><br>
+              <strong>2. Gallery Grid</strong>: Refined hover aura around each card that gently wakes up to signal the medium.
+            </p>
+            <div class="mt-4 text-[11px] font-mono text-emerald-300 font-bold">✓ Best aesthetics, zero lag, zero clutter.</div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Interactive Coordinate Grid JavaScript Engine for Modal Stage -->
+  <script>
+    // State
+    let backdropActive = true;
+    let backdropOpacity = 0.65;
+    let gridHoverMode = 'hover'; // 'hover' or 'always'
+
+    // Tab switcher
+    function switchView(viewName) {
+      document.querySelectorAll('.view-container').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('block');
+      });
+      document.getElementById('view-' + viewName).classList.remove('hidden');
+      document.getElementById('view-' + viewName).classList.add('block');
+
+      // Update tabs styling
+      const tabs = ['modal', 'grid', 'splitscreen', 'verdict'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tab-' + t);
+        if (t === viewName) {
+          btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all bg-[#06b6d4] text-black shadow-[0_0_15px_rgba(6,182,212,0.6)]";
+        } else {
+          btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition-all";
+        }
+      });
+    }
+
+    // Toggle Backdrop in Modal
+    function toggleBackdrop() {
+      backdropActive = !backdropActive;
+      const btn = document.getElementById('btn-toggle-backdrop');
+      const canvas = document.getElementById('modal-grid-canvas');
+      const leftStage = document.getElementById('modal-stage-left');
+      
+      if (backdropActive) {
+        btn.textContent = "ACTIVE (ON)";
+        btn.className = "px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all";
+        canvas.style.opacity = backdropOpacity;
+        leftStage.style.backgroundColor = '#08090d';
+      } else {
+        btn.textContent = "FLAT BLACK (OFF)";
+        btn.className = "px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase bg-neutral-700 text-neutral-300 transition-all";
+        canvas.style.opacity = '0';
+        leftStage.style.backgroundColor = '#020304';
+      }
+    }
+
+    // Adjust Backdrop Opacity
+    function setBackdropOpacity(val) {
+      backdropOpacity = val / 100;
+      document.getElementById('intensity-val').textContent = val + '%';
+      if (backdropActive) {
+        document.getElementById('modal-grid-canvas').style.opacity = backdropOpacity;
+      }
+    }
+
+    // Toggle Grid Cards Mode
+    function toggleGridMode() {
+      const btn = document.getElementById('btn-grid-mode');
+      const auras = document.querySelectorAll('.grid-card-aura');
+      
+      if (gridHoverMode === 'hover') {
+        gridHoverMode = 'always';
+        btn.textContent = "Current Mode: [Always On (Persistent)]";
+        auras.forEach(a => {
+          a.classList.remove('opacity-0', 'group-hover:opacity-100');
+          a.classList.add('opacity-100');
+        });
+      } else {
+        gridHoverMode = 'hover';
+        btn.textContent = "Current Mode: [Hover Aura Only]";
+        auras.forEach(a => {
+          a.classList.remove('opacity-100');
+          a.classList.add('opacity-0', 'group-hover:opacity-100');
+        });
+      }
+    }
+
+    // Interactive 3D Canvas Coordinate Grid Simulation (Aceternity Pattern)
+    (function initCanvasGrid() {
+      const canvas = document.getElementById('modal-grid-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let mouseX = -1000, mouseY = -1000;
+      let targetMouseX = -1000, targetMouseY = -1000;
+      let time = 0;
+
+      function resize() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        width = canvas.width = rect.width;
+        height = canvas.height = rect.height;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      // Mouse tracking over stage
+      canvas.parentElement.addEventListener('mousemove', (e) => {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        targetMouseX = e.clientX - rect.left;
+        targetMouseY = e.clientY - rect.top;
+      });
+      canvas.parentElement.addEventListener('mouseleave', () => {
+        targetMouseX = -1000;
+        targetMouseY = -1000;
+      });
+
+      const spacing = 32;
+
+      function render() {
+        requestAnimationFrame(render);
+        if (!backdropActive) return;
+
+        time += 0.015;
+        mouseX += (targetMouseX - mouseX) * 0.1;
+        mouseY += (targetMouseY - mouseY) * 0.1;
+
+        ctx.clearRect(0, 0, width, height);
+
+        const cols = Math.ceil(width / spacing) + 2;
+        const rows = Math.ceil(height / spacing) + 2;
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+
+        // Vertical lines
+        for (let x = 0; x < cols; x++) {
+          ctx.beginPath();
+          for (let y = 0; y < rows; y++) {
+            const baseX = x * spacing;
+            const baseY = y * spacing;
+            const dx = baseX - mouseX;
+            const dy = baseY - mouseY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const maxDist = 220;
+
+            let px = baseX;
+            let py = baseY;
+
+            if (dist < maxDist) {
+              const factor = (1 - dist / maxDist);
+              const push = Math.sin(factor * Math.PI) * 28;
+              px += (dx / dist) * push;
+              py += (dy / dist) * push;
+            }
+
+            py += Math.sin(time + x * 0.3) * 2;
+
+            if (y === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+
+        // Horizontal lines
+        for (let y = 0; y < rows; y++) {
+          ctx.beginPath();
+          for (let x = 0; x < cols; x++) {
+            const baseX = x * spacing;
+            const baseY = y * spacing;
+            const dx = baseX - mouseX;
+            const dy = baseY - mouseY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const maxDist = 220;
+
+            let px = baseX;
+            let py = baseY;
+
+            if (dist < maxDist) {
+              const factor = (1 - dist / maxDist);
+              const push = Math.sin(factor * Math.PI) * 28;
+              px += (dx / dist) * push;
+              py += (dy / dist) * push;
+            }
+            py += Math.sin(time + x * 0.3) * 2;
+
+            if (x === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+
+        // Draw Interactive Dot Matrix Nodes
+        for (let x = 0; x < cols; x++) {
+          for (let y = 0; y < rows; y++) {
+            const baseX = x * spacing;
+            const baseY = y * spacing;
+            const dx = baseX - mouseX;
+            const dy = baseY - mouseY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const maxDist = 220;
+
+            let px = baseX;
+            let py = baseY;
+            let isDistorted = false;
+
+            if (dist < maxDist) {
+              const factor = (1 - dist / maxDist);
+              const push = Math.sin(factor * Math.PI) * 28;
+              px += (dx / dist) * push;
+              py += (dy / dist) * push;
+              isDistorted = true;
+            }
+            py += Math.sin(time + x * 0.3) * 2;
+
+            ctx.beginPath();
+            if (isDistorted) {
+              const factor = 1 - (dist / maxDist);
+              ctx.arc(px, py, 1.8 + factor * 2.2, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(6, 182, 212, ${0.4 + factor * 0.6})`;
+              ctx.shadowColor = '#06b6d4';
+              ctx.shadowBlur = 8 * factor;
+            } else {
+              ctx.arc(px, py, 1.1, 0, Math.PI * 2);
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+              ctx.shadowBlur = 0;
+            }
+            ctx.fill();
+          }
+        }
+      }
+
+      render();
+    })();
+  </script>
+</body>
+</html>

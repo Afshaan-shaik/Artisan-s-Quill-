@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Artisan's Quill • Curatorial Dynamic Backdrops Showcase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-pitch: #030407;
+      --gold-primary: #c9a875;
+      --gold-light: #dfbd87;
+      --gold-glow: rgba(201, 168, 117, 0.45);
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-display: 'Cinzel', serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-pitch);
+      color: #f1f5f9;
+      font-family: var(--font-sans);
+      overflow-x: hidden;
+      min-height: 100vh;
+      selection-background-color: var(--gold-primary);
+      selection-color: #000;
+    }
+
+    /* ─── Master Top Control Bar ─── */
+    .sanctuary-hud {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(4, 5, 8, 0.88);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(201, 168, 117, 0.25);
+      padding: 14px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-emblem {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #1b1610, #090b10);
+      border: 1px solid rgba(201, 168, 117, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold-primary);
+      box-shadow: 0 0 15px rgba(201, 168, 117, 0.2);
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      letter-spacing: 0.15em;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .brand-subtitle {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      color: var(--gold-primary);
+      text-transform: uppercase;
+    }
+
+    .hud-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hud-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.25s ease;
+    }
+
+    .hud-btn:hover {
+      background: rgba(201, 168, 117, 0.15);
+      border-color: var(--gold-primary);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(201, 168, 117, 0.25);
+    }
+
+    .hud-btn.active {
+      background: var(--gold-primary);
+      color: #000;
+      font-weight: 700;
+      border-color: var(--gold-light);
+      box-shadow: 0 0 20px rgba(201, 168, 117, 0.5);
+    }
+
+    /* ─── Hero Presentation ─── */
+    .hero-banner {
+      padding: 48px 24px 28px;
+      text-align: center;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      background: rgba(201, 168, 117, 0.12);
+      border: 1px solid rgba(201, 168, 117, 0.4);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--gold-light);
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(26px, 4.5vw, 44px);
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 14px;
+      letter-spacing: 0.03em;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, #fff 20%, #dfbd87 60%, #c9a875 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-family: var(--font-serif);
+      font-size: clamp(16px, 2vw, 20px);
+      font-style: italic;
+      color: #94a3b8;
+      line-height: 1.6;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* ─── Showcase Grid ─── */
+    .showcase-container {
+      max-width: 1540px;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+      gap: 32px;
+    }
+
+    @media (max-width: 640px) {
+      .showcase-container {
+        grid-template-columns: 1fr;
+        padding: 16px;
+      }
+    }
+
+    /* ─── Medium Card Wrapper ─── */
+    .medium-card {
+      position: relative;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: #07090e;
+      overflow: hidden;
+      min-height: 540px;
+      display: flex;
+      flex-col: column;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+    }
+
+    .medium-card:hover {
+      border-color: rgba(201, 168, 117, 0.6);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9), 0 0 35px rgba(201, 168, 117, 0.2);
+    }
+
+    /* ─── Backdrop Canvas & Layer Containers ─── */
+    .backdrop-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+      transition: opacity 0.5s ease;
+    }
+
+    /* ─── Card Foreground Content ─── */
+    .card-content {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      padding: 28px;
+      pointer-events: auto;
+    }
+
+    .medium-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .medium-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--gold-light);
+      background: rgba(201, 168, 117, 0.12);
+      border: 1px solid rgba(201, 168, 117, 0.3);
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .component-origin {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: #64748b;
+      letter-spacing: 0.1em;
+      text-align: right;
+    }
+
+    .component-origin strong {
+      color: #cbd5e1;
+    }
+
+    .artwork-showpiece {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 16px 0;
+    }
+
+    .medium-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .state-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #94a3b8;
+    }
+
+    .state-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #64748b;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .state-dot.active {
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       MEDIUM 1: POETRY — CANVAS REVEAL EFFECT (Silvertone to Burning Gold)
+       ═══════════════════════════════════════════════════════════════ */
+    #poetry-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .poetry-parchment-card {
+      background: rgba(14, 16, 23, 0.85);
+      border: 1px solid rgba(201, 168, 117, 0.35);
+      border-radius: 16px;
+      padding: 24px 28px;
+      max-width: 400px;
+      width: 100%;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+      text-align: center;
+      transition: all 0.4s ease;
+    }
+
+    .poetry-parchment-card:hover {
+      border-color: var(--gold-light);
+      box-shadow: 0 20px 50px rgba(201, 168, 117, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .poetry-poem-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      letter-spacing: 0.1em;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .poetry-lines {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-style: italic;
+      color: #f1f5f9;
+      line-height: 1.8;
+      margin-bottom: 14px;
+    }
+
+    .poetry-author {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--gold-light);
+      text-transform: uppercase;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       MEDIUM 2: FLUID VIDEO — AURORA LIQUID GRADIENT (Zinc to Iridescent Oil Slick)
+       ═══════════════════════════════════════════════════════════════ */
+    .aurora-container {
+      position: absolute;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 50% 50%, rgba(14, 165, 233, 0.15), transparent 60%);
+      filter: blur(60px);
+      opacity: 0.3;
+      transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    .aurora-blob-1, .aurora-blob-2, .aurora-blob-3 {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      transition: all 0.8s ease;
+    }
+
+    .aurora-blob-1 {
+      width: 320px;
+      height: 320px;
+      background: #18181b;
+      top: 20%;
+      left: 20%;
+      animation: float1 14s infinite alternate ease-in-out;
+    }
+
+    .aurora-blob-2 {
+      width: 380px;
+      height: 380px;
+      background: #27272a;
+      bottom: 20%;
+      right: 20%;
+      animation: float2 18s infinite alternate ease-in-out;
+    }
+
+    .aurora-blob-3 {
+      width: 260px;
+      height: 260px;
+      background: #09090b;
+      top: 40%;
+      right: 35%;
+      animation: float3 12s infinite alternate ease-in-out;
+    }
+
+    @keyframes float1 {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(60px, 40px) scale(1.2); }
+    }
+    @keyframes float2 {
+      0% { transform: translate(0, 0) scale(1.1); }
+      100% { transform: translate(-50px, -30px) scale(0.9); }
+    }
+    @keyframes float3 {
+      0% { transform: translate(0, 0) scale(0.95); }
+      100% { transform: translate(40px, -50px) scale(1.25); }
+    }
+
+    /* Active Iridescent Oil Slick State */
+    .medium-card.hover-video .aurora-container,
+    .medium-card.hover-all .aurora-container {
+      opacity: 0.85;
+      filter: blur(45px);
+    }
+
+    .medium-card.hover-video .aurora-blob-1,
+    .medium-card.hover-all .aurora-blob-1 {
+      background: #7c3aed; /* Metallic Purple */
+      transform: scale(1.4);
+      animation-duration: 7s;
+    }
+
+    .medium-card.hover-video .aurora-blob-2,
+    .medium-card.hover-all .aurora-blob-2 {
+      background: #4338ca; /* Deep Indigo */
+      transform: scale(1.3);
+      animation-duration: 9s;
+    }
+
+    .medium-card.hover-video .aurora-blob-3,
+    .medium-card.hover-all .aurora-blob-3 {
+      background: #d97706; /* Radiant Amber Gold */
+      transform: scale(1.35);
+      animation-duration: 6s;
+    }
+
+    .video-showpiece-frame {
+      position: relative;
+      width: 100%;
+      max-width: 380px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: #000;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+      transition: all 0.4s ease;
+    }
+
+    .video-showpiece-frame video {
+      width: 100%;
+      height: 200px;
+      object-cover: cover;
+      display: block;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       MEDIUM 3: DIGITAL ART — INTERACTIVE GRID WITH DOTS (Silvertone to Neon Cyberpunk)
+       ═══════════════════════════════════════════════════════════════ */
+    #digital-grid-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .digital-art-frame {
+      position: relative;
+      width: 100%;
+      max-width: 380px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: #030408;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+      transition: all 0.4s ease;
+    }
+
+    .digital-art-frame img {
+      width: 100%;
+      height: 210px;
+      object-fit: cover;
+      display: block;
+      filter: contrast(1.05);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       MEDIUM 4: CHARCOAL & INK — NOISE GRID & BACKGROUND BOXES (Harsh Geometric)
+       ═══════════════════════════════════════════════════════════════ */
+    .noise-layer {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, #1c1917 0%, #0c0a09 50%, #000000 100%);
+      opacity: 0.9;
+    }
+
+    .noise-texture {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+      background-size: 8px 8px;
+      opacity: 0.5;
+    }
+
+    .boxes-grid {
+      position: absolute;
+      inset: -10px;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      gap: 3px;
+      pointer-events: none;
+    }
+
+    .box-cell {
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      transition: background 0.05s ease, border-color 0.05s ease;
+    }
+
+    .traditional-art-frame {
+      position: relative;
+      width: 100%;
+      max-width: 360px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.18);
+      background: #09090b;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.85);
+      transition: all 0.4s ease;
+    }
+
+    .traditional-art-frame img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+      filter: grayscale(0.85) contrast(1.15);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       MEDIUM 5: 3D COSMOS — SHOOTING STARS & HYPERDRIVE GRADIENT
+       ═══════════════════════════════════════════════════════════════ */
+    #cosmos-stars-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .hyperdrive-btn-wrapper {
+      position: relative;
+      display: inline-block;
+      padding: 3px;
+      border-radius: 12px;
+      background: linear-gradient(90deg, #27272a, #3f3f46, #18181b);
+      transition: all 0.4s ease;
+      cursor: pointer;
+    }
+
+    .hyperdrive-btn-wrapper:hover,
+    .medium-card.hover-cosmos .hyperdrive-btn-wrapper,
+    .medium-card.hover-all .hyperdrive-btn-wrapper {
+      background: linear-gradient(90deg, #ffffff, #c9a875, #dfbd87, #38bdf8, #ffffff);
+      background-size: 300% 300%;
+      animation: hyperdriveSpin 2s linear infinite;
+      box-shadow: 0 0 35px rgba(255, 255, 255, 0.6), 0 0 20px rgba(201, 168, 117, 0.8);
+      transform: scale(1.04);
+    }
+
+    @keyframes hyperdriveSpin {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .hyperdrive-inner-btn {
+      padding: 14px 28px;
+      border-radius: 9px;
+      background: #090a0f;
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* ─── Interactive Modal Preview for Verification ─── */
+    .preview-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.92);
+      backdrop-filter: blur(25px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .preview-modal-backdrop.active {
+      display: flex;
+    }
+
+    .preview-modal-window {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(201, 168, 117, 0.4);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), 0 0 50px rgba(201, 168, 117, 0.25);
+      background: #06080e;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 50;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close-btn:hover {
+      background: var(--gold-primary);
+      color: #000;
+      border-color: var(--gold-light);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.97); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Master Top Control Bar ─── -->
+  <header class="sanctuary-hud">
+    <div class="brand-group">
+      <div class="brand-emblem">✦</div>
+      <div>
+        <div class="brand-title">THE ARTISAN'S QUILL</div>
+        <div class="brand-subtitle">Aceternity UI & 21st.dev Dynamic Backdrops</div>
+      </div>
+    </div>
+
+    <div class="hud-controls">
+      <a href="/backdrop-aspects-comparison.html" class="hud-btn" style="background: rgba(6, 182, 212, 0.2); border-color: #06b6d4; color: #06b6d4; font-weight: bold;">
+        <span>⚖️ Compare Modal vs Grid Aspects (Image 1 vs 2)</span>
+      </a>
+      <button class="hud-btn" id="btn-toggle-hover" onclick="toggleSimulatedHover()">
+        <span>✦ Simulate All Hover States</span>
+      </button>
+      <button class="hud-btn" onclick="openTestModal('poetry')">
+        <span>📖 Test Poetry Modal</span>
+      </button>
+      <button class="hud-btn" onclick="openTestModal('video')">
+        <span>🎬 Test Video Modal</span>
+      </button>
+      <button class="hud-btn" onclick="openTestModal('digital')">
+        <span>⚡ Test Digital Modal</span>
+      </button>
+      <button class="hud-btn" onclick="openTestModal('charcoal')">
+        <span>✒️ Test Charcoal Modal</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ─── Hero Presentation ─── -->
+  <section class="hero-banner">
+    <div class="hero-badge">✦ Curatorial Medium Harmonization ✦</div>
+    <h1 class="hero-title">
+      Every Artwork Deserves a <span>Living Backdrop</span>
+    </h1>
+    <p class="hero-desc">
+      Replacing plain static black with reactive, dynamic gradients and matrix shaders tailored to each art discipline—breathing, pulsing, and distorting in real-time as users engage with each masterpiece.
+    </p>
+  </section>
+
+  <!-- ─── 4 Core Interactive Media Sections Showcase ─── -->
+  <main class="showcase-container">
+
+    <!-- ─────────────────────────────────────────────────────────────
+         CARD 1: POETRY — CANVAS REVEAL EFFECT (Silvertone to Burning Gold)
+         ───────────────────────────────────────────────────────────── -->
+    <div class="medium-card" id="card-poetry" onmouseenter="setCardHover('poetry', true)" onmouseleave="setCardHover('poetry', false)">
+      <div class="backdrop-layer">
+        <canvas id="poetry-canvas"></canvas>
+      </div>
+
+      <div class="card-content">
+        <div class="medium-header">
+          <div>
+            <div class="medium-tag">✦ 1. Lyrical Poetry</div>
+            <div style="font-family: var(--font-display); font-size: 19px; margin-top: 6px; color: #fff;">
+              Canvas Reveal Effect
+            </div>
+          </div>
+          <div class="component-origin">
+            Source: <strong>Aceternity UI</strong><br>
+            State: <span id="poetry-state-text" style="color: var(--gold-light);">Silvertone Quiet</span>
+          </div>
+        </div>
+
+        <div class="artwork-showpiece">
+          <div class="poetry-parchment-card">
+            <div class="poetry-poem-title">Algorithms of the Midnight Sky</div>
+            <p class="poetry-lines">
+              "In lines of logic, clean and deep,<br>
+              Where quiet micro-currents sweep,<br>
+              We sculpt the dark with keystroke light,<br>
+              And build cathedrals in the night."
+            </p>
+            <div class="poetry-author">— Afshaan Shaikh • Atelier Founder</div>
+          </div>
+        </div>
+
+        <div class="medium-footer">
+          <div class="state-indicator">
+            <span class="state-dot" id="poetry-dot"></span>
+            <span>Hover: Bursts into "Burning Gold" dots</span>
+          </div>
+          <button class="hud-btn" onclick="openTestModal('poetry')" style="padding: 4px 10px; font-size: 10px;">
+            Open Detail View ↗
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         CARD 2: FLUID VIDEO — AURORA LIQUID GRADIENT (Zinc to Iridescent Oil Slick)
+         ───────────────────────────────────────────────────────────── -->
+    <div class="medium-card" id="card-video" onmouseenter="setCardHover('video', true)" onmouseleave="setCardHover('video', false)">
+      <div class="backdrop-layer">
+        <div class="aurora-container">
+          <div class="aurora-blob-1"></div>
+          <div class="aurora-blob-2"></div>
+          <div class="aurora-blob-3"></div>
+        </div>
+      </div>
+
+      <div class="card-content">
+        <div class="medium-header">
+          <div>
+            <div class="medium-tag">✦ 2. Volumetric Fluid Video</div>
+            <div style="font-family: var(--font-display); font-size: 19px; margin-top: 6px; color: #fff;">
+              Aurora Gradient Flow
+            </div>
+          </div>
+          <div class="component-origin">
+            Source: <strong>Efferd UI & Aceternity</strong><br>
+            State: <span id="video-state-text" style="color: #94a3b8;">Deep Zinc Loop</span>
+          </div>
+        </div>
+
+        <div class="artwork-showpiece">
+          <div class="video-showpiece-frame">
+            <video
+              src="https://uskuzbtvbhfqlxvbbrvw.supabase.co/storage/v1/object/public/artworks/uploads/artworks-1787665014401-qbv149.mp4"
+              autoplay
+              loop
+              muted
+              playsinline
+            ></video>
+            <div style="padding: 10px 14px; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-family: var(--font-mono); font-size: 10px; color: #fff;">4K Fluid Dynamics Loop</span>
+              <span style="font-family: var(--font-mono); font-size: 9px; color: var(--gold-light);">YouTube Scrubber Active</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="medium-footer">
+          <div class="state-indicator">
+            <span class="state-dot" id="video-dot"></span>
+            <span>Hover: Ignites "Iridescent Oil Slick" Aurora</span>
+          </div>
+          <button class="hud-btn" onclick="openTestModal('video')" style="padding: 4px 10px; font-size: 10px;">
+            Open Detail View ↗
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         CARD 3: DIGITAL ART — INTERACTIVE GRID WITH DOTS (Silvertone to Neon Cyberpunk)
+         ───────────────────────────────────────────────────────────── -->
+    <div class="medium-card" id="card-digital" onmouseenter="setCardHover('digital', true)" onmouseleave="setCardHover('digital', false)">
+      <div class="backdrop-layer">
+        <canvas id="digital-grid-canvas"></canvas>
+      </div>
+
+      <div class="card-content">
+        <div class="medium-header">
+          <div>
+            <div class="medium-tag">✦ 3. Generative & Digital Art</div>
+            <div style="font-family: var(--font-display); font-size: 19px; margin-top: 6px; color: #fff;">
+              Background Grid & Dot Distortion
+            </div>
+          </div>
+          <div class="component-origin">
+            Source: <strong>Aceternity UI</strong><br>
+            State: <span id="digital-state-text" style="color: #67e8f9;">Silver Geometry</span>
+          </div>
+        </div>
+
+        <div class="artwork-showpiece">
+          <div class="digital-art-frame">
+            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" alt="The Obsidian Alchemist" />
+            <div style="padding: 10px 14px; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-family: var(--font-mono); font-size: 10px; color: #fff;">The Obsidian Alchemist</span>
+              <span style="font-family: var(--font-mono); font-size: 9px; color: #06b6d4;">Algorithmic Shader</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="medium-footer">
+          <div class="state-indicator">
+            <span class="state-dot" id="digital-dot"></span>
+            <span>Hover: Mouse distorts 3D grid to Neon Cyan</span>
+          </div>
+          <button class="hud-btn" onclick="openTestModal('digital')" style="padding: 4px 10px; font-size: 10px;">
+            Open Detail View ↗
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         CARD 4: TRADITIONAL ART — NOISE GRID & BOXES (Monochromatic to Harsh Geometric)
+         ───────────────────────────────────────────────────────────── -->
+    <div class="medium-card" id="card-charcoal" onmouseenter="setCardHover('charcoal', true)" onmouseleave="setCardHover('charcoal', false)">
+      <div class="backdrop-layer">
+        <div class="noise-layer"></div>
+        <div class="noise-texture"></div>
+        <div class="boxes-grid" id="charcoal-boxes-grid"></div>
+      </div>
+
+      <div class="card-content">
+        <div class="medium-header">
+          <div>
+            <div class="medium-tag">✦ 4. Charcoal, Ink & Traditional</div>
+            <div style="font-family: var(--font-display); font-size: 19px; margin-top: 6px; color: #fff;">
+              Background Noise & Snapping Boxes
+            </div>
+          </div>
+          <div class="component-origin">
+            Source: <strong>Aceternity UI</strong><br>
+            State: <span id="charcoal-state-text" style="color: #cbd5e1;">Paper Grain Texture</span>
+          </div>
+        </div>
+
+        <div class="artwork-showpiece">
+          <div class="traditional-art-frame">
+            <img src="https://images.unsplash.com/photo-1544717302-de2939b7ef71?auto=format&fit=crop&w=800&q=80" alt="Graphite Resonance" />
+            <div style="padding: 10px 14px; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-family: var(--font-mono); font-size: 10px; color: #fff;">Graphite Resonance No. IX</span>
+              <span style="font-family: var(--font-mono); font-size: 9px; color: #94a3b8;">Charcoal & Cotton</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="medium-footer">
+          <div class="state-indicator">
+            <span class="state-dot" id="charcoal-dot"></span>
+            <span>Hover: 15-20 geometric boxes snap into view</span>
+          </div>
+          <button class="hud-btn" onclick="openTestModal('charcoal')" style="padding: 4px 10px; font-size: 10px;">
+            Open Detail View ↗
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         CARD 5: 3D COSMOS & SPOTLIGHT — SHOOTING STARS & HYPERDRIVE CTA
+         ───────────────────────────────────────────────────────────── -->
+    <div class="medium-card" id="card-cosmos" onmouseenter="setCardHover('cosmos', true)" onmouseleave="setCardHover('cosmos', false)" style="grid-column: 1 / -1;">
+      <div class="backdrop-layer">
+        <canvas id="cosmos-stars-canvas"></canvas>
+      </div>
+
+      <div class="card-content" style="text-align: center; align-items: center;">
+        <div class="medium-header" style="width: 100%;">
+          <div>
+            <div class="medium-tag">✦ 5. Celestial Cosmos & Spotlight</div>
+            <div style="font-family: var(--font-display); font-size: 20px; margin-top: 6px; color: #fff;">
+              Shooting Stars & Hyperdrive Gradient Wrapper
+            </div>
+          </div>
+          <div class="component-origin">
+            Source: <strong>Aceternity UI</strong><br>
+            State: <span id="cosmos-state-text" style="color: var(--gold-light);">Celestial Starlight</span>
+          </div>
+        </div>
+
+        <div class="artwork-showpiece" style="flex-direction: column; gap: 20px;">
+          <p style="font-family: var(--font-serif); font-size: 18px; color: #cbd5e1; max-width: 580px; font-style: italic;">
+            "Concentric gravitational waves radiating from the central sanctuary void, laced with meteor trails and accelerating hyperdrive borders."
+          </p>
+
+          <!-- Aceternity Background Gradient CTA Button -->
+          <div class="hyperdrive-btn-wrapper" onclick="alert('✦ Hyperdrive Engagement: Navigating to 3D Constellation Cosmos!')">
+            <button class="hyperdrive-inner-btn">
+              <span>EXPLORE 3D CONSTELLATION COSMOS</span>
+              <span style="color: var(--gold-light);">✦ ↗</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="medium-footer" style="width: 100%;">
+          <div class="state-indicator">
+            <span class="state-dot" id="cosmos-dot"></span>
+            <span>Hover Button: Hyperdrive gradient triples rotation speed & expands outward blur</span>
+          </div>
+          <span style="color: var(--gold-primary);">Ready for Production Integration</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ─── Interactive Modal Preview for Verification ─── -->
+  <div class="preview-modal-backdrop" id="preview-modal" onclick="closeTestModal()">
+    <div class="preview-modal-window" onclick="event.stopPropagation()">
+      <button class="modal-close-btn" onclick="closeTestModal()">✕</button>
+      <div id="modal-backdrop-mount" style="position: absolute; inset: 0; pointer-events: none; z-index: 1;"></div>
+      <div id="modal-content-mount" style="position: relative; z-index: 10; padding: 40px; text-align: center; color: #fff;"></div>
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════
+    // STATE & HOVER CONTROLS
+    // ═══════════════════════════════════════════════════════════════
+    let isAllHoverActive = false;
+    const hoverStates = {
+      poetry: false,
+      video: false,
+      digital: false,
+      charcoal: false,
+      cosmos: false
+    };
+
+    function toggleSimulatedHover() {
+      isAllHoverActive = !isAllHoverActive;
+      const btn = document.getElementById('btn-toggle-hover');
+      btn.classList.toggle('active', isAllHoverActive);
+      btn.innerHTML = isAllHoverActive
+        ? '<span>✓ All Hover States Active (Bursted)</span>'
+        : '<span>✦ Simulate All Hover States</span>';
+
+      Object.keys(hoverStates).forEach(key => {
+        hoverStates[key] = isAllHoverActive;
+        updateMediumUI(key, isAllHoverActive);
+      });
+    }
+
+    function setCardHover(medium, isHovered) {
+      if (isAllHoverActive) return;
+      hoverStates[medium] = isHovered;
+      updateMediumUI(medium, isHovered);
+    }
+
+    function updateMediumUI(medium, isHovered) {
+      const card = document.getElementById(`card-${medium}`);
+      const dot = document.getElementById(`${medium}-dot`);
+      const text = document.getElementById(`${medium}-state-text`);
+
+      if (card) {
+        card.classList.toggle(`hover-${medium}`, isHovered);
+      }
+      if (dot) {
+        dot.classList.toggle('active', isHovered);
+      }
+
+      if (text) {
+        switch (medium) {
+          case 'poetry':
+            text.innerHTML = isHovered ? '<strong style="color:#dfbd87;">Burning Gold Burst</strong>' : 'Silvertone Quiet';
+            break;
+          case 'video':
+            text.innerHTML = isHovered ? '<strong style="color:#a855f7;">Iridescent Oil Slick</strong>' : 'Deep Zinc Loop';
+            break;
+          case 'digital':
+            text.innerHTML = isHovered ? '<strong style="color:#06b6d4;">Neon Cyberpunk Cyan</strong>' : 'Silver Geometry';
+            break;
+          case 'charcoal':
+            text.innerHTML = isHovered ? '<strong style="color:#fff;">Harsh Geometric Snaps</strong>' : 'Paper Grain Texture';
+            break;
+          case 'cosmos':
+            text.innerHTML = isHovered ? '<strong style="color:#38bdf8;">Hyperdrive Active</strong>' : 'Celestial Starlight';
+            break;
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 1. POETRY: CANVAS REVEAL EFFECT (Aceternity UI)
+    // ═══════════════════════════════════════════════════════════════
+    const poetryCanvas = document.getElementById('poetry-canvas');
+    const pCtx = poetryCanvas.getContext('2d');
+    let pWidth, pHeight;
+    let poetryDots = [];
+
+    function initPoetryCanvas() {
+      const rect = poetryCanvas.getBoundingClientRect();
+      pWidth = poetryCanvas.width = rect.width;
+      pHeight = poetryCanvas.height = rect.height;
+
+      poetryDots = [];
+      const cols = 26;
+      const rows = 18;
+      const stepX = pWidth / cols;
+      const stepY = pHeight / rows;
+
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          poetryDots.push({
+            baseX: i * stepX + stepX / 2,
+            baseY: j * stepY + stepY / 2,
+            x: i * stepX + stepX / 2,
+            y: j * stepY + stepY / 2,
+            angle: Math.random() * Math.PI * 2,
+            speed: 0.003 + Math.random() * 0.005,
+            radius: 1.5 + Math.random() * 1.5,
+            opacity: 0.15 + Math.random() * 0.25
+          });
+        }
+      }
+    }
+
+    function renderPoetry() {
+      pCtx.clearRect(0, 0, pWidth, pHeight);
+      const isHovered = hoverStates.poetry || isAllHoverActive;
+
+      poetryDots.forEach(dot => {
+        dot.angle += dot.speed * (isHovered ? 2.5 : 1);
+        const floatX = Math.cos(dot.angle) * (isHovered ? 8 : 4);
+        const floatY = Math.sin(dot.angle) * (isHovered ? 8 : 4);
+        const curX = dot.baseX + floatX;
+        const curY = dot.baseY + floatY;
+
+        pCtx.beginPath();
+        const r = isHovered ? dot.radius * 1.8 : dot.radius;
+        pCtx.arc(curX, curY, r, 0, Math.PI * 2);
+
+        if (isHovered) {
+          // BURNING GOLD & WHITE CONSTELLATION BURST
+          const isGold = Math.random() > 0.35;
+          pCtx.fillStyle = isGold
+            ? `rgba(201, 168, 117, ${dot.opacity + 0.45})`
+            : `rgba(255, 255, 255, ${dot.opacity + 0.55})`;
+          pCtx.shadowBlur = 10;
+          pCtx.shadowColor = 'rgba(201, 168, 117, 0.7)';
+        } else {
+          // QUIET SILVERTONE DOT MATRIX
+          pCtx.fillStyle = `rgba(161, 161, 170, ${dot.opacity * 0.7})`;
+          pCtx.shadowBlur = 0;
+        }
+
+        pCtx.fill();
+      });
+
+      requestAnimationFrame(renderPoetry);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 3. DIGITAL ART: INTERACTIVE GRID WITH 3D MOUSE DISTORTION (Aceternity UI)
+    // ═══════════════════════════════════════════════════════════════
+    const digitalCanvas = document.getElementById('digital-grid-canvas');
+    const dCtx = digitalCanvas.getContext('2d');
+    let dWidth, dHeight;
+    let digitalMouse = { x: -1000, y: -1000, active: false };
+
+    function initDigitalCanvas() {
+      const rect = digitalCanvas.getBoundingClientRect();
+      dWidth = digitalCanvas.width = rect.width;
+      dHeight = digitalCanvas.height = rect.height;
+    }
+
+    digitalCanvas.parentElement.parentElement.addEventListener('mousemove', (e) => {
+      const rect = digitalCanvas.getBoundingClientRect();
+      digitalMouse.x = e.clientX - rect.left;
+      digitalMouse.y = e.clientY - rect.top;
+      digitalMouse.active = true;
+    });
+
+    digitalCanvas.parentElement.parentElement.addEventListener('mouseleave', () => {
+      digitalMouse.active = false;
+    });
+
+    function renderDigital() {
+      dCtx.clearRect(0, 0, dWidth, dHeight);
+      const isHovered = hoverStates.digital || isAllHoverActive;
+      const gridSize = 28;
+      const radius = isHovered ? 180 : 100;
+
+      // Draw SVG-like distorted coordinate grid
+      dCtx.lineWidth = isHovered ? 1.2 : 0.8;
+
+      const targetX = digitalMouse.active ? digitalMouse.x : dWidth / 2;
+      const targetY = digitalMouse.active ? digitalMouse.y : dHeight / 2;
+
+      for (let x = 0; x < dWidth; x += gridSize) {
+        for (let y = 0; y < dHeight; y += gridSize) {
+          const dx = x - targetX;
+          const dy = y - targetY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          let drawX = x;
+          let drawY = y;
+
+          if (dist < radius) {
+            const factor = (1 - dist / radius) * (isHovered ? 26 : 14);
+            drawX += (dx / dist) * factor;
+            drawY += (dy / dist) * factor;
+          }
+
+          // Node points
+          dCtx.beginPath();
+          dCtx.arc(drawX, drawY, isHovered ? 1.6 : 1.0, 0, Math.PI * 2);
+
+          if (isHovered && dist < radius) {
+            dCtx.fillStyle = '#06b6d4'; // Glowing Cyan Cyberpunk
+            dCtx.shadowBlur = 8;
+            dCtx.shadowColor = '#06b6d4';
+          } else {
+            dCtx.fillStyle = 'rgba(113, 113, 122, 0.4)';
+            dCtx.shadowBlur = 0;
+          }
+          dCtx.fill();
+        }
+      }
+
+      // Grid connecting lines with radial fade
+      dCtx.strokeStyle = isHovered ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.05)';
+      for (let x = 0; x < dWidth; x += gridSize * 2) {
+        dCtx.beginPath();
+        dCtx.moveTo(x, 0);
+        dCtx.lineTo(x, dHeight);
+        dCtx.stroke();
+      }
+      for (let y = 0; y < dHeight; y += gridSize * 2) {
+        dCtx.beginPath();
+        dCtx.moveTo(0, y);
+        dCtx.lineTo(dWidth, y);
+        dCtx.stroke();
+      }
+
+      requestAnimationFrame(renderDigital);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 4. CHARCOAL & INK: SNAPPING BACKGROUND BOXES (Aceternity UI)
+    // ═══════════════════════════════════════════════════════════════
+    const boxesGrid = document.getElementById('charcoal-boxes-grid');
+    const boxElements = [];
+
+    function initCharcoalBoxes() {
+      boxesGrid.innerHTML = '';
+      boxElements.length = 0;
+      for (let i = 0; i < 80; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'box-cell';
+        boxesGrid.appendChild(cell);
+        boxElements.push(cell);
+      }
+    }
+
+    let boxTimer = null;
+    function pulseCharcoalBoxes() {
+      const isHovered = hoverStates.charcoal || isAllHoverActive;
+      // Reset all boxes
+      boxElements.forEach(cell => {
+        cell.style.background = 'transparent';
+        cell.style.borderColor = 'rgba(255, 255, 255, 0.03)';
+      });
+
+      if (isHovered) {
+        // Randomly highlight 15-20 geometric boxes sharply
+        const count = 15 + Math.floor(Math.random() * 6);
+        const palette = [
+          'rgba(226, 232, 240, 0.35)', // Slate-200 Stark Silver
+          'rgba(255, 255, 255, 0.45)', // Pure White
+          'rgba(201, 168, 117, 0.3)',  // Warm Gold
+          'rgba(63, 63, 70, 0.5)'       // Deep Zinc
+        ];
+
+        for (let i = 0; i < count; i++) {
+          const randIdx = Math.floor(Math.random() * boxElements.length);
+          const cell = boxElements[randIdx];
+          const color = palette[Math.floor(Math.random() * palette.length)];
+          cell.style.background = color;
+          cell.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+        }
+      }
+    }
+
+    setInterval(pulseCharcoalBoxes, 280);
+
+    // ═══════════════════════════════════════════════════════════════
+    // 5. 3D COSMOS: SHOOTING STARS & CONCENTRIC WAVES (Aceternity UI)
+    // ═══════════════════════════════════════════════════════════════
+    const cosmosCanvas = document.getElementById('cosmos-stars-canvas');
+    const cCtx = cosmosCanvas.getContext('2d');
+    let cWidth, cHeight;
+    let shootingStars = [];
+
+    function initCosmosCanvas() {
+      const rect = cosmosCanvas.getBoundingClientRect();
+      cWidth = cosmosCanvas.width = rect.width;
+      cHeight = cosmosCanvas.height = rect.height;
+    }
+
+    function createShootingStar() {
+      shootingStars.push({
+        x: Math.random() * cWidth,
+        y: Math.random() * (cHeight * 0.4),
+        length: 80 + Math.random() * 120,
+        speed: 9 + Math.random() * 8,
+        angle: Math.PI / 4 + (Math.random() - 0.5) * 0.2,
+        opacity: 1
+      });
+    }
+
+    setInterval(createShootingStar, 1200);
+
+    let concentricPhase = 0;
+    function renderCosmos() {
+      cCtx.clearRect(0, 0, cWidth, cHeight);
+      const isHovered = hoverStates.cosmos || isAllHoverActive;
+
+      concentricPhase += isHovered ? 0.03 : 0.01;
+
+      // Pulsing concentric gravitational waves orbiting central void
+      const centerX = cWidth / 2;
+      const centerY = cHeight / 2;
+
+      for (let r = 40; r < Math.max(cWidth, cHeight) * 0.6; r += 50) {
+        cCtx.beginPath();
+        const curR = (r + (concentricPhase * 40)) % (Math.max(cWidth, cHeight) * 0.6);
+        cCtx.arc(centerX, centerY, curR, 0, Math.PI * 2);
+        const alpha = Math.max(0, 0.25 - (curR / (Math.max(cWidth, cHeight) * 0.6)) * 0.25);
+        cCtx.strokeStyle = isHovered
+          ? `rgba(201, 168, 117, ${alpha * 1.5})`
+          : `rgba(255, 255, 255, ${alpha * 0.7})`;
+        cCtx.lineWidth = 1;
+        cCtx.stroke();
+      }
+
+      // Render Shooting Stars
+      for (let i = shootingStars.length - 1; i >= 0; i--) {
+        const star = shootingStars[i];
+        star.x += Math.cos(star.angle) * star.speed;
+        star.y += Math.sin(star.angle) * star.speed;
+        star.opacity -= 0.015;
+
+        if (star.opacity <= 0) {
+          shootingStars.splice(i, 1);
+          continue;
+        }
+
+        const tailX = star.x - Math.cos(star.angle) * star.length;
+        const tailY = star.y - Math.sin(star.angle) * star.length;
+
+        const grad = cCtx.createLinearGradient(star.x, star.y, tailX, tailY);
+        grad.addColorStop(0, `rgba(255, 255, 255, ${star.opacity})`);
+        grad.addColorStop(0.3, `rgba(201, 168, 117, ${star.opacity * 0.8})`);
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        cCtx.beginPath();
+        cCtx.moveTo(star.x, star.y);
+        cCtx.lineTo(tailX, tailY);
+        cCtx.strokeStyle = grad;
+        cCtx.lineWidth = 2;
+        cCtx.stroke();
+      }
+
+      requestAnimationFrame(renderCosmos);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // INTERACTIVE MODAL PREVIEW (Simulating Artwork Click Event)
+    // ═══════════════════════════════════════════════════════════════
+    function openTestModal(medium) {
+      const modal = document.getElementById('preview-modal');
+      const bMount = document.getElementById('modal-backdrop-mount');
+      const cMount = document.getElementById('modal-content-mount');
+
+      modal.classList.add('active');
+      bMount.innerHTML = '';
+
+      if (medium === 'poetry') {
+        bMount.innerHTML = `
+          <div style="position:absolute; inset:0; background: radial-gradient(circle at 50% 30%, rgba(201, 168, 117, 0.22) 0%, #06080e 80%);"></div>
+          <div style="position:absolute; inset:0; background-image: radial-gradient(#dfbd87 1px, transparent 1px); background-size: 18px 18px; opacity:0.4;"></div>
+        `;
+        cMount.innerHTML = `
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 8px;">
+            Poetry Sanctuary Modal • No Black Void
+          </div>
+          <h2 style="font-family: var(--font-display); font-size: 28px; margin-bottom: 20px;">Algorithms of the Midnight Sky</h2>
+          <div style="font-family: var(--font-serif); font-size: 20px; font-style: italic; line-height: 2; max-width: 600px; margin: 0 auto 24px; color: #fdfaf2;">
+            Between the pixel and the soul,<br>
+            A silent symmetry takes hold—<br>
+            Not merely code that machines comprehend,<br>
+            But art where heart and math transcend.
+          </div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--gold-light);">
+            — Afshaan Shaikh • Creative Gradient Canvas Reveal Active
+          </div>
+        `;
+      } else if (medium === 'video') {
+        bMount.innerHTML = `
+          <div style="position:absolute; inset:0; background: radial-gradient(ellipse at 50% 50%, rgba(124, 58, 237, 0.35) 0%, rgba(67, 56, 202, 0.25) 40%, #030407 85%); filter: blur(50px);"></div>
+        `;
+        cMount.innerHTML = `
+          <div style="font-family: var(--font-mono); font-size: 11px; color: #c084fc; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 8px;">
+            Fluid Cinema Modal • Iridescent Oil Slick Active
+          </div>
+          <h2 style="font-family: var(--font-display); font-size: 28px; margin-bottom: 16px;">Volumetric Fluid Dynamics Loop</h2>
+          <div style="max-width: 640px; margin: 0 auto; border-radius: 16px; overflow: hidden; border: 1px solid rgba(201,168,117,0.4); box-shadow: 0 0 50px rgba(124,58,237,0.35);">
+            <video src="https://uskuzbtvbhfqlxvbbrvw.supabase.co/storage/v1/object/public/artworks/uploads/artworks-1787665014401-qbv149.mp4" autoplay loop muted playsinline style="width: 100%; display: block;"></video>
+          </div>
+        `;
+      } else if (medium === 'digital') {
+        bMount.innerHTML = `
+          <div style="position:absolute; inset:0; background: radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.2) 0%, #020306 80%);"></div>
+          <div style="position:absolute; inset:0; background-image: linear-gradient(to right, rgba(6, 182, 212, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(6, 182, 212, 0.1) 1px, transparent 1px); background-size: 32px 32px;"></div>
+        `;
+        cMount.innerHTML = `
+          <div style="font-family: var(--font-mono); font-size: 11px; color: #06b6d4; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 8px;">
+            Digital Shader Modal • Neon Cyberpunk Active
+          </div>
+          <h2 style="font-family: var(--font-display); font-size: 28px; margin-bottom: 16px;">The Obsidian Alchemist</h2>
+          <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80" style="max-height: 400px; border-radius: 14px; margin: 0 auto; display: block; border: 1px solid rgba(6, 182, 212, 0.4);" />
+        `;
+      } else {
+        bMount.innerHTML = `
+          <div style="position:absolute; inset:0; background: linear-gradient(135deg, #18181b 0%, #09090b 60%, #000 100%);"></div>
+          <div style="position:absolute; inset:0; background-image: radial-gradient(rgba(255,255,255,0.12) 1px, transparent 1px); background-size: 12px 12px;"></div>
+        `;
+        cMount.innerHTML = `
+          <div style="font-family: var(--font-mono); font-size: 11px; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 8px;">
+            Traditional Drawing Modal • Washi Noise Texture Active
+          </div>
+          <h2 style="font-family: var(--font-display); font-size: 28px; margin-bottom: 16px;">Graphite Resonance No. IX</h2>
+          <img src="https://images.unsplash.com/photo-1544717302-de2939b7ef71?auto=format&fit=crop&w=1200&q=80" style="max-height: 400px; border-radius: 14px; margin: 0 auto; display: block; border: 1px solid rgba(255, 255, 255, 0.2);" />
+        `;
+      }
+    }
+
+    function closeTestModal() {
+      document.getElementById('preview-modal').classList.remove('active');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // INITIALIZATION & RESIZE
+    // ═══════════════════════════════════════════════════════════════
+    window.addEventListener('load', () => {
+      initPoetryCanvas();
+      initDigitalCanvas();
+      initCharcoalBoxes();
+      initCosmosCanvas();
+
+      renderPoetry();
+      renderDigital();
+      renderCosmos();
+    });
+
+    window.addEventListener('resize', () => {
+      initPoetryCanvas();
+      initDigitalCanvas();
+      initCosmosCanvas();
+    });
+  </script>
+</body>
+</html>
