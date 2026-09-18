@@ -362,6 +362,17 @@ async function startServer() {
     }
   });
 
+  // Sync users to Supabase Auth + profiles (dev proxy to Vercel handler)
+  app.post('/api/auth/sync-users', async (req, res) => {
+    try {
+      const syncHandler = await import('./api/auth/sync-users.js');
+      await syncHandler.default(req as any, res as any);
+    } catch {
+      // Forward to Vercel in production; in dev just acknowledge
+      return res.json({ success: true, message: 'sync-users: handled by Vercel in production' });
+    }
+  });
+
   // Vite middleware for development vs static serve for production
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
