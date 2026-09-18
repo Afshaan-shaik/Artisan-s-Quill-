@@ -41,7 +41,6 @@ interface NavbarProps {
   onOpenBardModal?: () => void;
   onOpenConstellationModal?: () => void;
   onOpenCollectorVault?: () => void;
-  onOpenBackendModal: () => void;
   onOpenVaultModal?: () => void;
   onSelectCurrentUser: () => void;
   onOpenEditProfile?: () => void;
@@ -66,7 +65,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenBardModal,
   onOpenConstellationModal,
   onOpenCollectorVault,
-  onOpenBackendModal,
   onSelectCurrentUser,
   onOpenEditProfile,
   onOpenCreateProfile,
@@ -484,7 +482,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           )}
 
-          {/* Dead Right: Date Filter & Live Sync Feature (Clean compact size directly under Recycle Bin & About) */}
+          {/* Dead Right: Date Filter */}
           <div className="flex items-center gap-2 shrink-0 ml-auto">
             {/* Filter Button */}
             <button
@@ -500,20 +498,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Filter className="w-3 h-3" />
               <span>Filter</span>
               {hasActiveDateFilter && <span className="w-1.5 h-1.5 rounded-full bg-[#c9a875]" />}
-            </button>
-
-            {/* Live Sync Symbol */}
-            <button
-              id="navbar-live-sync-btn"
-              onClick={onOpenBackendModal}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#c9a875]/10 hover:bg-[#c9a875]/20 border border-[#c9a875]/40 hover:border-[#c9a875] text-[10px] uppercase font-mono-code text-[#dfbd87] shrink-0 transition-all cursor-pointer shadow-xs active:scale-95"
-              title="Real-Time Global Synchronization Active across 500+ Sanctuary Artists (Click to inspect Architecture)"
-            >
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-              </span>
-              <span className="font-bold tracking-wider text-white">Live Sync</span>
             </button>
           </div>
         </div>
@@ -560,21 +544,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           MOBILE APPARATUS & ATELIER EXPERIENCE (block md:hidden)
          ───────────────────────────────────────────────────────────── */}
       <div className="block md:hidden">
-        {/* Dynamic Island Status Bar Capsule (from Image 4 reference) */}
-        <div className="w-full pt-2 pb-1 flex items-center justify-center bg-[#06070a] border-b border-white/[0.04]">
-          <button
-            id="mobile-dynamic-island-sync-btn"
-            onClick={onOpenBackendModal}
-            className="inline-flex items-center gap-2 px-3.5 py-0.5 rounded-full bg-black/95 border border-white/15 text-[11px] font-mono-code text-neutral-200 shadow-md hover:border-[#c9a875]/60 hover:text-white transition-all cursor-pointer"
-            title="Centralized Real-Time Cloud Synchronization (500+ active connections)"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="font-medium tracking-wide">Live Sync 500+</span>
-          </button>
-        </div>
 
         {/* Mobile Top App Bar (h-14 landscape:h-11 from Image 4 reference) */}
         <div className="flex items-center justify-between h-14 landscape:h-11 px-3 bg-[#06070a]/98 backdrop-blur-2xl border-b border-white/10">
@@ -1063,23 +1032,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Drawer Bottom Infrastructure Footer */}
             <div className="pt-4 border-t border-white/10 space-y-3">
-              <button
-                onClick={() => {
-                  setIsMobileDrawerOpen(false);
-                  onOpenBackendModal();
-                }}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/[0.04] border border-[#c9a875]/30 text-xs font-mono-code text-[#dfbd87] cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                  <span>Live Cloud Sync</span>
-                </div>
-                <span className="text-[10px] text-neutral-400">500+ Active ↗</span>
-              </button>
-
               {onLogout && currentUser.id !== 'guest' && (
                 <button
                   onClick={() => {

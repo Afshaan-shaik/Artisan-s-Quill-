@@ -32,7 +32,6 @@ import { realtimeBroker } from './services/realtimeBroker';
 import { ArtworkDetailModal } from './components/ArtworkDetailModal';
 import { ExhibitionsView } from './components/ExhibitionsView';
 import { ArtistProfileModal } from './components/ArtistProfileModal';
-import { BackendArchitectureModal } from './components/BackendArchitectureModal';
 import { ExhibitionUploadModal } from './components/ExhibitionUploadModal';
 import { FloatingGuestbook } from './components/FloatingGuestbook';
 import { EditArtworkModal } from './components/EditArtworkModal';
@@ -162,7 +161,6 @@ export default function App() {
   const [isExhibitionModalOpen, setIsExhibitionModalOpen] = useState(false);
   const [uploadModalCategory, setUploadModalCategory] = useState<ArtCategory>('digital');
   const [uploadModalFormat, setUploadModalFormat] = useState<string>('digital art');
-  const [isBackendModalOpen, setIsBackendModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [artworkToEdit, setArtworkToEdit] = useState<Artwork | null>(null);
   const [artworkToShare, setArtworkToShare] = useState<Artwork | null>(null);
@@ -803,7 +801,6 @@ export default function App() {
         onOpenBardModal={() => handleOpenBardWithPoem()}
         onOpenConstellationModal={() => setIsConstellationOpen(true)}
         onOpenCollectorVault={() => setIsCollectorVaultOpen(true)}
-        onOpenBackendModal={() => setIsBackendModalOpen(true)}
         onSelectCurrentUser={() => setSelectedArtistId(currentUser.id)}
         onOpenEditProfile={() => {
           setIsAddProfileCreateMode(false);
@@ -1357,11 +1354,6 @@ export default function App() {
         isOpen={Boolean(artworkForColorStudio)}
         artwork={artworkForColorStudio}
         onClose={() => setArtworkForColorStudio(null)}
-      />
-
-      <BackendArchitectureModal
-        isOpen={isBackendModalOpen}
-        onClose={() => setIsBackendModalOpen(false)}
       />
 
       <AddToMoodBoardModal
