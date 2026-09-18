@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface AuroraFluidBackdropProps {
   className?: string;
@@ -7,64 +7,104 @@ interface AuroraFluidBackdropProps {
 
 /**
  * 21st.dev / Efferd UI Aurora Liquid Gradient Background
- * Designed for Fluid Videos and Volumetric Loops:
- * Continuous, organic fluid mesh flowing from obsidian/zinc
- * into an iridescent oil slick palette of deep indigo, metallic purple, and warm amber.
+ * Designed for Fluid Videos & Volumetric Loops:
+ * Liquid iridescent oil-slick dynamics blending deep violet, neon indigo,
+ * warm amber gold, and electric cyan with organic harmonic undulations.
  */
 export const AuroraFluidBackdrop: React.FC<AuroraFluidBackdropProps> = ({
   className = '',
-  opacity = 0.5
+  opacity = 0.85
 }) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let width = 0;
+    let height = 0;
+    let time = 0;
+
+    const resize = () => {
+      if (!canvas.parentElement) return;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      width = canvas.width = rect.width;
+      height = canvas.height = rect.height;
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Dynamic fluid blobs
+    const blobs = [
+      { x: 0.25, y: 0.3, r: 0.4, color: 'rgba(147, 51, 234, 0.45)', speed: 0.8 }, // Purple
+      { x: 0.75, y: 0.65, r: 0.45, color: 'rgba(79, 70, 229, 0.5)', speed: 1.1 },  // Indigo
+      { x: 0.5, y: 0.4, r: 0.35, color: 'rgba(217, 119, 6, 0.38)', speed: 0.9 },   // Amber Gold
+      { x: 0.8, y: 0.25, r: 0.38, color: 'rgba(6, 182, 212, 0.35)', speed: 1.2 }   // Cyan
+    ];
+
+    const render = () => {
+      time += 0.015;
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw multi-stop glowing fluid gradients
+      blobs.forEach((blob, idx) => {
+        const currentX = (blob.x + Math.sin(time * blob.speed + idx * 1.5) * 0.18) * width;
+        const currentY = (blob.y + Math.cos(time * blob.speed * 0.8 + idx * 2.0) * 0.18) * height;
+        const currentRadius = blob.r * Math.min(width, height) * (1 + Math.sin(time + idx) * 0.15);
+
+        const gradient = ctx.createRadialGradient(
+          currentX,
+          currentY,
+          0,
+          currentX,
+          currentY,
+          Math.max(10, currentRadius)
+        );
+
+        gradient.addColorStop(0, blob.color);
+        gradient.addColorStop(0.55, blob.color.replace(/[\d\.]+\)$/, '0.15)'));
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(currentX, currentY, Math.max(10, currentRadius), 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
   return (
     <div
       className={`absolute inset-0 pointer-events-none overflow-hidden select-none ${className}`}
       style={{ opacity }}
     >
-      {/* Background Deep Zinc/Obsidian Base */}
-      <div className="absolute inset-0 bg-[#07080c]" />
+      {/* Deep Obsidian Background Base */}
+      <div className="absolute inset-0 bg-[#06070a]" />
 
-      {/* Floating Animated Fluid Blobs (CSS GPU-accelerated) */}
-      <div className="absolute inset-0 filter blur-[90px] transform-gpu">
-        {/* Blob 1: Metallic Purple / Violet */}
-        <div
-          className="absolute w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-purple-900/60 to-indigo-600/40 -top-24 -left-20 animate-pulse"
-          style={{
-            animationDuration: '10s',
-            animationIterationCount: 'infinite'
-          }}
-        />
+      {/* Floating Canvas Fluid Waves */}
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full block filter blur-[50px] scale-110"
+      />
 
-        {/* Blob 2: Deep Indigo & Cyan */}
-        <div
-          className="absolute w-[520px] h-[520px] rounded-full bg-gradient-to-br from-indigo-900/50 via-sky-900/40 to-cyan-950/30 -bottom-28 -right-20 animate-pulse"
-          style={{
-            animationDuration: '14s',
-            animationIterationCount: 'infinite',
-            animationDelay: '2s'
-          }}
-        />
+      {/* Subtle organic noise */}
+      <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay bg-noise" />
 
-        {/* Blob 3: Iridescent Amber / Warm Gold Core Accent */}
-        <div
-          className="absolute w-[360px] h-[360px] rounded-full bg-gradient-to-r from-amber-600/30 to-yellow-500/20 top-1/3 left-1/3 animate-pulse"
-          style={{
-            animationDuration: '12s',
-            animationIterationCount: 'infinite',
-            animationDelay: '4s'
-          }}
-        />
-
-        {/* Blob 4: Obsidian Shadow Wave */}
-        <div
-          className="absolute w-[600px] h-[400px] rounded-full bg-zinc-950/70 top-1/2 -translate-y-1/2 -translate-x-1/2 left-1/2"
-        />
-      </div>
-
-      {/* Subtle Noise Texture for tactile organic grain */}
-      <div className="absolute inset-0 opacity-[0.035] mix-blend-overlay bg-noise" />
-
-      {/* Radial Vignette Focus Mask */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(7,8,12,0.8)_75%,#050608_100%)]" />
+      {/* Soft Vignette Mask */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(6,7,10,0.75)_80%,#040508_100%)]" />
     </div>
   );
 };

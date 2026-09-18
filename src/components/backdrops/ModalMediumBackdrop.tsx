@@ -7,6 +7,8 @@ import { ShootingStarsBackdrop } from './ShootingStarsBackdrop';
 
 interface ModalMediumBackdropProps {
   category?: string;
+  medium?: string;
+  title?: string;
   isVideo?: boolean;
   lightingMode?: string;
   className?: string;
@@ -14,67 +16,105 @@ interface ModalMediumBackdropProps {
 
 /**
  * Universal Curatorial Modal Backdrop Resolver
- * Automatically renders the exact artistic backdrop corresponding to the artwork medium:
- * - Poetry -> Canvas Reveal Dot Matrix (warm gold / silver breathing)
- * - Video / Loops -> Efferd UI Aurora Liquid Gradient (indigo / metallic purple / amber)
- * - Digital Art -> Aceternity 3D Grid with Dots & Cyan Cursor Distortion
- * - Charcoal, Ink & Traditional Painting -> Washi Noise Grid & Snapping Boxes
- * - Cosmos & 3D Celestial -> Concentric Waves & Shooting Stars
+ * Automatically and intelligently matches each artwork to its dedicated
+ * rich motion backdrop and vibrant gradient atmosphere:
+ *
+ * 1. Digital Art & Generative Shaders:
+ *    - Interactive 3D Perspective Grid with Cyan Cursor Distortion & Matrix Sparks
+ * 2. Fluid Videos & Volumetric Loops:
+ *    - Aurora Liquid Gradient with dynamic Iridescent Oil Slick colors
+ * 3. Charcoal, Ink, Drawing & Traditional Art:
+ *    - Washi Noise Paper Texture with dynamic geometric Snapping Silver Boxes
+ * 4. 3D Cosmos & Celestial Spotlight:
+ *    - Nebula Atmosphere, Pulsing Orbital Waves & High-Speed Meteor Trails
+ * 5. Poetry & Spoken Verse:
+ *    - Preserved untouched Canvas Reveal Dot Matrix
  */
 export const ModalMediumBackdrop: React.FC<ModalMediumBackdropProps> = ({
   category = 'digital',
+  medium = '',
+  title = '',
   isVideo = false,
   lightingMode = 'obsidian',
   className = ''
 }) => {
-  const normalizedCategory = (category || '').toLowerCase();
+  const normCategory = (category || '').toLowerCase().trim();
+  const normMedium = (medium || '').toLowerCase().trim();
+  const normTitle = (title || '').toLowerCase().trim();
 
-  // Determine which backdrop component fits the medium
-  const renderBackdrop = () => {
-    if (isVideo || normalizedCategory === 'video') {
-      return <AuroraFluidBackdrop opacity={lightingMode === 'spotlight' ? 0.65 : 0.5} />;
-    }
+  // 1. Fluid Videos & Volumetric Loops
+  const isVideoDiscipline =
+    isVideo ||
+    normCategory === 'video' ||
+    normCategory === 'motion' ||
+    normMedium.includes('video') ||
+    normMedium.includes('volumetric') ||
+    normMedium.includes('loop');
 
-    if (normalizedCategory === 'poetry') {
-      return <CanvasRevealBackdrop opacity={lightingMode === 'spotlight' ? 0.7 : 0.55} />;
-    }
+  if (isVideoDiscipline) {
+    return (
+      <div className={`absolute inset-0 pointer-events-none overflow-hidden z-0 ${className}`}>
+        <AuroraFluidBackdrop opacity={lightingMode === 'spotlight' ? 0.95 : 0.85} />
+      </div>
+    );
+  }
 
-    if (
-      normalizedCategory === 'digital' ||
-      normalizedCategory === 'generative' ||
-      normalizedCategory === 'shader'
-    ) {
-      return <InteractiveGridDotsBackdrop opacity={lightingMode === 'spotlight' ? 0.75 : 0.6} />;
-    }
+  // 2. Poetry & Spoken Verse (Preserved untouched as requested)
+  if (normCategory === 'poetry' || normMedium.includes('poetry') || normMedium.includes('verse')) {
+    return (
+      <div className={`absolute inset-0 pointer-events-none overflow-hidden z-0 ${className}`}>
+        <CanvasRevealBackdrop opacity={lightingMode === 'spotlight' ? 0.75 : 0.6} />
+      </div>
+    );
+  }
 
-    if (
-      normalizedCategory === 'drawing' ||
-      normalizedCategory === 'painting' ||
-      normalizedCategory === 'charcoal' ||
-      normalizedCategory === 'ink' ||
-      normalizedCategory === 'traditional'
-    ) {
-      return <NoiseBoxesBackdrop opacity={lightingMode === 'spotlight' ? 0.7 : 0.55} />;
-    }
+  // 3. 3D Cosmos & Celestial Work
+  const isCosmosDiscipline =
+    normCategory === 'cosmos' ||
+    normCategory === 'celestial' ||
+    normCategory === 'astronomy' ||
+    normMedium.includes('cosmos') ||
+    normMedium.includes('celestial') ||
+    normMedium.includes('astronom') ||
+    normTitle.includes('cosmos') ||
+    normTitle.includes('galaxy') ||
+    normTitle.includes('orbit');
 
-    if (
-      normalizedCategory === 'cosmos' ||
-      normalizedCategory === 'celestial' ||
-      normalizedCategory === '3d'
-    ) {
-      return <ShootingStarsBackdrop opacity={lightingMode === 'spotlight' ? 0.75 : 0.6} />;
-    }
+  if (isCosmosDiscipline) {
+    return (
+      <div className={`absolute inset-0 pointer-events-none overflow-hidden z-0 ${className}`}>
+        <ShootingStarsBackdrop opacity={lightingMode === 'spotlight' ? 0.95 : 0.88} />
+      </div>
+    );
+  }
 
-    // Default for any other visual medium: High-tech interactive grid
-    return <InteractiveGridDotsBackdrop opacity={0.5} />;
-  };
+  // 4. Charcoal, Ink, Drawing & Traditional Art
+  const isTraditionalDiscipline =
+    normCategory === 'drawing' ||
+    normCategory === 'painting' ||
+    normCategory === 'charcoal' ||
+    normCategory === 'ink' ||
+    normCategory === 'traditional' ||
+    normMedium.includes('charcoal') ||
+    normMedium.includes('ink') ||
+    normMedium.includes('graphite') ||
+    normMedium.includes('canvas') ||
+    normMedium.includes('oil') ||
+    normMedium.includes('acrylic') ||
+    normMedium.includes('watercolor');
 
+  if (isTraditionalDiscipline) {
+    return (
+      <div className={`absolute inset-0 pointer-events-none overflow-hidden z-0 ${className}`}>
+        <NoiseBoxesBackdrop opacity={lightingMode === 'spotlight' ? 0.95 : 0.85} />
+      </div>
+    );
+  }
+
+  // 5. Digital Art & Generative Shaders (Default for digital, 3D render, shader art)
   return (
-    <div
-      className={`absolute inset-0 pointer-events-none overflow-hidden z-0 transition-opacity duration-700 ${className}`}
-      aria-hidden="true"
-    >
-      {renderBackdrop()}
+    <div className={`absolute inset-0 pointer-events-none overflow-hidden z-0 ${className}`}>
+      <InteractiveGridDotsBackdrop opacity={lightingMode === 'spotlight' ? 0.95 : 0.88} />
     </div>
   );
 };

@@ -841,6 +841,8 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
             {/* Dynamic Curatorial Medium Backdrop (Aceternity UI & 21st.dev) */}
             <ModalMediumBackdrop
               category={artwork.category}
+              medium={artwork.medium}
+              title={artwork.title}
               isVideo={isVideoMedia(artwork)}
               lightingMode={lightingMode}
             />

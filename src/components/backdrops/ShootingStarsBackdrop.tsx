@@ -8,22 +8,34 @@ interface ShootingStarsBackdropProps {
 interface Star {
   x: number;
   y: number;
+  size: number;
+  alpha: number;
+  pulseSpeed: number;
+  color: string;
+}
+
+interface ShootingStar {
+  x: number;
+  y: number;
   length: number;
   speed: number;
   angle: number;
   opacity: number;
   thickness: number;
+  color: string;
 }
 
 /**
- * Aceternity UI Shooting Stars with Concentric Gravitational Waves
- * Designed for 3D Cosmos & Celestial spotlight themes:
- * Concentric orbital rings pulsing smoothly from the center,
- * with periodic high-speed meteor shooting stars sweeping across the dark void.
+ * Premium Aceternity UI 3D Cosmos & Celestial Backdrop
+ * Designed for 3D Cosmos & Curatorial Spotlight:
+ * - Glowing nebula atmosphere with deep indigo, violet, and obsidian gradients
+ * - Concentric gravitational wave rings that pulse smoothly outward
+ * - Frequent luminous meteor shooting stars with radiant tails
+ * - Gravitational lens cursor interaction
  */
 export const ShootingStarsBackdrop: React.FC<ShootingStarsBackdropProps> = ({
   className = '',
-  opacity = 0.6
+  opacity = 0.9
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -34,94 +46,146 @@ export const ShootingStarsBackdrop: React.FC<ShootingStarsBackdropProps> = ({
     if (!ctx) return;
 
     let animationFrameId: number;
-    let width = (canvas.width = canvas.parentElement?.clientWidth || 800);
-    let height = (canvas.height = canvas.parentElement?.clientHeight || 600);
+    let width = 0;
+    let height = 0;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    const handleResize = () => {
+    let mouseX = -1000;
+    let mouseY = -1000;
+    let targetX = -1000;
+    let targetY = -1000;
+    let time = 0;
+
+    const resize = () => {
       if (!canvas.parentElement) return;
-      width = canvas.width = canvas.parentElement.clientWidth;
-      height = canvas.height = canvas.parentElement.clientHeight;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
-    window.addEventListener('resize', handleResize);
+    resize();
+    window.addEventListener('resize', resize);
 
-    // Static background stars
-    const staticStars = Array.from({ length: 60 }).map(() => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      size: Math.random() * 1.5 + 0.5,
-      alpha: Math.random() * 0.5 + 0.2
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      targetX = e.clientX - rect.left;
+      targetY = e.clientY - rect.top;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+
+    // Multi-tint static stars
+    const starColors = ['#ffffff', '#dfbd87', '#38bdf8', '#c084fc'];
+    const stars: Star[] = Array.from({ length: 90 }).map(() => ({
+      x: Math.random() * (width || 800),
+      y: Math.random() * (height || 600),
+      size: Math.random() * 2 + 0.8,
+      alpha: Math.random() * 0.6 + 0.3,
+      pulseSpeed: Math.random() * 0.04 + 0.01,
+      color: starColors[Math.floor(Math.random() * starColors.length)]
     }));
 
-    // Dynamic shooting stars array
-    const shootingStars: Star[] = [];
-    const spawnShootingStar = () => {
-      if (shootingStars.length >= 3) return;
+    const shootingStars: ShootingStar[] = [];
+
+    const spawnMeteor = () => {
+      if (shootingStars.length >= 4) return;
       shootingStars.push({
-        x: Math.random() * (width * 0.8),
+        x: Math.random() * (width * 0.85),
         y: Math.random() * (height * 0.4),
-        length: Math.random() * 120 + 80,
-        speed: Math.random() * 8 + 10,
-        angle: Math.PI / 4 + (Math.random() * 0.2 - 0.1), // ~45 deg
+        length: Math.random() * 140 + 90,
+        speed: Math.random() * 10 + 12,
+        angle: Math.PI / 4 + (Math.random() * 0.3 - 0.15),
         opacity: 1,
-        thickness: Math.random() * 1.5 + 1
+        thickness: Math.random() * 2 + 1.2,
+        color: Math.random() > 0.5 ? '#dfbd87' : '#38bdf8'
       });
     };
 
-    let time = 0;
-
     const render = () => {
-      time += 0.015;
+      time += 0.018;
+      mouseX += (targetX - mouseX) * 0.08;
+      mouseY += (targetY - mouseY) * 0.08;
+
       ctx.clearRect(0, 0, width, height);
 
       const centerX = width / 2;
       const centerY = height / 2;
 
-      // 1. Concentric Orbital Waves
-      const numRings = 4;
-      for (let r = 1; r <= numRings; r++) {
-        const baseRadius = r * 140;
-        const waveRadius = baseRadius + Math.sin(time * 0.8 + r) * 12;
+      // 1. Concentric Gravitational Orbit Waves
+      const ringCount = 5;
+      for (let r = 1; r <= ringCount; r++) {
+        const baseRadius = r * 110;
+        const waveRadius = baseRadius + Math.sin(time * 0.9 + r * 1.2) * 16;
+        
         ctx.beginPath();
         ctx.arc(centerX, centerY, waveRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(201, 168, 117, ${0.04 - r * 0.006})`;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([8, 16]);
+        const ringAlpha = Math.max(0.04, 0.14 - r * 0.02);
+        ctx.strokeStyle = `rgba(201, 168, 117, ${ringAlpha})`;
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([10, 16]);
         ctx.stroke();
         ctx.setLineDash([]);
       }
 
-      // 2. Static Stars
-      staticStars.forEach((star) => {
+      // 2. Stars with Twinkling & Gravitational Shift
+      stars.forEach((s) => {
+        let px = s.x;
+        let py = s.y;
+
+        // Subtle pull towards cursor if nearby
+        const dx = px - mouseX;
+        const dy = py - mouseY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 200 && dist > 0) {
+          const factor = (1 - dist / 200) * 14;
+          px -= (dx / dist) * factor;
+          py -= (dy / dist) * factor;
+        }
+
+        const currentAlpha = Math.min(1, Math.max(0.2, s.alpha + Math.sin(time * 3 + s.x) * 0.35));
+
         ctx.beginPath();
-        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha + Math.sin(time + star.x) * 0.15})`;
+        ctx.arc(px, py, s.size, 0, Math.PI * 2);
+        ctx.fillStyle = s.color;
+        ctx.globalAlpha = currentAlpha;
+        if (s.size > 1.8) {
+          ctx.shadowColor = s.color;
+          ctx.shadowBlur = 8;
+        } else {
+          ctx.shadowBlur = 0;
+        }
         ctx.fill();
+        ctx.globalAlpha = 1;
       });
 
-      // 3. Spawning & Animating Shooting Stars
-      if (Math.random() < 0.02) {
-        spawnShootingStar();
+      // 3. Periodic Meteor Spawn
+      if (Math.random() < 0.035) {
+        spawnMeteor();
       }
 
+      // 4. Draw Shooting Stars
       for (let i = shootingStars.length - 1; i >= 0; i--) {
         const s = shootingStars[i];
         s.x += Math.cos(s.angle) * s.speed;
         s.y += Math.sin(s.angle) * s.speed;
-        s.opacity -= 0.012;
+        s.opacity -= 0.016;
 
-        if (s.opacity <= 0 || s.x > width || s.y > height) {
+        if (s.opacity <= 0 || s.x > width + 100 || s.y > height + 100) {
           shootingStars.splice(i, 1);
           continue;
         }
 
-        // Draw meteor trail
         const tailX = s.x - Math.cos(s.angle) * s.length;
         const tailY = s.y - Math.sin(s.angle) * s.length;
 
         const grad = ctx.createLinearGradient(tailX, tailY, s.x, s.y);
         grad.addColorStop(0, 'rgba(255, 255, 255, 0)');
-        grad.addColorStop(0.7, `rgba(201, 168, 117, ${s.opacity * 0.6})`);
+        grad.addColorStop(0.65, s.color === '#dfbd87' ? `rgba(223, 189, 135, ${s.opacity * 0.7})` : `rgba(56, 189, 248, ${s.opacity * 0.7})`);
         grad.addColorStop(1, `rgba(255, 255, 255, ${s.opacity})`);
 
         ctx.beginPath();
@@ -130,7 +194,10 @@ export const ShootingStarsBackdrop: React.FC<ShootingStarsBackdropProps> = ({
         ctx.strokeStyle = grad;
         ctx.lineWidth = s.thickness;
         ctx.lineCap = 'round';
+        ctx.shadowColor = s.color;
+        ctx.shadowBlur = 12;
         ctx.stroke();
+        ctx.shadowBlur = 0;
       }
 
       animationFrameId = requestAnimationFrame(render);
@@ -139,20 +206,29 @@ export const ShootingStarsBackdrop: React.FC<ShootingStarsBackdropProps> = ({
     render();
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
   return (
-    <div className={`absolute inset-0 pointer-events-none overflow-hidden select-none ${className}`}>
+    <div
+      className={`absolute inset-0 pointer-events-none overflow-hidden select-none ${className}`}
+      style={{ opacity }}
+    >
+      {/* Deep Space Nebula Background Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#05060d] via-[#0b0f1e]/60 to-[#020306]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.18)_0%,rgba(147,51,234,0.12)_45%,transparent_75%)]" />
+
+      {/* High-Precision Cosmic Canvas */}
       <canvas
         ref={canvasRef}
-        className="w-full h-full block"
-        style={{ opacity }}
+        className="w-full h-full block relative z-10"
       />
-      {/* Radial Vignette Mask */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(5,6,8,0.85)_75%,#040507_100%)]" />
+
+      {/* Radial Vignette Focus */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(3,4,8,0.7)_80%,#020306_100%)] z-20" />
     </div>
   );
 };
