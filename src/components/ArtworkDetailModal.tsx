@@ -50,6 +50,8 @@ import { getSoothingFemaleVoice, detectPoemLanguage, preparePoeticTextForVoice, 
 import { VOICE_ACCENT_PROFILES, resolvePoeticVoice, isAfshaanShaikh } from '../utils/afshaanVoiceEngine';
 import { isVideoMedia, isAudioMedia, getMediaPoster } from '../utils/mediaUtils';
 import { ModalMediumBackdrop } from './backdrops';
+import { getCanonicalArtworkUrl } from '../utils/permalinkUtils';
+import { fetchCommentsFromSupabase } from '../services/supabaseClient';
 
 interface ArtworkDetailModalProps {
   artwork: Artwork | null;
@@ -248,7 +250,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
     if (onShare) {
       onShare(artwork);
     } else {
-      const url = `${window.location.origin}${window.location.pathname}?artwork=${artwork.id}`;
+      const url = getCanonicalArtworkUrl(artwork.id);
       navigator.clipboard.writeText(url);
       setIsSharedCopied(true);
       confetti({
@@ -281,6 +283,20 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
       setIsLikedState(Boolean(artwork.isLiked));
       const storeComments = useGalleryStore.getState().getCommentsForArtwork(artwork.id);
       setComments(storeComments.length > 0 ? storeComments : GalleryService.getComments(artwork.id));
+
+      // Asynchronously fetch fresh comments from Supabase Postgres for shared permalinks
+      fetchCommentsFromSupabase(artwork.id).then((cloudComments) => {
+        if (cloudComments && cloudComments.length > 0) {
+          setComments((prev) => {
+            const map = new Map<string, Comment>();
+            cloudComments.forEach((c) => map.set(c.id, c));
+            prev.forEach((c) => {
+              if (!map.has(c.id)) map.set(c.id, c);
+            });
+            return Array.from(map.values());
+          });
+        }
+      }).catch(() => {});
     }
   }, [artwork, resolveArtworkImage]);
 
@@ -295,6 +311,10 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
         });
       } else if (event.type === 'LIKE_UPDATED' && event.payload.artworkId === artwork.id) {
         setLiveLikesCount(event.payload.likesCount);
+      } else if (event.type === 'ARTWORK_UPDATED' && event.payload.id === artwork.id) {
+        if (event.payload.updates.likesCount !== undefined) {
+          setLiveLikesCount(event.payload.updates.likesCount);
+        }
       }
     });
     return () => {

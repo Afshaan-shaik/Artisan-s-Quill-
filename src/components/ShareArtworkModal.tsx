@@ -19,6 +19,7 @@ import {
 import { Artwork } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
+import { getArtworkSharePayload, getCanonicalArtworkUrl } from '../utils/permalinkUtils';
 
 interface ShareArtworkModalProps {
   artwork: Artwork | null;
@@ -67,11 +68,25 @@ const XTwitterIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
+// Authentic Instagram SVG Icon
+const InstagramIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width="15"
+    height="15"
+    fill="currentColor"
+    className={className}
+    aria-hidden="true"
+  >
+    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+  </svg>
+);
+
 export const ShareArtworkModal: React.FC<ShareArtworkModalProps> = ({
   artwork,
   onClose
 }) => {
-  const [copiedType, setCopiedType] = useState<'link' | 'citation' | 'poem' | null>(null);
+  const [copiedType, setCopiedType] = useState<'link' | 'citation' | 'poem' | 'instagram' | null>(null);
   const [showQrCode, setShowQrCode] = useState(false);
 
   useEffect(() => {
@@ -93,10 +108,15 @@ export const ShareArtworkModal: React.FC<ShareArtworkModalProps> = ({
   const artworkYear = artwork.year || 2026;
   const artworkCategory = artwork.category || 'Visual Art';
 
-  // Permalinks directly open this exact piece of art in high-resolution salon mode
-  const currentUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}${window.location.pathname}?artwork=${encodeURIComponent(artwork.id)}`
-    : `https://artisansquill.gallery/artwork/${artwork.id}`;
+  // Standardized, high-reliability canonical permalink and social dispatch payload
+  const {
+    permalink: currentUrl,
+    shareText,
+    twitterUrl,
+    whatsappUrl,
+    telegramUrl,
+    mailUrl
+  } = getArtworkSharePayload(artwork);
 
   const triggerSparkleConfetti = () => {
     try {
@@ -163,16 +183,16 @@ export const ShareArtworkModal: React.FC<ShareArtworkModalProps> = ({
     }
   };
 
-  const shareText = encodeURIComponent(
-    `Admiring "${artworkTitle}" by ${artistName} on @TheArtisansQuill ✨\n\nDirect View: ${currentUrl}`
-  );
-
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${shareText}`;
-  const whatsappUrl = `https://api.whatsapp.com/send?text=${shareText}`;
-  const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(`"${artworkTitle}" by ${artistName}`)}`;
-  const mailUrl = `mailto:?subject=${encodeURIComponent(`Curatorial Discovery: "${artworkTitle}"`)}&body=${encodeURIComponent(
-    `Greetings,\n\nI thought you would appreciate this artwork:\n\n"${artworkTitle}" by ${artistName}\n${artworkDesc}\n\nView this artwork directly in full gallery resolution:\n${currentUrl}`
-  )}`;
+  const handleInstagramShare = async () => {
+    try {
+      await navigator.clipboard.writeText(currentUrl);
+      setCopiedType('instagram');
+      triggerSparkleConfetti();
+      setTimeout(() => setCopiedType(null), 3000);
+    } catch {
+      // Fallback
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -292,50 +312,78 @@ export const ShareArtworkModal: React.FC<ShareArtworkModalProps> = ({
 
             {/* Quick Social Dispatch Grid */}
             <div className="space-y-2.5">
-              <label className="text-xs uppercase tracking-wider font-bold text-neutral-400 block font-mono-code">
-                Quick Social Dispatch
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs uppercase tracking-wider font-bold text-neutral-400 block font-mono-code">
+                  Quick Social Dispatch
+                </label>
+                {copiedType === 'instagram' && (
+                  <span className="text-[10px] font-mono-code text-rose-300 animate-pulse font-semibold">
+                    ✓ Direct link copied for Instagram Story / DM!
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 <a
-                  href={twitterUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/70 border border-white/10 hover:border-white hover:bg-white/10 text-neutral-300 hover:text-white transition-all text-xs font-medium group cursor-pointer shadow-sm"
-                  title="Share on X / Twitter"
-                >
-                  <XTwitterIcon className="text-white group-hover:scale-110 transition-transform" />
-                  <span>X / Tweet</span>
-                </a>
-
-                <a
+                  id="share-whatsapp-btn"
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/70 border border-white/10 hover:border-[#25D366] hover:bg-[#25D366]/20 text-neutral-300 hover:text-white transition-all text-xs font-medium group cursor-pointer shadow-sm"
+                  className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-black/70 border border-white/10 hover:border-[#25D366] hover:bg-[#25D366]/20 text-neutral-300 hover:text-white transition-all text-xs font-medium group cursor-pointer shadow-sm"
                   title="Share on WhatsApp"
                 >
-                  <WhatsAppIcon className="text-[#25D366] group-hover:scale-110 transition-transform" />
-                  <span className="group-hover:text-[#25D366] transition-colors">WhatsApp</span>
+                  <WhatsAppIcon className="text-[#25D366] group-hover:scale-110 transition-transform shrink-0" />
+                  <span className="group-hover:text-[#25D366] transition-colors truncate">WhatsApp</span>
                 </a>
 
                 <a
+                  id="share-telegram-btn"
                   href={telegramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/70 border border-white/10 hover:border-[#0088cc] hover:bg-[#0088cc]/20 text-neutral-300 hover:text-white transition-all text-xs font-medium group cursor-pointer shadow-sm"
+                  className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-black/70 border border-white/10 hover:border-[#0088cc] hover:bg-[#0088cc]/20 text-neutral-300 hover:text-white transition-all text-xs font-medium group cursor-pointer shadow-sm"
                   title="Share on Telegram"
                 >
-                  <TelegramIcon className="text-[#0088cc] group-hover:scale-110 transition-transform" />
-                  <span className="group-hover:text-[#0088cc] transition-colors">Telegram</span>
+                  <TelegramIcon className="text-[#0088cc] group-hover:scale-110 transition-transform shrink-0" />
+                  <span className="group-hover:text-[#0088cc] transition-colors truncate">Telegram</span>
+                </a>
+
+                <button
+                  id="share-instagram-btn"
+                  type="button"
+                  onClick={handleInstagramShare}
+                  className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border transition-all text-xs font-medium group cursor-pointer shadow-sm ${
+                    copiedType === 'instagram'
+                      ? 'bg-rose-950/80 border-rose-500 text-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.35)]'
+                      : 'bg-black/70 border-white/10 hover:border-pink-500 hover:bg-pink-500/20 text-neutral-300 hover:text-white'
+                  }`}
+                  title="Copy direct permalink for Instagram Story Link or DM"
+                >
+                  <InstagramIcon className="text-pink-500 group-hover:scale-110 transition-transform shrink-0" />
+                  <span className="group-hover:text-pink-400 transition-colors truncate">
+                    {copiedType === 'instagram' ? 'Copied!' : 'Instagram'}
+                  </span>
+                </button>
+
+                <a
+                  id="share-twitter-btn"
+                  href={twitterUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-black/70 border border-white/10 hover:border-white hover:bg-white/10 text-neutral-300 hover:text-white transition-all text-xs font-medium group cursor-pointer shadow-sm"
+                  title="Share on X / Twitter"
+                >
+                  <XTwitterIcon className="text-white group-hover:scale-110 transition-transform shrink-0" />
+                  <span className="truncate">X / Tweet</span>
                 </a>
 
                 <a
+                  id="share-email-btn"
                   href={mailUrl}
-                  className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/70 border border-white/10 hover:border-[#c9a875] hover:bg-[#c9a875]/20 text-neutral-300 hover:text-white transition-all text-xs font-medium group cursor-pointer shadow-sm"
+                  className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-black/70 border border-white/10 hover:border-[#c9a875] hover:bg-[#c9a875]/20 text-neutral-300 hover:text-white transition-all text-xs font-medium group cursor-pointer shadow-sm"
                   title="Share via Email"
                 >
-                  <Mail className="w-4 h-4 text-[#e8ca95] group-hover:scale-110 transition-transform" />
-                  <span className="group-hover:text-[#e8ca95] transition-colors">Email</span>
+                  <Mail className="w-3.5 h-3.5 text-[#e8ca95] group-hover:scale-110 transition-transform shrink-0" />
+                  <span className="group-hover:text-[#e8ca95] transition-colors truncate">Email</span>
                 </a>
               </div>
             </div>

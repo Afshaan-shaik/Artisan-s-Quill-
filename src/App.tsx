@@ -68,6 +68,10 @@ import {
   signOutFirebaseUser
 } from './services/firebase';
 import { getActiveSupabaseUser, signOutSupabase, onSupabaseAuthStateChange } from './services/supabaseClient';
+import {
+  extractArtworkIdFromLocation,
+  syncArtworkUrl
+} from './utils/permalinkUtils';
 
 export default function App() {
   const { artworks: realtimeArtworks, isRealtimeConnected, toggleLike: toggleRealtimeLike, toggleSave: toggleRealtimeSave } = useRealtimeGallery();
@@ -155,7 +159,14 @@ export default function App() {
   const [dateRangeFilter, setDateRangeFilter] = useState<{ start?: string; end?: string; }>({});
 
   // Modals
-  const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
+  const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(() => {
+    const targetId = extractArtworkIdFromLocation();
+    if (targetId) {
+      return GalleryService.getArtworkById(targetId) || null;
+    }
+    return null;
+  });
+  const [isResolvingDeepLink, setIsResolvingDeepLink] = useState<boolean>(false);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isExhibitionModalOpen, setIsExhibitionModalOpen] = useState(false);
@@ -327,26 +338,68 @@ export default function App() {
   // Open artwork and sync URL parameter for direct permalinks
   const handleOpenArtwork = (art: Artwork | null) => {
     setSelectedArtwork(art);
-    if (typeof window !== 'undefined') {
-      try {
-        const url = new URL(window.location.href);
-        if (art) {
-          url.searchParams.set('artwork', art.id);
-          window.history.pushState({ artworkId: art.id }, '', url.toString());
-        } else {
-          url.searchParams.delete('artwork');
-          const cleanUrl = url.pathname + (url.search ? url.search : '');
-          window.history.pushState({}, '', cleanUrl);
-        }
-      } catch {
-        // Safe history fallback
-      }
-    }
+    syncArtworkUrl(art, 'push');
   };
 
   const handleCloseArtwork = () => {
-    handleOpenArtwork(null);
+    setSelectedArtwork(null);
+    syncArtworkUrl(null, 'push');
   };
+
+  /**
+   * Centralized, bulletproof deep-link resolver.
+   * Resolves ANY shared artwork across WhatsApp, Telegram, Instagram, Email, Google, or direct URL:
+   * 1. Checks memory cache (0ms instant response)
+   * 2. Direct query to Supabase Postgres database (authoritative cloud sync)
+   * 3. Fallback to Cloud Firestore
+   * Seamlessly injects the resolved artwork into the gallery stream so all controls work.
+   */
+  const resolveAndOpenArtwork = React.useCallback(
+    async (artworkId: string, syncMode: 'push' | 'replace' = 'replace') => {
+      if (!artworkId) {
+        setSelectedArtwork(null);
+        syncArtworkUrl(null, syncMode);
+        return;
+      }
+
+      const cleanId = artworkId.trim();
+
+      // 1. Immediate synchronous resolution from memory cache or store
+      const synchronousArt =
+        GalleryService.getArtworkById(cleanId) ||
+        useGalleryStore.getState().artworks.find(
+          (a) => a.id === cleanId || a.id.toLowerCase() === cleanId.toLowerCase()
+        );
+
+      if (synchronousArt) {
+        setSelectedArtwork(synchronousArt);
+        syncArtworkUrl(synchronousArt, syncMode);
+        return;
+      }
+
+      // 2. High-speed asynchronous cloud resolution from Supabase Postgres database / Firestore
+      try {
+        setIsResolvingDeepLink(true);
+        const cloudArt = await GalleryService.fetchArtworkById(cleanId);
+        if (cloudArt) {
+          // Non-destructively inject into store so it belongs to active gallery stream
+          useGalleryStore.getState().prependArtwork(cloudArt);
+          setSelectedArtwork(cloudArt);
+          syncArtworkUrl(cloudArt, syncMode);
+        } else {
+          console.warn('[Sanctuary Deep-Link] Artwork not found for ID:', cleanId);
+          triggerNotification('Requested artwork is unavailable or has been archived.', 'info');
+          syncArtworkUrl(null, syncMode);
+        }
+      } catch (err) {
+        console.error('[Sanctuary Deep-Link] Error fetching artwork:', err);
+        syncArtworkUrl(null, syncMode);
+      } finally {
+        setIsResolvingDeepLink(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     GalleryService.init().then(() => {
@@ -380,22 +433,9 @@ export default function App() {
       refreshArtworks();
 
       // Deep linking: Immediately open the requested artwork if shared via direct link / WhatsApp / social
-      try {
-        if (typeof window !== 'undefined') {
-          const urlParams = new URLSearchParams(window.location.search);
-          let artworkId = urlParams.get('artwork');
-          if (!artworkId && window.location.hash.startsWith('#artwork-')) {
-            artworkId = window.location.hash.replace('#artwork-', '');
-          }
-          if (artworkId) {
-            const targetArt = GalleryService.getArtworkById(artworkId);
-            if (targetArt) {
-              setSelectedArtwork(targetArt);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error resolving direct artwork URL:', err);
+      const targetArtworkId = extractArtworkIdFromLocation();
+      if (targetArtworkId) {
+        resolveAndOpenArtwork(targetArtworkId, 'replace');
       }
     });
 
@@ -443,28 +483,58 @@ export default function App() {
       unsubscribeSupabaseAuth();
       unsubscribeRealtime();
     };
-  }, []);
+  }, [resolveAndOpenArtwork]);
 
-  // Listen to browser Back/Forward (popstate) navigation
+  // Listen to browser Back/Forward (popstate) and hash navigation
   useEffect(() => {
-    const handlePopState = () => {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const artworkId = urlParams.get('artwork');
-        if (artworkId) {
-          const target = GalleryService.getArtworkById(artworkId);
-          setSelectedArtwork(target || null);
-        } else {
-          setSelectedArtwork(null);
-        }
-      } catch {
-        // Safe fallback
+    const handleLocationSync = () => {
+      const targetArtworkId = extractArtworkIdFromLocation();
+      if (targetArtworkId) {
+        resolveAndOpenArtwork(targetArtworkId, 'replace');
+      } else {
+        setSelectedArtwork(null);
+        syncArtworkUrl(null, 'replace');
       }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+    window.addEventListener('popstate', handleLocationSync);
+    window.addEventListener('hashchange', handleLocationSync);
+    return () => {
+      window.removeEventListener('popstate', handleLocationSync);
+      window.removeEventListener('hashchange', handleLocationSync);
+    };
+  }, [resolveAndOpenArtwork]);
+
+  // Reactive synchronization: If a deep-linked artwork ID is in URL, ensure selectedArtwork is populated
+  useEffect(() => {
+    const activeUrlArtworkId = extractArtworkIdFromLocation();
+    if (activeUrlArtworkId && (!selectedArtwork || selectedArtwork.id !== activeUrlArtworkId)) {
+      const match = realtimeArtworks.find(
+        (a) => a.id === activeUrlArtworkId || a.id.toLowerCase() === activeUrlArtworkId.toLowerCase()
+      );
+      if (match) {
+        setSelectedArtwork(match);
+        syncArtworkUrl(match, 'replace');
+      }
+    }
+  }, [realtimeArtworks, selectedArtwork]);
+
+  // Real-time synchronization: When the open artwork receives likes/saves/comments/edits from other users
+  useEffect(() => {
+    if (selectedArtwork) {
+      const fresh = realtimeArtworks.find((a) => a.id === selectedArtwork.id);
+      if (
+        fresh &&
+        (fresh.likesCount !== selectedArtwork.likesCount ||
+          fresh.savesCount !== selectedArtwork.savesCount ||
+          fresh.viewsCount !== selectedArtwork.viewsCount ||
+          fresh.title !== selectedArtwork.title ||
+          fresh.description !== selectedArtwork.description)
+      ) {
+        setSelectedArtwork((prev) => (prev ? { ...prev, ...fresh } : fresh));
+      }
+    }
+  }, [realtimeArtworks, selectedArtwork]);
 
   useEffect(() => {
     refreshArtworks();
@@ -583,6 +653,7 @@ export default function App() {
       return;
     }
     setSelectedArtwork(null);
+    syncArtworkUrl(null, 'replace');
     refreshArtworks();
     triggerNotification(res.message, 'success');
   };
@@ -701,6 +772,7 @@ export default function App() {
       return;
     }
     setSelectedArtwork(null);
+    syncArtworkUrl(null, 'replace');
     refreshArtworks();
     triggerNotification(res.message, 'success');
   };
@@ -716,6 +788,7 @@ export default function App() {
       return;
     }
     setSelectedArtwork(null);
+    syncArtworkUrl(null, 'replace');
     refreshArtworks();
     triggerNotification(res.message, 'success');
   };
@@ -819,6 +892,19 @@ export default function App() {
         onLogout={handleLogout}
         onOpenCinemaMode={() => setIsCinemaModeOpen(true)}
       />
+
+      {/* Real-Time Deep Link Resolution Banner */}
+      {isResolvingDeepLink && (
+        <div
+          id="deep-link-resolving-indicator"
+          className="fixed top-20 left-1/2 -translate-x-1/2 z-[999999] flex items-center gap-3 px-5 py-2.5 rounded-full bg-black/95 border border-[#c9a875]/80 shadow-[0_0_35px_rgba(201,168,117,0.45)] backdrop-blur-xl pointer-events-none select-none transition-all"
+        >
+          <Sparkles className="w-4 h-4 text-[#dfbd87] animate-spin" />
+          <span className="text-xs font-mono-code text-[#f8f5eb] tracking-wide">
+            Curating shared masterpiece from sanctuary vault...
+          </span>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1 w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-6 sm:pt-8 pb-24 md:pb-8 space-y-8 relative z-10">

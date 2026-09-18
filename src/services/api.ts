@@ -17,9 +17,17 @@ import {
   saveExhibitionToSupabase,
   deleteExhibitionFromSupabase,
   fetchCollectionsFromSupabase,
-  getActiveSupabaseUser
+  getActiveSupabaseUser,
+  fetchArtworkByIdFromSupabase
 } from './supabaseClient';
-import { syncArtworkToCloud, deleteArtworkFromCloud, syncUserProfileToCloud, syncArtworkLikeToCloud, syncCommentToCloud } from './firebase';
+import {
+  syncArtworkToCloud,
+  deleteArtworkFromCloud,
+  syncUserProfileToCloud,
+  syncArtworkLikeToCloud,
+  syncCommentToCloud,
+  fetchArtworkByIdFromFirestore
+} from './firebase';
 import { realtimeBroker } from './realtimeBroker';
 
 const COMMENTS_STORAGE_KEY = 'atelier_noir_comments_v1';
@@ -452,8 +460,56 @@ export class GalleryService {
   }
 
   static getArtworkById(id: string): Artwork | undefined {
+    if (!id) return undefined;
+    const cleanId = id.trim();
     const list = this.getStoredArtworks();
-    return list.find((a) => a.id === id);
+    return list.find((a) => a.id === cleanId || a.id.toLowerCase() === cleanId.toLowerCase());
+  }
+
+  /**
+   * Asynchronously fetches an artwork by ID across all data layers:
+   * 1. Memory cache (instant 0ms response)
+   * 2. Supabase Postgres database (authoritative cloud sync)
+   * 3. Cloud Firestore (fallback sync)
+   * Merges non-destructively into local cache to guarantee zero data loss.
+   */
+  static async fetchArtworkById(id: string): Promise<Artwork | null> {
+    if (!id) return null;
+    const cleanId = id.trim();
+
+    // 1. Check synchronous cache first
+    const cached = this.getArtworkById(cleanId);
+    if (cached) {
+      return cached;
+    }
+
+    // 2. Query Supabase Postgres database directly
+    try {
+      const supaArtwork = await fetchArtworkByIdFromSupabase(cleanId);
+      if (supaArtwork) {
+        this.mergeCloudArtworks([supaArtwork]);
+        return supaArtwork;
+      }
+    } catch (err) {
+      console.warn('[GalleryService] Supabase single-artwork fetch note:', err);
+    }
+
+    // 3. Fallback to Cloud Firestore
+    try {
+      const fireArtwork = await fetchArtworkByIdFromFirestore(cleanId);
+      if (fireArtwork) {
+        this.mergeCloudArtworks([fireArtwork]);
+        return fireArtwork;
+      }
+    } catch (err) {
+      console.warn('[GalleryService] Firestore single-artwork fetch note:', err);
+    }
+
+    return null;
+  }
+
+  static async fetchArtworkByIdAsync(id: string): Promise<Artwork | null> {
+    return this.fetchArtworkById(id);
   }
 
   static getDeletedArtworks(userOrId?: UserProfile | string): Artwork[] {

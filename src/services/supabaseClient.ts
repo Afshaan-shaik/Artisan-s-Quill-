@@ -303,6 +303,35 @@ export async function fetchArtworksFromSupabase(): Promise<Artwork[]> {
 }
 
 /**
+ * Fetches a single artwork by its unique ID from Supabase Postgres.
+ * Enables immediate real-time rendering when a link is shared across WhatsApp, Telegram, Google, or direct URLs.
+ */
+export async function fetchArtworkByIdFromSupabase(id: string): Promise<Artwork | null> {
+  const client = getSupabaseClient() || supabase;
+  if (!client || !id) return null;
+
+  try {
+    const { data, error } = await client
+      .from('artworks')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('[Supabase Artwork By ID Query Error]:', error.message);
+      return null;
+    }
+
+    if (data) {
+      return mapRowToArtwork(data as CloudArtworkRow);
+    }
+  } catch (err) {
+    console.warn('[Supabase Artwork By ID Exception]:', err);
+  }
+  return null;
+}
+
+/**
  * Persists an artwork to Supabase Postgres.
  */
 export async function saveArtworkToSupabase(artwork: Artwork): Promise<boolean> {

@@ -14,6 +14,7 @@ import {
   getFirestore,
   collection,
   doc,
+  getDoc,
   setDoc,
   getDocs,
   deleteDoc,
@@ -432,6 +433,23 @@ export async function deleteArtworkFromCloud(artworkId: string): Promise<boolean
     console.warn('[Firestore Sync]: Could not delete artwork from cloud:', err);
     return false;
   }
+}
+
+/**
+ * Fetches a single artwork from Cloud Firestore by ID (fallback support)
+ */
+export async function fetchArtworkByIdFromFirestore(artworkId: string): Promise<Artwork | null> {
+  if (!db || !artworkId) return null;
+  try {
+    const docRef = doc(db, 'artworks', artworkId);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return snap.data() as Artwork;
+    }
+  } catch (e) {
+    console.warn('[Firestore Single Artwork Fetch Note]:', e);
+  }
+  return null;
 }
 
 /**
