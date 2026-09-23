@@ -37,11 +37,25 @@ export const ArtisticCursor: React.FC = () => {
         isHovering = false;
         return;
       }
+
+      // Over text inputs & textareas, keep cursor unobtrusive so text and caret are clearly visible
+      const isTextInput = Boolean(
+        target.closest('input') ||
+        target.closest('textarea') ||
+        target.closest('[contenteditable="true"]')
+      );
+
+      if (isTextInput) {
+        ring.className =
+          'fixed top-0 left-0 pointer-events-none z-[9998] rounded-full border border-[#c9a875]/30 bg-transparent w-4 h-4 opacity-25 transition-[width,height,background-color,border-color,opacity,transform] duration-200 ease-out';
+        dot.style.opacity = '0.35';
+        isHovering = false;
+        return;
+      }
+
       const isClickable = Boolean(
         target.closest('button') ||
         target.closest('a') ||
-        target.closest('input') ||
-        target.closest('textarea') ||
         target.closest('select') ||
         target.closest('[role="button"]') ||
         target.closest('.cursor-pointer') ||

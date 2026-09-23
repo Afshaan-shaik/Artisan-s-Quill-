@@ -211,25 +211,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span>Upload</span>
               </button>
 
-              {/* Restored Quick-Select Format Dropdown */}
+              {/* Restored Quick-Select Format Dropdown - All 5 Atelier Pieces */}
               <div className="absolute right-0 top-full mt-1.5 w-52 py-1.5 bg-[#0a0d14]/98 border border-[#c9a875]/40 rounded-xl shadow-2xl backdrop-blur-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="px-3 py-1 text-[9px] uppercase font-mono-code text-[#c9a875]/80 tracking-widest border-b border-white/10 mb-1">
-                  Atelier Formats
+                  Atelier Formats (5 Pieces)
                 </div>
                 <button
-                  id="upload-opt-poetry-session"
-                  onClick={() => onOpenUpload('poetry', 'poetry session')}
+                  id="upload-opt-music"
+                  onClick={() => onOpenUpload('music', 'original song')}
                   className="w-full text-left px-3 py-2 text-xs text-neutral-200 hover:text-white hover:bg-[#c9a875]/15 flex items-center gap-2 font-mono-code transition-colors cursor-pointer"
                 >
-                  <Feather className="w-3.5 h-3.5 text-[#e0c49a]" />
-                  <span>Poetry Session</span>
+                  <Disc3 className="w-3.5 h-3.5 text-[#c9a875]" />
+                  <span>Original Song</span>
                 </button>
                 <button
                   id="upload-opt-poetry-card"
                   onClick={() => onOpenUpload('poetry', 'poetry card')}
                   className="w-full text-left px-3 py-2 text-xs text-neutral-200 hover:text-white hover:bg-[#c9a875]/15 flex items-center gap-2 font-mono-code transition-colors cursor-pointer"
                 >
-                  <Feather className="w-3.5 h-3.5 text-[#c9a875]" />
+                  <Feather className="w-3.5 h-3.5 text-[#e0c49a]" />
                   <span>Poetry Card</span>
                 </button>
                 <button
@@ -247,6 +247,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#f0a8d0]" />
                   <span>Integer Art</span>
+                </button>
+                <button
+                  id="upload-opt-motion-loops"
+                  onClick={() => onOpenUpload('video', 'motion loops')}
+                  className="w-full text-left px-3 py-2 text-xs text-neutral-200 hover:text-white hover:bg-[#c9a875]/15 flex items-center gap-2 font-mono-code transition-colors cursor-pointer"
+                >
+                  <Film className="w-3.5 h-3.5 text-[#b9c6ea]" />
+                  <span>Motion Loops</span>
                 </button>
               </div>
             </div>
@@ -1132,14 +1140,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={() => {
                 setIsMobileActionSheetOpen(false);
-                onOpenUpload('poetry', 'poetry session');
+                onOpenUpload('video', 'motion loops');
               }}
               className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-[#c9a875]/60 text-left transition-all cursor-pointer"
             >
-              <span className="text-xl">✍️</span>
+              <span className="text-xl">🎬</span>
               <div>
-                <div className="text-xs font-semibold text-white">Poetry Session</div>
-                <div className="text-[10px] font-mono-code text-neutral-400">Live spoken recital &amp; verse composition</div>
+                <div className="text-xs font-semibold text-white">Motion Cinema &amp; Loops</div>
+                <div className="text-[10px] font-mono-code text-neutral-400">4K volumetric fluid dynamics &amp; audiovisual loops</div>
               </div>
             </button>
 

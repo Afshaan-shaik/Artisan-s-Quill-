@@ -142,8 +142,10 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
         : 'digital art')
   );
 
-  // Common fields
+  // Common & tab-isolated title fields to prevent cross-contamination
   const [title, setTitle] = useState('');
+  const [poetryTitle, setPoetryTitle] = useState('');
+  const [musicTitle, setMusicTitle] = useState('Nocturne in C-sharp Minor');
   const [description, setDescription] = useState('');
   const [year, setYear] = useState(new Date().getFullYear());
   const [tagsInput, setTagsInput] = useState('');
@@ -217,6 +219,11 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
       } else if (initialFormat === 'original song' || initialFormat.includes('music')) {
         setActiveTab('music');
         setAspectRatio('square');
+      } else if (initialFormat === 'motion loops' || initialFormat.includes('video')) {
+        setActiveTab('visual');
+        setVisualCategory('video');
+        setMedium('4K Volumetric Fluid Loop');
+        setAspectRatio('wide');
       } else {
         setActiveTab('visual');
         setVisualCategory('digital');
@@ -233,11 +240,11 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
       setActiveTab('music');
       setActiveFormat('original song');
       setAspectRatio('square');
-      if (!title) setTitle('Nocturne in C-sharp Minor');
+      if (!musicTitle) setMusicTitle('Nocturne in C-sharp Minor');
     } else if (initialCategory !== 'all') {
       setActiveTab('visual');
       setVisualCategory(initialCategory as 'painting' | 'drawing' | 'digital' | 'video');
-      setActiveFormat(initialCategory === 'digital' ? 'digital art' : `${initialCategory} art`);
+      setActiveFormat(initialCategory === 'digital' ? 'digital art' : initialCategory === 'video' ? 'motion loops' : `${initialCategory} art`);
     }
   }, [initialCategory, initialFormat]);
 
@@ -287,8 +294,8 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
 
     try {
       setIsUploadingMedia(true);
-      if (!title) {
-        setTitle(file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
+      if (!musicTitle) {
+        setMusicTitle(file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
       }
       const publicUrl = await uploadArtworkMediaToStorage(file);
       setMusicAudioUrl(publicUrl);
@@ -326,7 +333,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
   };
 
   const handleSelectMusicPreset = (preset: typeof PRESET_MUSIC_TRACKS[0]) => {
-    setTitle(preset.title);
+    setMusicTitle(preset.title);
     setMusicAudioUrl(preset.audioUrl);
     setMusicCoverUrl(preset.coverUrl);
     setMusicAlbum(preset.album);
@@ -357,7 +364,14 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+
+    if (activeTab === 'poetry') {
+      if (!poetryTitle.trim()) return;
+    } else if (activeTab === 'music') {
+      if (!musicTitle.trim()) return;
+    } else {
+      if (!title.trim()) return;
+    }
 
     const tags = tagsInput
       .split(',')
@@ -386,7 +400,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
     if (activeTab === 'poetry') {
       const poetryArtwork: Artwork = {
         id: newArtId,
-        title: title.trim(),
+        title: poetryTitle.trim(),
         category: 'poetry',
         artist: artistObj,
         mediaUrl: mediaUrl.trim() || '/curatorial-masterpiece.svg',
@@ -430,7 +444,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
       const resolvedCoverUrl =
         musicCoverUrl.trim() ||
         'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&q=80';
-      const trackTitle = title.trim() || 'Untitled Original Master';
+      const trackTitle = musicTitle.trim() || 'Nocturne in C-sharp Minor';
 
       const musicArtwork: Artwork = {
         id: newArtId,
@@ -530,7 +544,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
   const activeUser = GalleryService.getCurrentUser();
   const livePreviewArtwork: Artwork = {
     id: 'preview-artwork',
-    title: title || 'Title of Your Verse',
+    title: poetryTitle || 'Title of Your Verse',
     artist: {
       id: activeUser.id !== 'guest' ? activeUser.id : 'preview-artist',
       name: activeUser.id !== 'guest' ? activeUser.name : 'Atelier Poet',
@@ -561,7 +575,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
 
   const liveMusicPreviewArtwork: Artwork = {
     id: 'preview-music-artwork',
-    title: title.trim() || 'Nocturne in C-sharp Minor',
+    title: musicTitle.trim() || 'Nocturne in C-sharp Minor',
     artist: {
       id: activeUser.id !== 'guest' ? activeUser.id : 'preview-artist',
       name: activeUser.id !== 'guest' ? activeUser.name : guestName || 'Atelier Musician',
@@ -639,6 +653,8 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                   ? 'Poetry Studio & Card Formatter'
                   : activeTab === 'music'
                   ? 'Original Music Studio & Vinyl Press'
+                  : activeFormat === 'motion loops' || visualCategory === 'video'
+                  ? 'Motion Cinema & Audiovisual Studio'
                   : 'Exhibition Media Upload'}
               </h2>
               <p className="text-[11px] sm:text-xs text-white/50 font-mono-code truncate hidden sm:block">
@@ -646,6 +662,8 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                   ? 'Automatically format stanzas into high-end aesthetic presentation cards'
                   : activeTab === 'music'
                   ? 'Master, press, and broadcast original musical works to the sanctuary gallery'
+                  : activeFormat === 'motion loops' || visualCategory === 'video'
+                  ? 'Upload and broadcast 4K volumetric fluid dynamics and cinematic motion loops'
                   : 'Submit paintings, fine charcoal drawings, digital renders, and video loops'}
               </p>
             </div>
@@ -661,7 +679,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                   setActiveTab('music');
                   setActiveFormat('original song');
                   setAspectRatio('square');
-                  if (!title) setTitle('Nocturne in C-sharp Minor');
+                  if (!musicTitle) setMusicTitle('Nocturne in C-sharp Minor');
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
                   activeTab === 'music'
@@ -671,22 +689,6 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
               >
                 <Disc3 className="w-3.5 h-3.5" />
                 Original Song
-              </button>
-              <button
-                type="button"
-                id="modal-tab-poetry-session"
-                onClick={() => {
-                  setActiveTab('poetry');
-                  setActiveFormat('poetry session');
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
-                  activeTab === 'poetry' && activeFormat === 'poetry session'
-                    ? 'bg-[#c9a875] text-[#0d0e12] font-semibold'
-                    : 'text-white/70 hover:text-white'
-                }`}
-              >
-                <Feather className="w-3.5 h-3.5" />
-                Poetry Session
               </button>
               <button
                 type="button"
@@ -739,6 +741,25 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 Integer Art
+              </button>
+              <button
+                type="button"
+                id="modal-tab-motion-loops"
+                onClick={() => {
+                  setActiveTab('visual');
+                  setVisualCategory('video');
+                  setActiveFormat('motion loops');
+                  setMedium('4K Volumetric Fluid Dynamics & Motion Loop');
+                  setAspectRatio('wide');
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
+                  activeTab === 'visual' && (activeFormat === 'motion loops' || visualCategory === 'video')
+                    ? 'bg-[#c9a875] text-[#0d0e12] font-semibold'
+                    : 'text-white/70 hover:text-white'
+                }`}
+              >
+                <Film className="w-3.5 h-3.5" />
+                Motion Loops
               </button>
             </div>
 
@@ -1113,8 +1134,8 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                     type="text"
                     required
                     placeholder="e.g. Anatomy of the Night Wind"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    value={poetryTitle}
+                    onChange={(e) => setPoetryTitle(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl bg-black/30 border border-white/15 text-sm text-white focus:border-[#c9a875] focus:outline-none font-serif-display text-base"
                   />
                 </div>
@@ -1373,7 +1394,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                             </button>
                             <div className="text-left min-w-0">
                               <p className="text-xs font-semibold text-white truncate font-serif-display">
-                                {title || 'Master Recording Audio'}
+                                {musicTitle || 'Master Recording Audio'}
                               </p>
                               <p className="text-[10px] text-[#c9a875] font-mono-code truncate">
                                 {musicAudioPlaying ? 'Playing in Studio Preview...' : 'Ready for mastering'} • {Math.floor(musicDurationSeconds / 60)}:{String(musicDurationSeconds % 60).padStart(2, '0')}
@@ -1555,8 +1576,8 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                     type="text"
                     required
                     placeholder="e.g. Nocturne in C-sharp Minor"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    value={musicTitle}
+                    onChange={(e) => setMusicTitle(e.target.value)}
                     className="w-full px-4 py-2 rounded-xl bg-black/30 border border-white/15 text-sm text-white focus:border-[#c9a875] focus:outline-none font-serif-display text-base"
                   />
                 </div>
