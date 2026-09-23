@@ -12,6 +12,34 @@
     --font-fraunces: 'Fraunces', Georgia, serif;
     --font-literata: 'Literata', Georgia, serif;
     --font-plex-mono: 'IBM Plex Mono', monospace;
+
+    /* Mobile & Tablet Safe Area Tokens */
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Prevent automatic Safari/iOS zoom on form focus by ensuring min 16px font */
+  @media (max-width: 640px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="number"],
+    input[type="date"],
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
   }
 }
 
@@ -76,6 +104,46 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #393e4f;
+}
+
+/* Hide scrollbar while maintaining touch / scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth momentum touch scrolling for iOS / mobile */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Safe area padding utilities */
+.pb-safe {
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+}
+.pt-safe {
+  padding-top: max(12px, env(safe-area-inset-top, 12px));
+}
+
+/* Minimum 44px touch target compliance for mobile buttons */
+.touch-target-44 {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Dynamic 100dvh container helper */
+.h-dvh {
+  height: 100dvh;
+}
+.min-h-dvh {
+  min-height: 100dvh;
+}
+.max-h-dvh {
+  max-height: 100dvh;
 }
 
 /* Subtle glow effects */

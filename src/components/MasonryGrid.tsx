@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Heart, Bookmark, Play, Pause, Volume2, VolumeX, Sparkles, Image, Film, Palette, PenTool, Share2, Layers } from 'lucide-react';
 import { Artwork, ArtCategory } from '../types';
 import { PoetryCard } from './PoetryCard';
+import { MusicArtworkCard } from './MusicArtworkCard';
 import confetti from 'canvas-confetti';
 import { motion } from 'motion/react';
 import { isVideoMedia, isAudioMedia, getMediaPoster } from '../utils/mediaUtils';
@@ -460,16 +461,17 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
           <span className="text-neutral-300 truncate max-w-[140px] sm:max-w-[200px]">
             {artwork.artist.name}
           </span>
-          <div className="flex items-center gap-3 shrink-0 text-[11px]">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 text-[11px]">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleLike(artwork.id, artwork.isLiked, e);
               }}
-              className="text-neutral-400 hover:text-rose-400 active:scale-90 flex items-center gap-1 p-1 -m-1 transition-all cursor-pointer"
+              className="text-neutral-400 hover:text-rose-400 active:scale-90 flex items-center gap-1 p-1.5 min-w-[36px] min-h-[36px] justify-center transition-all cursor-pointer"
               title="Like artwork"
+              aria-label={`Like ${artwork.title}, currently ${artwork.likesCount || 0} likes`}
             >
-              <Heart className={`w-3.5 h-3.5 ${artwork.isLiked ? 'fill-rose-500 text-rose-500' : 'text-neutral-400'}`} />
+              <Heart className={`w-3.5 h-3.5 shrink-0 ${artwork.isLiked ? 'fill-rose-500 text-rose-500' : 'text-neutral-400'}`} />
               <span>{artwork.likesCount || 0}</span>
             </button>
             <button
@@ -477,11 +479,28 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
                 e.stopPropagation();
                 onToggleSave(artwork.id, e);
               }}
-              className="text-neutral-400 hover:text-[#dfbd87] active:scale-90 flex items-center gap-1 p-1 -m-1 transition-all cursor-pointer"
+              className="text-neutral-400 hover:text-[#dfbd87] active:scale-90 flex items-center gap-1 p-1.5 min-w-[36px] min-h-[36px] justify-center transition-all cursor-pointer"
               title="Save artwork to vault"
+              aria-label={`Save ${artwork.title} to vault`}
             >
-              <Bookmark className={`w-3.5 h-3.5 ${artwork.isSaved ? 'fill-[#c9a875] text-[#c9a875]' : 'text-neutral-400'}`} />
+              <Bookmark className={`w-3.5 h-3.5 shrink-0 ${artwork.isSaved ? 'fill-[#c9a875] text-[#c9a875]' : 'text-neutral-400'}`} />
               <span>{artwork.savesCount || 0}</span>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onShareArtwork) {
+                  onShareArtwork(artwork);
+                } else {
+                  const url = `${window.location.origin}${window.location.pathname}?artwork=${artwork.id}`;
+                  navigator.clipboard.writeText(url);
+                }
+              }}
+              className="text-neutral-400 hover:text-[#dfbd87] active:scale-90 flex items-center gap-1 p-1.5 min-w-[36px] min-h-[36px] justify-center transition-all cursor-pointer"
+              title="Share artwork"
+              aria-label={`Share ${artwork.title}`}
+            >
+              <Share2 className="w-3.5 h-3.5 shrink-0 text-[#c9a875]" />
             </button>
           </div>
         </div>
@@ -647,6 +666,23 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
                     onOpenBardModal={onOpenBardModal}
                   />
                 </motion.div>
+              );
+            }
+
+            if (artwork.category === 'music' || artwork.musicData) {
+              return (
+                <div key={artwork.id} className="w-full">
+                  <MusicArtworkCard
+                    artwork={artwork}
+                    index={originalIndex}
+                    onSelectArtwork={onSelectArtwork}
+                    onToggleLike={onToggleLike}
+                    onToggleSave={onToggleSave}
+                    onSelectArtist={onSelectArtist}
+                    onShareArtwork={onShareArtwork}
+                    onAddToMoodBoard={onAddToMoodBoard}
+                  />
+                </div>
               );
             }
 

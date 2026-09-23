@@ -29,7 +29,8 @@ export function isVideoMedia(artwork: Artwork | null | undefined): boolean {
  */
 export function isAudioMedia(artwork: Artwork | null | undefined): boolean {
   if (!artwork) return false;
-  if ((artwork.category as string) === 'audio') return true;
+  if (artwork.category === 'music' || (artwork.category as string) === 'audio') return true;
+  if (artwork.musicData && Boolean(artwork.musicData.audioUrl)) return true;
 
   const url = (artwork.mediaUrl || '').toLowerCase().trim();
   const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];

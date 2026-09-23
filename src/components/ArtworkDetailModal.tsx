@@ -46,6 +46,7 @@ import { MarginReflectionsDrawer } from './MarginReflectionsDrawer';
 import { VoiceRecitalStudioModal } from './VoiceRecitalStudioModal';
 import { SpotifyRecitalPlayer } from './SpotifyRecitalPlayer';
 import { YouTubeVideoPlayer } from './YouTubeVideoPlayer';
+import { AudioSanctuaryChamber } from './AudioSanctuaryChamber';
 import confetti from 'canvas-confetti';
 import { getSoothingFemaleVoice, detectPoemLanguage, preparePoeticTextForVoice, getVoiceIdentityLabel } from '../utils/speechUtils';
 import { VOICE_ACCENT_PROFILES, resolvePoeticVoice, isAfshaanShaikh } from '../utils/afshaanVoiceEngine';
@@ -693,15 +694,15 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto bg-[#050608]/95 backdrop-blur-2xl">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto bg-[#050608]/95 backdrop-blur-2xl">
       <div
         id="artwork-detail-modal"
-        className="relative w-full max-w-[90rem] h-full max-h-[95vh] bg-[#050608] border border-white/5 shadow-2xl overflow-hidden flex flex-col font-sans rounded-sm text-neutral-200"
+        className="relative w-full max-w-[90rem] h-full sm:h-auto max-h-[100dvh] sm:max-h-[95vh] bg-[#050608] border-0 sm:border sm:border-white/5 shadow-2xl overflow-hidden flex flex-col font-sans rounded-none sm:rounded-sm text-neutral-200"
       >
         <div className="fixed inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay bg-noise z-0"></div>
         
         {/* Top Control Bar */}
-        <div className="flex items-center justify-between px-4 sm:px-8 py-3.5 border-b border-white/10 bg-[#050608]/95 backdrop-blur-2xl z-30 shrink-0 min-h-[4.25rem]">
+        <div className="flex items-center justify-between px-3 sm:px-8 py-2.5 sm:py-3.5 border-b border-white/10 bg-[#050608]/95 backdrop-blur-2xl z-30 shrink-0 min-h-[3.75rem] sm:min-h-[4.25rem]">
           <div className="flex items-center gap-3 sm:gap-5 min-w-0 pr-2">
             <span className="px-2.5 py-1 rounded bg-[#c9a875]/20 backdrop-blur-md border border-[#c9a875]/50 text-[10px] uppercase font-bold tracking-widest text-[#dfbd87] shrink-0">
               {artwork.category}
@@ -1234,25 +1235,12 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                 />
               </div>
             ) : isAudioMedia(artwork) ? (
-              /* Audio / Sound Art Composition with Visual Equalizer */
-              <div className="relative z-10 w-full max-w-2xl rounded-2xl p-8 sm:p-12 bg-black/80 border border-[#c9a875]/40 shadow-2xl my-auto text-center space-y-6">
-                <div className="w-24 h-24 rounded-full bg-[#c9a875]/20 border-2 border-[#c9a875] flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(201,168,117,0.3)] animate-pulse">
-                  <Volume2 className="w-10 h-10 text-[#c9a875]" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-serif-display font-bold text-white mb-2">{artwork.title}</h3>
-                  <p className="text-xs font-mono-code text-[#c9a875] uppercase tracking-widest">{artwork.artist.name} • Master Audio Composition</p>
-                </div>
-                <audio
-                  src={artwork.mediaUrl}
-                  controls
-                  className="w-full mx-auto"
-                />
-              </div>
+              /* Audio / Sound Art Composition with Luxury Vinyl Chamber & Equalizer */
+              <AudioSanctuaryChamber artwork={artwork} />
             ) : (
               /* High Resolution Visual Artwork (Painting / Drawing / Digital) */
               <div className="relative z-10 flex items-center justify-center max-w-full max-h-full my-auto">
-                <div className="relative group inline-flex items-center justify-center max-w-full max-h-[70vh] sm:max-h-[74vh] rounded-xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.9)] border border-[#c9a875]/35 bg-black/40">
+                <div className="relative group inline-flex items-center justify-center max-w-full max-h-[48vh] sm:max-h-[70vh] md:max-h-[74vh] rounded-xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.9)] border border-[#c9a875]/35 bg-black/40">
                   <img
                     key={`${artwork.id}-${activeImageSrc}`}
                     src={activeImageSrc}
@@ -1265,7 +1253,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                         setActiveImageSrc('/curatorial-masterpiece.svg');
                       }
                     }}
-                    className={`w-auto h-auto max-w-full max-h-[68vh] sm:max-h-[72vh] object-contain transition-transform duration-500 cursor-zoom-in block ${
+                    className={`w-auto h-auto max-w-full max-h-[46vh] sm:max-h-[68vh] md:max-h-[72vh] object-contain transition-transform duration-500 cursor-zoom-in block ${
                       isZoomed ? 'scale-150 cursor-zoom-out' : 'scale-100'
                     }`}
                     onClick={() => setIsZoomed(!isZoomed)}
@@ -1295,7 +1283,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
           </div>
 
           {/* Right Sidebar: Curatorial Statement, Metadata, Features & Critique */}
-          <div className="lg:col-span-5 xl:col-span-4 border-l border-white/10 bg-[#0d0f14] flex flex-col overflow-y-auto p-6 sm:p-8 space-y-8">
+          <div className="lg:col-span-5 xl:col-span-4 border-t lg:border-t-0 lg:border-l border-white/10 bg-[#0d0f14] flex flex-col overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
             
             {/* Artwork Master Header */}
             <div className="pb-6 border-b border-white/10 space-y-3">

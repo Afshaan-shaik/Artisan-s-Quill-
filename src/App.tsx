@@ -287,6 +287,11 @@ export default function App() {
           const poetryMatch =
             a.poetryContent?.stanzas &&
             a.poetryContent.stanzas.some((s) => s.toLowerCase().includes(q));
+          const musicMatch =
+            a.musicData &&
+            ((a.musicData.genre && a.musicData.genre.toLowerCase().includes(q)) ||
+              (a.musicData.album && a.musicData.album.toLowerCase().includes(q)) ||
+              (a.musicData.lyrics && a.musicData.lyrics.toLowerCase().includes(q)));
           const exhibitionMatch = a.exhibitionName?.toLowerCase().includes(q);
 
           return (
@@ -298,6 +303,7 @@ export default function App() {
             yearMatch ||
             tagsMatch ||
             poetryMatch ||
+            musicMatch ||
             exhibitionMatch
           );
         });
@@ -916,7 +922,7 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-6 sm:pt-8 pb-24 md:pb-8 space-y-8 relative z-10">
+      <main className="flex-1 w-full max-w-[1760px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 pt-4 sm:pt-8 pb-28 md:pb-12 space-y-6 sm:space-y-8 relative z-10">
         
 
 
@@ -1024,6 +1030,7 @@ export default function App() {
                   {selectedCategory === 'digital' && 'Generative Shaders & 3D Digital Media'}
                   {selectedCategory === 'video' && 'Motion Loops & Cinema Fluid Dynamics'}
                   {selectedCategory === 'poetry' && 'The Poetic Archive & Lyric Verse Cards'}
+                  {selectedCategory === 'music' && 'Original Music, Compositions & Soundscapes'}
                 </h2>
                 <p className="text-xs text-neutral-400 font-mono-code mt-1.5 flex items-center gap-2">
                   <span>Displaying {artworks.length} indexed work{artworks.length !== 1 ? 's' : ''}</span>
@@ -1033,44 +1040,44 @@ export default function App() {
               </div>
 
               {/* Enlarged Curated / Most Liked / Latest Filter Capsule */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-neutral-900/90 border border-white/15 shadow-xl backdrop-blur-md">
+              <div className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-start md:justify-end">
+                <div className="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded-full bg-neutral-900/90 border border-white/15 shadow-xl backdrop-blur-md overflow-x-auto no-scrollbar">
                   <button
                     id="filter-curated-btn"
                     onClick={() => setFeedFilter('curated')}
-                    className={`flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 ${
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shrink-0 ${
                       feedFilter === 'curated'
                         ? 'bg-[#c9a875] text-black shadow-[0_0_18px_rgba(201,168,117,0.5)]'
                         : 'text-neutral-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <Sparkles className={`w-4 h-4 ${feedFilter === 'curated' ? 'text-black' : 'text-[#c9a875]'}`} />
+                    <Sparkles className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${feedFilter === 'curated' ? 'text-black' : 'text-[#c9a875]'}`} />
                     <span>Curated</span>
                   </button>
 
                   <button
                     id="filter-popular-btn"
                     onClick={() => setFeedFilter('popular')}
-                    className={`flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 ${
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shrink-0 ${
                       feedFilter === 'popular'
                         ? 'bg-rose-500 text-white shadow-[0_0_18px_rgba(244,63,94,0.5)]'
                         : 'text-neutral-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <Heart className={`w-4 h-4 ${feedFilter === 'popular' ? 'text-white fill-white' : 'text-rose-400'}`} />
+                    <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${feedFilter === 'popular' ? 'text-white fill-white' : 'text-rose-400'}`} />
                     <span>Most Liked</span>
                   </button>
 
                   <button
                     id="filter-latest-btn"
                     onClick={() => setFeedFilter('latest')}
-                    className={`flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 ${
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shrink-0 ${
                       feedFilter === 'latest'
                         ? 'bg-white text-black shadow-[0_0_18px_rgba(255,255,255,0.45)]'
                         : 'text-neutral-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
-                    <Clock className={`w-4 h-4 ${feedFilter === 'latest' ? 'text-black' : 'text-amber-400'}`} />
+                    <Clock className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${feedFilter === 'latest' ? 'text-black' : 'text-amber-400'}`} />
                     <span>Latest</span>
                   </button>
                 </div>
@@ -1079,54 +1086,54 @@ export default function App() {
                 <button
                   id="cinema-mode-btn"
                   onClick={() => setIsCinemaModeOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-neutral-900/90 border border-white/15 text-neutral-300 hover:text-white hover:bg-white/10 hover:border-[#c9a875]/60 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-xl backdrop-blur-md"
+                  className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-neutral-900/90 border border-white/15 text-neutral-300 hover:text-white hover:bg-white/10 hover:border-[#c9a875]/60 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-xl backdrop-blur-md shrink-0"
                   title="View Gallery as Cinematic Slideshow"
                 >
-                  <Film className="w-4 h-4 text-[#c9a875]" />
-                  <span className="hidden sm:inline">Cinema</span>
+                  <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#c9a875]" />
+                  <span>Cinema</span>
                 </button>
 
                 {/* Curatorial Density Switcher */}
                 <div
                   id="curatorial-density-switcher"
-                  className="flex items-center gap-1 p-1 rounded-full bg-neutral-900/90 border border-[#c9a875]/30 backdrop-blur-md shadow-xl"
+                  className="flex items-center gap-1 p-1 rounded-full bg-neutral-900/90 border border-[#c9a875]/30 backdrop-blur-md shadow-xl shrink-0"
                   title="Curatorial Density Scale"
                 >
                   <button
                     id="density-grande-btn"
                     onClick={() => setGridDensity('grande')}
                     title="2-Column Grande Scale"
-                    className={`px-3 py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
+                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
                       gridDensity === 'grande'
                         ? 'bg-[#c9a875] text-black font-bold shadow-[0_0_12px_rgba(201,168,117,0.4)]'
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
-                    Grande (2-Col)
+                    <span className="hidden sm:inline">Grande </span>2-Col
                   </button>
                   <button
                     id="density-curatorial-btn"
                     onClick={() => setGridDensity('curatorial')}
                     title="3-Column Curatorial Salon (Default)"
-                    className={`px-3 py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
+                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
                       gridDensity === 'curatorial'
                         ? 'bg-[#c9a875] text-black font-bold shadow-[0_0_12px_rgba(201,168,117,0.4)]'
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
-                    Curatorial (3-Col)
+                    <span className="hidden sm:inline">Curatorial </span>3-Col
                   </button>
                   <button
                     id="density-archive-btn"
                     onClick={() => setGridDensity('archive')}
                     title="4-Column Archive View"
-                    className={`px-3 py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
+                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
                       gridDensity === 'archive'
                         ? 'bg-[#c9a875] text-black font-bold shadow-[0_0_12px_rgba(201,168,117,0.4)]'
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
-                    Archive (4-Col)
+                    <span className="hidden sm:inline">Archive </span>4-Col
                   </button>
                 </div>
               </div>

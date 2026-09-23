@@ -1,10 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Upload, Feather, Palette, PenTool, Image as ImageIcon, Film, Sparkles, Check, RefreshCw, Music } from 'lucide-react';
+import {
+  X,
+  Upload,
+  Feather,
+  Palette,
+  PenTool,
+  Image as ImageIcon,
+  Film,
+  Sparkles,
+  Check,
+  RefreshCw,
+  Music,
+  Disc3,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Radio,
+  FileAudio
+} from 'lucide-react';
 import { ArtCategory, Artwork, PoetryTheme, PoetryFont, AspectRatioType } from '../types';
 import { PoetryCard } from './PoetryCard';
 import { GalleryService } from '../services/api';
 import { uploadArtworkMediaToStorage } from '../services/supabaseClient';
 import { YouTubeVideoPlayer } from './YouTubeVideoPlayer';
+import { registerCommunityTrack } from '../services/musicEngine';
+import { MusicArtworkCard } from './MusicArtworkCard';
 
 interface MediaUploadModalProps {
   isOpen: boolean;
@@ -13,6 +34,57 @@ interface MediaUploadModalProps {
   initialCategory?: ArtCategory;
   initialFormat?: string;
 }
+
+const PRESET_MUSIC_TRACKS = [
+  {
+    title: 'Nocturne in C-sharp Minor',
+    artist: 'Afshaan Shaikh',
+    audioUrl: '/audio/wsKhe5rTKw8.mp4',
+    coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&q=80',
+    album: 'Sanctuary Nocturnes Vol. I',
+    genre: 'Neo-Classical / Ambient Piano',
+    durationSeconds: 215,
+    key: 'C# Minor',
+    bpm: '72 BPM',
+    lyrics: 'Soft falls the lantern glow upon the keys,\nA wandering cadence adrift upon the breeze.\nNo words required when the shadows speak in chord,\nA quiet reverie that time and silence hoard.'
+  },
+  {
+    title: 'Elysian Pulse (M-Remix Edit)',
+    artist: 'Kaelen Vance',
+    audioUrl: '/audio/M-Remix.mp4',
+    coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1200&q=80',
+    album: 'Analog Monoliths',
+    genre: 'Electronic Ambient / Modular Lo-Fi',
+    durationSeconds: 184,
+    key: 'F Minor',
+    bpm: '96 BPM',
+    lyrics: 'Rhythms of obsidian, pulses of gold,\nStories in low frequencies untold.'
+  },
+  {
+    title: 'Derry Solitude Theme',
+    artist: 'Julian Thorne',
+    audioUrl: '/audio/qwTop2qs1tE.mp4',
+    coverUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=1200&q=80',
+    album: 'Highland Nocturnes',
+    genre: 'Cinematic Orchestral',
+    durationSeconds: 115,
+    key: 'D Minor',
+    bpm: '65 BPM',
+    lyrics: 'Strings weep upon the desolate moor,\nA distant bell tolls by the mist-shrouded shore.'
+  },
+  {
+    title: 'Starboy Midnight Reverie',
+    artist: 'The Weeknd & Daft Punk',
+    audioUrl: '/audio/Rif-RTvmmss.mp4',
+    coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1200&q=80',
+    album: 'Starboy Studio Masters',
+    genre: 'Electropop / Midnight R&B',
+    durationSeconds: 231,
+    key: 'G Minor',
+    bpm: '186 BPM',
+    lyrics: ''
+  }
+];
 
 const PRESET_ART_IMAGES = [
   {
@@ -52,11 +124,22 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
   initialCategory = 'poetry',
   initialFormat
 }) => {
-  const [activeTab, setActiveTab] = useState<'visual' | 'poetry'>(
-    initialFormat?.includes('poetry') || initialCategory === 'poetry' ? 'poetry' : 'visual'
+  const [activeTab, setActiveTab] = useState<'visual' | 'poetry' | 'music'>(
+    initialCategory === 'music' || initialFormat?.includes('music') || initialFormat?.includes('song')
+      ? 'music'
+      : initialFormat?.includes('poetry') || initialCategory === 'poetry'
+      ? 'poetry'
+      : 'visual'
   );
   const [activeFormat, setActiveFormat] = useState<string>(
-    initialFormat || (initialCategory === 'poetry' ? 'poetry card' : initialCategory === 'digital' ? 'digital art' : 'digital art')
+    initialFormat ||
+      (initialCategory === 'music'
+        ? 'original song'
+        : initialCategory === 'poetry'
+        ? 'poetry card'
+        : initialCategory === 'digital'
+        ? 'digital art'
+        : 'digital art')
   );
 
   // Common fields
@@ -64,14 +147,22 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
   const [description, setDescription] = useState('');
   const [year, setYear] = useState(new Date().getFullYear());
   const [tagsInput, setTagsInput] = useState('');
-  const [aspectRatio, setAspectRatio] = useState<AspectRatioType>('tall');
+  const [aspectRatio, setAspectRatio] = useState<AspectRatioType>(
+    initialCategory === 'music' ? 'square' : 'tall'
+  );
 
   // Visual art fields
   const [visualCategory, setVisualCategory] = useState<'painting' | 'drawing' | 'digital' | 'video'>(
-    initialCategory === 'poetry' || initialCategory === 'all' ? 'digital' : initialCategory
+    initialCategory === 'painting' || initialCategory === 'drawing' || initialCategory === 'video'
+      ? initialCategory
+      : 'digital'
   );
   const [medium, setMedium] = useState(
-    initialFormat === 'integer art' ? 'Algorithmic Integer Canvas & Shader Code' : 'Generative Shader & 3D Render'
+    initialCategory === 'music'
+      ? 'Original Master • Neo-Classical / Ambient Piano'
+      : initialFormat === 'integer art'
+      ? 'Algorithmic Integer Canvas & Shader Code'
+      : 'Generative Shader & 3D Render'
   );
   const [dimensions, setDimensions] = useState('120 x 160 cm');
   const [mediaUrl, setMediaUrl] = useState('');
@@ -97,13 +188,35 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
   const [guestName, setGuestName] = useState('Guest Artist');
   const [guestHandle, setGuestHandle] = useState('@guest_artist');
 
+  // Music Studio fields
+  const [musicAudioUrl, setMusicAudioUrl] = useState('/audio/wsKhe5rTKw8.mp4');
+  const [musicCoverUrl, setMusicCoverUrl] = useState(
+    'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&q=80'
+  );
+  const [musicAlbum, setMusicAlbum] = useState('Sanctuary Nocturnes Vol. I');
+  const [musicGenre, setMusicGenre] = useState('Neo-Classical / Ambient Piano');
+  const [musicLyrics, setMusicLyrics] = useState(
+    'Soft falls the lantern glow upon the keys,\nA wandering cadence adrift upon the breeze.\nNo words required when the shadows speak in chord,\nA quiet reverie that time and silence hoard.'
+  );
+  const [musicBpm, setMusicBpm] = useState('72 BPM');
+  const [musicKey, setMusicKey] = useState('C# Minor');
+  const [musicDurationSeconds, setMusicDurationSeconds] = useState(215);
+  const [musicAudioPlaying, setMusicAudioPlaying] = useState(false);
+  const [musicAudioTime, setMusicAudioTime] = useState(0);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const musicAudioPlayerRef = useRef<HTMLAudioElement | null>(null);
+  const musicAudioInputRef = useRef<HTMLInputElement>(null);
+  const musicCoverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialFormat) {
       setActiveFormat(initialFormat);
       if (initialFormat === 'poetry session' || initialFormat === 'poetry card') {
         setActiveTab('poetry');
+      } else if (initialFormat === 'original song' || initialFormat.includes('music')) {
+        setActiveTab('music');
+        setAspectRatio('square');
       } else {
         setActiveTab('visual');
         setVisualCategory('digital');
@@ -116,9 +229,14 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
     } else if (initialCategory === 'poetry') {
       setActiveTab('poetry');
       setActiveFormat('poetry card');
+    } else if (initialCategory === 'music') {
+      setActiveTab('music');
+      setActiveFormat('original song');
+      setAspectRatio('square');
+      if (!title) setTitle('Nocturne in C-sharp Minor');
     } else if (initialCategory !== 'all') {
       setActiveTab('visual');
-      setVisualCategory(initialCategory);
+      setVisualCategory(initialCategory as 'painting' | 'drawing' | 'digital' | 'video');
       setActiveFormat(initialCategory === 'digital' ? 'digital art' : `${initialCategory} art`);
     }
   }, [initialCategory, initialFormat]);
@@ -161,6 +279,80 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
     setVisualCategory(preset.category);
     setMedium(preset.medium);
     setPaletteHexes(preset.palette);
+  };
+
+  const handleMusicAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingMedia(true);
+      if (!title) {
+        setTitle(file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
+      }
+      const publicUrl = await uploadArtworkMediaToStorage(file);
+      setMusicAudioUrl(publicUrl);
+      if (musicAudioPlayerRef.current) {
+        musicAudioPlayerRef.current.src = publicUrl;
+        musicAudioPlayerRef.current.load();
+      }
+    } catch (err) {
+      console.warn('[MediaUploadModal] Audio upload fallback to blob:', err);
+      const blobUrl = URL.createObjectURL(file);
+      setMusicAudioUrl(blobUrl);
+      if (musicAudioPlayerRef.current) {
+        musicAudioPlayerRef.current.src = blobUrl;
+      }
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  const handleMusicCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingMedia(true);
+      const publicUrl = await uploadArtworkMediaToStorage(file);
+      setMusicCoverUrl(publicUrl);
+    } catch (err) {
+      console.warn('[MediaUploadModal] Cover upload fallback to blob:', err);
+      const blobUrl = URL.createObjectURL(file);
+      setMusicCoverUrl(blobUrl);
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  const handleSelectMusicPreset = (preset: typeof PRESET_MUSIC_TRACKS[0]) => {
+    setTitle(preset.title);
+    setMusicAudioUrl(preset.audioUrl);
+    setMusicCoverUrl(preset.coverUrl);
+    setMusicAlbum(preset.album);
+    setMusicGenre(preset.genre);
+    setMusicDurationSeconds(preset.durationSeconds);
+    setMusicKey(preset.key);
+    setMusicBpm(preset.bpm);
+    if (preset.lyrics) setMusicLyrics(preset.lyrics);
+    if (musicAudioPlayerRef.current) {
+      musicAudioPlayerRef.current.src = preset.audioUrl;
+      setMusicAudioPlaying(false);
+      setMusicAudioTime(0);
+    }
+  };
+
+  const toggleMusicAudioPlayback = () => {
+    if (!musicAudioPlayerRef.current) return;
+    if (musicAudioPlaying) {
+      musicAudioPlayerRef.current.pause();
+      setMusicAudioPlaying(false);
+    } else {
+      musicAudioPlayerRef.current
+        .play()
+        .then(() => setMusicAudioPlaying(true))
+        .catch((err) => console.warn('Audio playback error:', err));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -233,6 +425,67 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
         }
       };
       onSuccess(poetryArtwork);
+    } else if (activeTab === 'music') {
+      const resolvedAudioUrl = musicAudioUrl.trim() || '/audio/wsKhe5rTKw8.mp4';
+      const resolvedCoverUrl =
+        musicCoverUrl.trim() ||
+        'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&q=80';
+      const trackTitle = title.trim() || 'Untitled Original Master';
+
+      const musicArtwork: Artwork = {
+        id: newArtId,
+        title: trackTitle,
+        category: 'music',
+        artist: artistObj,
+        mediaUrl: resolvedAudioUrl,
+        thumbnailUrl: resolvedCoverUrl,
+        medium: `Original Master • ${musicGenre}`,
+        dimensions: 'Master Vinyl Studio Recording',
+        year: year,
+        description:
+          description.trim() ||
+          `Original musical composition "${trackTitle}" published in The Artisan's Quill sanctuary.`,
+        tags: tags.length > 0 ? tags : ['Music', 'Original Song', musicGenre, 'Sanctuary Audio'],
+        likesCount: 0,
+        viewsCount: 1,
+        savesCount: 0,
+        createdAt: new Date().toISOString(),
+        aspectRatio: 'square',
+        isLiked: false,
+        isSaved: false,
+        featured: false,
+        colorPalette: paletteHexes,
+        musicData: {
+          audioUrl: resolvedAudioUrl,
+          coverArtUrl: resolvedCoverUrl,
+          album: musicAlbum.trim() || 'Atelier Master Sessions',
+          durationSeconds: musicDurationSeconds || 215,
+          duration: `${Math.floor((musicDurationSeconds || 215) / 60)}:${String(
+            (musicDurationSeconds || 215) % 60
+          ).padStart(2, '0')}`,
+          genre: musicGenre.trim() || 'Original Composition',
+          isOriginalComposition: true,
+          composer: artistObj.name,
+          key: musicKey.trim(),
+          bpm: musicBpm.trim(),
+          lyrics: musicLyrics.trim()
+        }
+      };
+
+      // Automatically register to the floating sanctuary background ambience player queue!
+      registerCommunityTrack({
+        id: newArtId,
+        title: trackTitle,
+        artistName: artistObj.name,
+        audioUrl: resolvedAudioUrl,
+        coverUrl: resolvedCoverUrl,
+        album: musicAlbum.trim() || 'Atelier Master Sessions',
+        genre: musicGenre.trim() || 'Original Composition',
+        durationSeconds: musicDurationSeconds || 215
+      });
+
+      onSuccess(musicArtwork);
+      return;
     } else {
       const resolvedMediaUrl = mediaUrl.trim() || '/curatorial-masterpiece.svg';
 
@@ -306,33 +559,119 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
     }
   };
 
+  const liveMusicPreviewArtwork: Artwork = {
+    id: 'preview-music-artwork',
+    title: title.trim() || 'Nocturne in C-sharp Minor',
+    artist: {
+      id: activeUser.id !== 'guest' ? activeUser.id : 'preview-artist',
+      name: activeUser.id !== 'guest' ? activeUser.name : guestName || 'Atelier Musician',
+      handle: activeUser.id !== 'guest' ? activeUser.handle : guestHandle || '@musician',
+      avatar: activeUser.avatar || '/curatorial-masterpiece.svg',
+      verified: true
+    },
+    category: 'music',
+    mediaUrl: musicAudioUrl,
+    thumbnailUrl: musicCoverUrl,
+    year,
+    description: description || 'Master recording preview',
+    tags: ['Music', 'Original Song', musicGenre],
+    likesCount: 0,
+    viewsCount: 0,
+    savesCount: 0,
+    createdAt: new Date().toISOString(),
+    aspectRatio: 'square',
+    colorPalette: paletteHexes,
+    musicData: {
+      audioUrl: musicAudioUrl,
+      coverArtUrl: musicCoverUrl,
+      album: musicAlbum || 'Atelier Master Sessions',
+      durationSeconds: musicDurationSeconds || 215,
+      duration: `${Math.floor((musicDurationSeconds || 215) / 60)}:${String(
+        (musicDurationSeconds || 215) % 60
+      ).padStart(2, '0')}`,
+      genre: musicGenre || 'Original Composition',
+      isOriginalComposition: true,
+      composer: activeUser.id !== 'guest' ? activeUser.name : guestName || 'Atelier Musician',
+      key: musicKey,
+      bpm: musicBpm,
+      lyrics: musicLyrics
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-md">
+      {/* Hidden Audio Player for In-Modal Preview */}
+      <audio
+        ref={musicAudioPlayerRef}
+        src={musicAudioUrl}
+        onTimeUpdate={() => {
+          if (musicAudioPlayerRef.current) {
+            setMusicAudioTime(musicAudioPlayerRef.current.currentTime);
+          }
+        }}
+        onEnded={() => setMusicAudioPlaying(false)}
+        onLoadedMetadata={() => {
+          if (musicAudioPlayerRef.current && musicAudioPlayerRef.current.duration) {
+            setMusicDurationSeconds(Math.round(musicAudioPlayerRef.current.duration));
+          }
+        }}
+      />
+
       <div
         id="media-upload-modal"
-        className="relative w-full max-w-5xl bg-[#11131a] border border-white/15 rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col"
+        className="relative w-full max-w-5xl bg-[#11131a] border border-white/15 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[96vh] sm:max-h-[92vh] flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#151822]">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#c9a875]/15 border border-[#c9a875]/30 text-[#c9a875]">
-              {activeTab === 'poetry' ? <Feather className="w-5 h-5" /> : <Palette className="w-5 h-5" />}
+        <div className="flex flex-wrap items-center justify-between px-4 sm:px-6 py-3.5 sm:py-5 border-b border-white/10 bg-[#151822] gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 rounded-xl bg-[#c9a875]/15 border border-[#c9a875]/30 text-[#c9a875] shrink-0">
+              {activeTab === 'poetry' ? (
+                <Feather className="w-5 h-5" />
+              ) : activeTab === 'music' ? (
+                <Disc3 className="w-5 h-5 animate-spin" style={{ animationDuration: '6s' }} />
+              ) : (
+                <Palette className="w-5 h-5" />
+              )}
             </div>
-            <div>
-              <h2 className="text-lg font-serif-display font-semibold text-white">
-                {activeTab === 'poetry' ? 'Poetry Studio & Card Formatter' : 'Exhibition Media Upload'}
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-serif-display font-semibold text-white truncate">
+                {activeTab === 'poetry'
+                  ? 'Poetry Studio & Card Formatter'
+                  : activeTab === 'music'
+                  ? 'Original Music Studio & Vinyl Press'
+                  : 'Exhibition Media Upload'}
               </h2>
-              <p className="text-xs text-white/50 font-mono-code">
+              <p className="text-[11px] sm:text-xs text-white/50 font-mono-code truncate hidden sm:block">
                 {activeTab === 'poetry'
                   ? 'Automatically format stanzas into high-end aesthetic presentation cards'
+                  : activeTab === 'music'
+                  ? 'Master, press, and broadcast original musical works to the sanctuary gallery'
                   : 'Submit paintings, fine charcoal drawings, digital renders, and video loops'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* 4 Format Switcher Buttons */}
-            <div className="flex flex-wrap p-1 rounded-xl bg-black/40 border border-white/10 text-xs font-mono-code gap-1">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+            {/* 5 Format Switcher Buttons */}
+            <div className="flex items-center overflow-x-auto no-scrollbar touch-scroll p-1 rounded-xl bg-black/40 border border-white/10 text-xs font-mono-code gap-1 max-w-[calc(100%-48px)] sm:max-w-none">
+              <button
+                type="button"
+                id="modal-tab-music-track"
+                onClick={() => {
+                  setActiveTab('music');
+                  setActiveFormat('original song');
+                  setAspectRatio('square');
+                  if (!title) setTitle('Nocturne in C-sharp Minor');
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
+                  activeTab === 'music'
+                    ? 'bg-[#c9a875] text-[#0d0e12] font-semibold shadow-md shadow-[#c9a875]/20'
+                    : 'text-white/70 hover:text-white'
+                }`}
+              >
+                <Disc3 className="w-3.5 h-3.5" />
+                Original Song
+              </button>
               <button
                 type="button"
                 id="modal-tab-poetry-session"
@@ -340,7 +679,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                   setActiveTab('poetry');
                   setActiveFormat('poetry session');
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
                   activeTab === 'poetry' && activeFormat === 'poetry session'
                     ? 'bg-[#c9a875] text-[#0d0e12] font-semibold'
                     : 'text-white/70 hover:text-white'
@@ -356,7 +695,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                   setActiveTab('poetry');
                   setActiveFormat('poetry card');
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
                   activeTab === 'poetry' && activeFormat === 'poetry card'
                     ? 'bg-[#c9a875] text-[#0d0e12] font-semibold'
                     : 'text-white/70 hover:text-white'
@@ -374,7 +713,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                   setActiveFormat('digital art');
                   setMedium('Generative Shader & 3D Render');
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
                   activeTab === 'visual' && activeFormat === 'digital art'
                     ? 'bg-[#c9a875] text-[#0d0e12] font-semibold'
                     : 'text-white/70 hover:text-white'
@@ -392,7 +731,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                   setActiveFormat('integer art');
                   setMedium('Algorithmic Integer Canvas & Shader Code');
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
                   activeTab === 'visual' && activeFormat === 'integer art'
                     ? 'bg-[#c9a875] text-[#0d0e12] font-semibold'
                     : 'text-white/70 hover:text-white'
@@ -406,7 +745,8 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
             <button
               id="close-upload-modal"
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+              className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer shrink-0"
+              aria-label="Close upload modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -726,7 +1066,7 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                 </div>
               </div>
             </div>
-          ) : (
+          ) : activeTab === 'poetry' ? (
             /* Poetry Studio Form & Live Card Formatter */
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Left Column: Poetry Composer */}
@@ -949,6 +1289,373 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
                 </div>
               </div>
             </div>
+          ) : (
+            /* Original Music Studio & Vinyl Press Form */
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Left Column: Audio Master & Sleeve Cover */}
+              <div className="lg:col-span-6 space-y-5">
+                {activeUser.id === 'guest' && (
+                  <div className="p-3.5 rounded-xl bg-[#c9a875]/10 border border-[#c9a875]/30 space-y-2.5">
+                    <div className="flex items-center gap-2 text-xs font-mono-code text-[#c9a875] uppercase tracking-wider font-semibold">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Broadcasting to Global Live Feed (Guest Musician)</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono-code text-white/70 mb-1">Your Artist / Band Name</label>
+                        <input
+                          type="text"
+                          value={guestName}
+                          onChange={(e) => setGuestName(e.target.value)}
+                          placeholder="e.g. Elena Vance"
+                          className="w-full px-3 py-1.5 rounded-lg bg-black/40 border border-white/15 text-xs text-white focus:border-[#c9a875] focus:outline-none font-mono-code"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono-code text-white/70 mb-1">Your Musician Handle</label>
+                        <input
+                          type="text"
+                          value={guestHandle}
+                          onChange={(e) => setGuestHandle(e.target.value)}
+                          placeholder="e.g. @elena.music"
+                          className="w-full px-3 py-1.5 rounded-lg bg-black/40 border border-white/15 text-xs text-white focus:border-[#c9a875] focus:outline-none font-mono-code"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-[#c9a875]/80 font-mono-code">
+                      🎵 Sound Sanctuary Policy: Music tracks are automatically cued into the floating background ambience player for all active visitors worldwide.
+                    </p>
+                  </div>
+                )}
+
+                {/* Master Audio Track Upload */}
+                <div>
+                  <label className="block text-xs font-mono-code uppercase tracking-wider text-white/70 mb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Music className="w-3.5 h-3.5 text-[#c9a875]" />
+                      Master Audio Track *
+                    </span>
+                    {isUploadingMedia && (
+                      <span className="text-[11px] text-[#c9a875] animate-pulse">Uploading audio...</span>
+                    )}
+                  </label>
+
+                  <div
+                    onClick={() => musicAudioInputRef.current?.click()}
+                    className={`relative border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-all overflow-hidden flex flex-col items-center justify-center min-h-[170px] ${
+                      musicAudioUrl
+                        ? 'border-[#c9a875]/50 bg-black/40'
+                        : 'border-white/15 hover:border-[#c9a875]/40 bg-black/20'
+                    }`}
+                  >
+                    <input
+                      ref={musicAudioInputRef}
+                      type="file"
+                      accept="audio/*,video/*"
+                      onChange={handleMusicAudioUpload}
+                      className="hidden"
+                    />
+
+                    {musicAudioUrl ? (
+                      <div className="w-full space-y-3" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-black/60 border border-white/15">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <button
+                              type="button"
+                              onClick={toggleMusicAudioPlayback}
+                              className="w-10 h-10 rounded-full bg-[#c9a875] text-[#0d0e12] flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
+                            >
+                              {musicAudioPlaying ? (
+                                <Pause className="w-4 h-4 fill-current" />
+                              ) : (
+                                <Play className="w-4 h-4 fill-current ml-0.5" />
+                              )}
+                            </button>
+                            <div className="text-left min-w-0">
+                              <p className="text-xs font-semibold text-white truncate font-serif-display">
+                                {title || 'Master Recording Audio'}
+                              </p>
+                              <p className="text-[10px] text-[#c9a875] font-mono-code truncate">
+                                {musicAudioPlaying ? 'Playing in Studio Preview...' : 'Ready for mastering'} • {Math.floor(musicDurationSeconds / 60)}:{String(musicDurationSeconds % 60).padStart(2, '0')}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Equalizer Frequency Bars */}
+                          <div className="flex items-end gap-1 h-6 shrink-0 px-2">
+                            {[0.4, 0.9, 0.6, 1.0, 0.7, 0.3, 0.8].map((h, i) => (
+                              <div
+                                key={i}
+                                className={`w-1 rounded-full transition-all duration-200 ${
+                                  musicAudioPlaying ? 'bg-[#c9a875] animate-pulse' : 'bg-white/20'
+                                }`}
+                                style={{
+                                  height: musicAudioPlaying ? `${Math.max(25, h * 100)}%` : '30%',
+                                  animationDelay: `${i * 120}ms`
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <p
+                          onClick={() => musicAudioInputRef.current?.click()}
+                          className="text-xs text-[#c9a875] font-mono-code cursor-pointer hover:underline text-center"
+                        >
+                          Click here to upload a different audio file
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <FileAudio className="w-8 h-8 text-[#c9a875] mx-auto animate-bounce" />
+                        <p className="text-sm font-medium text-white">
+                          Drag & drop master audio (MP3, WAV, FLAC, M4A) or click to browse
+                        </p>
+                        <p className="text-xs text-white/40 font-mono-code">
+                          Supports high-resolution audio master files up to 50MB
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-2.5">
+                    <label className="block text-[11px] font-mono-code text-white/50 mb-1">
+                      Or paste an audio stream / media URL:
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://... or /audio/wsKhe5rTKw8.mp4"
+                      value={musicAudioUrl}
+                      onChange={(e) => {
+                        setMusicAudioUrl(e.target.value);
+                        if (musicAudioPlayerRef.current) {
+                          musicAudioPlayerRef.current.src = e.target.value;
+                        }
+                      }}
+                      className="w-full px-3.5 py-2 rounded-xl bg-black/30 border border-white/10 text-xs text-white placeholder-white/30 focus:border-[#c9a875] focus:outline-none font-mono-code"
+                    />
+                  </div>
+                </div>
+
+                {/* Album Cover Art / Vinyl Sleeve */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-mono-code uppercase tracking-wider text-white/70">
+                      Album Cover & Vinyl Sleeve *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => musicCoverInputRef.current?.click()}
+                      className="text-[11px] text-[#c9a875] hover:underline font-mono-code cursor-pointer"
+                    >
+                      Upload custom cover
+                    </button>
+                    <input
+                      ref={musicCoverInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleMusicCoverUpload}
+                      className="hidden"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 rounded-2xl bg-black/40 border border-white/10">
+                    <div
+                      className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-white/20 shadow-lg group cursor-pointer"
+                      onClick={() => musicCoverInputRef.current?.click()}
+                    >
+                      <img
+                        src={musicCoverUrl}
+                        alt="Album Cover"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <Upload className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-white truncate font-serif-display">
+                        {musicAlbum || 'Atelier Master Sessions'}
+                      </p>
+                      <p className="text-[10px] text-white/50 font-mono-code truncate mt-0.5">
+                        High-resolution 1:1 vinyl square art
+                      </p>
+                      <input
+                        type="url"
+                        placeholder="Or paste image URL: https://..."
+                        value={musicCoverUrl}
+                        onChange={(e) => setMusicCoverUrl(e.target.value)}
+                        className="w-full mt-2 px-2.5 py-1 rounded-lg bg-black/50 border border-white/10 text-[11px] text-white placeholder-white/30 focus:border-[#c9a875] focus:outline-none font-mono-code"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Curated Studio Master Presets */}
+                <div>
+                  <label className="block text-xs font-mono-code text-white/50 mb-2">
+                    Or select a curated Sanctuary master track to test:
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PRESET_MUSIC_TRACKS.map((preset, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => handleSelectMusicPreset(preset)}
+                        className={`flex items-center gap-2.5 p-2 rounded-xl border transition-all cursor-pointer ${
+                          musicAudioUrl === preset.audioUrl
+                            ? 'bg-[#c9a875]/15 border-[#c9a875] text-white'
+                            : 'bg-black/30 border-white/10 hover:border-white/30 text-white/70'
+                        }`}
+                      >
+                        <img
+                          src={preset.coverUrl}
+                          alt={preset.title}
+                          className="w-10 h-10 rounded-lg object-cover shrink-0 border border-white/10"
+                        />
+                        <div className="min-w-0 text-left">
+                          <p className="text-xs font-medium text-white truncate">{preset.title}</p>
+                          <p className="text-[10px] text-[#c9a875] font-mono-code truncate">{preset.genre}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Live Vinyl Record Preview & Metadata */}
+              <div className="lg:col-span-6 space-y-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-mono-code uppercase tracking-wider text-[#c9a875] flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Live Sanctuary Vinyl Preview
+                  </span>
+                  <span className="text-[11px] text-white/40 font-mono-code">
+                    Interactive Gallery Card
+                  </span>
+                </div>
+
+                <div className="bg-black/40 border border-white/10 rounded-2xl p-4 flex items-center justify-center overflow-hidden">
+                  <div className="w-full max-w-sm">
+                    <MusicArtworkCard
+                      artwork={liveMusicPreviewArtwork}
+                      index={0}
+                      onSelectArtwork={() => {}}
+                      onToggleLike={() => {}}
+                      onToggleSave={() => {}}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono-code uppercase tracking-wider text-white/70 mb-1.5">
+                    Track Title *
+                  </label>
+                  <input
+                    id="music-title-input"
+                    type="text"
+                    required
+                    placeholder="e.g. Nocturne in C-sharp Minor"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl bg-black/30 border border-white/15 text-sm text-white focus:border-[#c9a875] focus:outline-none font-serif-display text-base"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-mono-code uppercase tracking-wider text-white/70 mb-1.5">
+                      Album / Anthology
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Sanctuary Nocturnes Vol. I"
+                      value={musicAlbum}
+                      onChange={(e) => setMusicAlbum(e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-xl bg-black/30 border border-white/15 text-xs text-white focus:border-[#c9a875] focus:outline-none font-mono-code"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono-code uppercase tracking-wider text-white/70 mb-1.5">
+                      Genre / Style
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Neo-Classical / Ambient Piano"
+                      value={musicGenre}
+                      onChange={(e) => setMusicGenre(e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-xl bg-black/30 border border-white/15 text-xs text-white focus:border-[#c9a875] focus:outline-none font-mono-code"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-mono-code uppercase tracking-wider text-white/70 mb-1.5">
+                      Key
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. C# Minor"
+                      value={musicKey}
+                      onChange={(e) => setMusicKey(e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-xl bg-black/30 border border-white/15 text-xs text-white focus:border-[#c9a875] focus:outline-none font-mono-code"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono-code uppercase tracking-wider text-white/70 mb-1.5">
+                      BPM / Tempo
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 72 BPM"
+                      value={musicBpm}
+                      onChange={(e) => setMusicBpm(e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-xl bg-black/30 border border-white/15 text-xs text-white focus:border-[#c9a875] focus:outline-none font-mono-code"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono-code uppercase tracking-wider text-white/70 mb-1.5">
+                      Duration (Sec)
+                    </label>
+                    <input
+                      type="number"
+                      value={musicDurationSeconds}
+                      onChange={(e) => setMusicDurationSeconds(parseInt(e.target.value) || 180)}
+                      className="w-full px-3 py-1.5 rounded-xl bg-black/30 border border-white/15 text-xs text-white focus:border-[#c9a875] focus:outline-none font-mono-code"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono-code uppercase tracking-wider text-white/70 mb-1.5">
+                    Liner Notes & Song Poetry / Lyrics
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Provide the lyrical poetry, musical inspiration, acoustic recording instruments, or mastering equipment..."
+                    value={musicLyrics}
+                    onChange={(e) => setMusicLyrics(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl bg-black/30 border border-white/15 text-xs text-white focus:border-[#c9a875] focus:outline-none font-serif leading-relaxed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono-code uppercase tracking-wider text-white/70 mb-1.5">
+                    Tags (Comma separated)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Original Song, Piano, Ambient, Vinyl, Sanctuary"
+                    value={tagsInput}
+                    onChange={(e) => setTagsInput(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl bg-black/30 border border-white/15 text-xs text-white focus:border-[#c9a875] focus:outline-none font-mono-code"
+                  />
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Footer CTA */}
@@ -967,7 +1674,11 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
               className="flex items-center gap-2 px-7 py-3 rounded-full bg-[#c9a875] hover:bg-[#dfba88] text-[#0c0d10] font-semibold text-sm transition-all cursor-pointer shadow-xl shadow-[#c9a875]/20 hover:scale-[1.02]"
             >
               <Check className="w-4 h-4" />
-              {activeTab === 'poetry' ? 'Publish Formatted Poetry Card' : 'Inaugurate to Sanctuary'}
+              {activeTab === 'poetry'
+                ? 'Publish Formatted Poetry Card'
+                : activeTab === 'music'
+                ? 'Press Vinyl & Broadcast Song'
+                : 'Inaugurate to Sanctuary'}
             </button>
           </div>
         </form>

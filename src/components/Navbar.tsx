@@ -20,7 +20,9 @@ import {
   Camera,
   HardDrive,
   Menu,
-  LogIn
+  LogIn,
+  Disc3,
+  Music
 } from 'lucide-react';
 import { ArtCategory, UserProfile } from '../types';
 import { Avatar } from './Avatar';
@@ -85,7 +87,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'painting', label: 'Paintings', icon: <Palette className="w-3.5 h-3.5 text-[#e8b482]" />, desc: 'Oil, acrylic & canvas' },
     { id: 'drawing', label: 'Drawings & Ink', icon: <PenTool className="w-3.5 h-3.5 text-[#b9c6ea]" />, desc: 'Charcoal, pencil & ink wash' },
     { id: 'digital', label: 'Digital Media', icon: <ImageIcon className="w-3.5 h-3.5 text-[#8ed8b5]" />, desc: 'Generative, 3D & render art' },
-    { id: 'video', label: 'Motion Loops', icon: <Film className="w-3.5 h-3.5 text-[#f0a8d0]" />, desc: 'Cinematic loops & audiovisual' }
+    { id: 'video', label: 'Motion Loops', icon: <Film className="w-3.5 h-3.5 text-[#f0a8d0]" />, desc: 'Cinematic loops & audiovisual' },
+    { id: 'music', label: 'Original Music', icon: <Disc3 className="w-3.5 h-3.5 text-[#c9a875]" />, desc: 'Original songs, audio tracks & soundscapes' }
   ];
 
   const hasActiveDateFilter = Boolean(dateRange.start || dateRange.end);
@@ -189,7 +192,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 id="navbar-ink-studio-btn"
                 onClick={onOpenInkStudio}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] border border-[#dfbd87]/50 bg-gradient-to-r from-[#c9a875]/25 via-white/5 to-[#c9a875]/10 hover:border-[#dfbd87] text-[#f8ebd5] hover:text-white rounded-sm transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(201,168,117,0.25)] backdrop-blur-md"
+                className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] border border-[#dfbd87]/50 bg-gradient-to-r from-[#c9a875]/25 via-white/5 to-[#c9a875]/10 hover:border-[#dfbd87] text-[#f8ebd5] hover:text-white rounded-sm transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(201,168,117,0.25)] backdrop-blur-md"
                 title="Launch Fluid Ink & Gold-Leaf Poetry Studio"
               >
                 <Feather className="w-3.5 h-3.5 text-[#dfbd87]" />
@@ -253,7 +256,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 id="navbar-guest-signin-btn"
                 onClick={onOpenLoginModal}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] border border-[#c9a875]/70 bg-gradient-to-r from-[#c9a875]/20 to-[#c9a875]/40 hover:from-[#c9a875] hover:to-[#dfbd87] text-[#f8ebd5] hover:text-black rounded-sm transition-all cursor-pointer shadow-[0_0_12px_rgba(201,168,117,0.3)] hover:scale-105 active:scale-95"
+                className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] border border-[#c9a875]/70 bg-gradient-to-r from-[#c9a875]/20 to-[#c9a875]/40 hover:from-[#c9a875] hover:to-[#dfbd87] text-[#f8ebd5] hover:text-black rounded-sm transition-all cursor-pointer shadow-[0_0_12px_rgba(201,168,117,0.3)] hover:scale-105 active:scale-95"
                 title="Sign in with Google or Artist Credentials"
               >
                 <LogIn className="w-3.5 h-3.5" />
@@ -305,10 +308,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           + Right: Saved Vault, Recycle Bin, About
          ───────────────────────────────────────────────────────────── */}
       <div className="border-t border-white/[0.06] bg-[#05060a]/95 px-4 sm:px-6 lg:px-8 xl:px-10 py-2 shadow-sm">
-        <div className="max-w-[1760px] mx-auto flex items-center justify-between gap-3 sm:gap-4">
+        <div className="max-w-[1760px] mx-auto flex items-center justify-between gap-3 sm:gap-4 overflow-x-auto no-scrollbar touch-scroll py-0.5">
           
           {/* Left: Main Navigation Views Pills */}
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 py-0.5">
             <button
               id="nav-all-works-btn"
               onClick={() => {
@@ -447,7 +450,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           
           {/* Left: Category Pills (When on feed or saved), or View Context */}
           {activeView === 'feed' || activeView === 'saved' ? (
-            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar touch-scroll py-0.5">
               {categories.map((cat) => {
                 const isSelected = selectedCategory === cat.id;
                 return (
@@ -545,10 +548,10 @@ export const Navbar: React.FC<NavbarProps> = ({
          ───────────────────────────────────────────────────────────── */}
       <div className="block md:hidden">
 
-        {/* Mobile Top App Bar (h-14 landscape:h-11 from Image 4 reference) */}
-        <div className="flex items-center justify-between h-14 landscape:h-11 px-3 bg-[#06070a]/98 backdrop-blur-2xl border-b border-white/10">
+        {/* Mobile Top App Bar */}
+        <div className="flex items-center justify-between h-14 landscape:h-11 px-2.5 sm:px-3 bg-[#06070a]/98 backdrop-blur-2xl border-b border-white/10 gap-2">
           
-          {/* Left Brand Logo Badge & Title (from Image 4) */}
+          {/* Left Brand Logo Badge & Title */}
           <div
             id="mobile-brand-logo-btn"
             onClick={() => {
@@ -556,29 +559,29 @@ export const Navbar: React.FC<NavbarProps> = ({
               onSelectCategory('all');
               onSearchChange('');
             }}
-            className="flex items-center gap-2.5 cursor-pointer group shrink-0"
+            className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group min-w-0 pr-1 shrink"
             title="The Artisan's Quill — Home Atelier"
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-neutral-900/90 border border-white/15 flex items-center justify-center shadow-inner group-hover:border-[#c9a875]/60 transition-colors">
-              <Feather className="w-5 h-5 text-[#e0c49a]" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-neutral-900/90 border border-white/15 flex items-center justify-center shadow-inner group-hover:border-[#c9a875]/60 transition-colors shrink-0">
+              <Feather className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-[#e0c49a]" />
             </div>
-            <div className="flex flex-col">
-              <span className="font-serif-display text-[17px] sm:text-lg font-medium tracking-wide text-white leading-tight">
+            <div className="flex flex-col min-w-0">
+              <span className="font-serif-display text-[15px] sm:text-lg font-medium tracking-wide text-white leading-tight truncate">
                 The Artisan's Quill
               </span>
-              <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.24em] text-[#c9a875] font-mono-code font-medium mt-0.5">
-                ATELIER & GALLERY VAULT
+              <span className="text-[7.5px] sm:text-[9px] uppercase tracking-[0.2em] text-[#c9a875] font-mono-code font-medium mt-0.5 truncate hidden min-[360px]:block">
+                ATELIER &amp; GALLERY VAULT
               </span>
             </div>
           </div>
 
-          {/* Right Action Suite: 4 Circular Buttons (Search, Audio, Avatar, Menu) from Image 4 */}
+          {/* Right Action Suite: 4 Circular Buttons (Search, Audio, Avatar, Menu) */}
           <div className="flex items-center gap-1.5 shrink-0">
             {/* 1. Search Circular Button */}
             <button
               id="mobile-search-toggle-btn"
               onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all cursor-pointer ${
+              className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all cursor-pointer touch-target-44 ${
                 isMobileSearchOpen || searchQuery
                   ? 'bg-[#c9a875]/20 border-[#c9a875] text-[#dfbd87]'
                   : 'bg-neutral-900/90 border-white/15 text-cyan-400 hover:text-white hover:border-white/30'
@@ -611,7 +614,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               id="mobile-menu-drawer-btn"
               onClick={() => setIsMobileDrawerOpen(true)}
-              className="w-9 h-9 rounded-full bg-neutral-900/90 border border-white/15 flex items-center justify-center text-neutral-200 hover:text-white hover:border-[#c9a875]/50 transition-all cursor-pointer"
+              className="w-9 h-9 rounded-full bg-neutral-900/90 border border-white/15 flex items-center justify-center text-neutral-200 hover:text-white hover:border-[#c9a875]/50 transition-all cursor-pointer touch-target-44"
               title="Open Sanctuary Menu"
             >
               <Menu className="w-4 h-4" />
@@ -653,7 +656,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Mobile Category Rail (Exact Image 4 reference with icons & gold active border) */}
         <div className="bg-[#050609]/95 border-b border-white/[0.06] px-3 py-2 landscape:py-1 flex items-center justify-between gap-2">
           {activeView === 'feed' || activeView === 'saved' ? (
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 w-full">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar touch-scroll py-0.5 w-full">
               {categories.map((cat) => {
                 const isSelected = selectedCategory === cat.id;
                 // Category emoji badges matching Image 4
@@ -668,6 +671,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                     ? '✒️'
                     : cat.id === 'digital'
                     ? '🖼️'
+                    : cat.id === 'music'
+                    ? '🎵'
                     : '🎬';
 
                 return (
@@ -863,7 +868,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="absolute top-0 bottom-0 right-0 w-[84%] max-w-xs bg-[#080a11] border-l border-[#c9a875]/40 shadow-2xl p-5 overflow-y-auto flex flex-col justify-between animate-in slide-in-from-right duration-300"
+            className="absolute top-0 bottom-0 right-0 w-[84%] max-w-xs bg-[#080a11] border-l border-[#c9a875]/40 shadow-2xl p-5 pt-[calc(env(safe-area-inset-top,16px)+16px)] pb-[calc(env(safe-area-inset-bottom,16px)+16px)] overflow-y-auto touch-scroll flex flex-col justify-between animate-in slide-in-from-right duration-300"
           >
             <div className="space-y-5">
               {/* Drawer Top Header */}
@@ -1107,6 +1112,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div>
                 <div className="text-xs font-semibold text-white">Inscribe Poetry Card</div>
                 <div className="text-[10px] font-mono-code text-neutral-400">Coffee-stained lyrical verse archive</div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setIsMobileActionSheetOpen(false);
+                onOpenUpload('music', 'music track');
+              }}
+              className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-[#c9a875]/60 text-left transition-all cursor-pointer"
+            >
+              <span className="text-xl">🎵</span>
+              <div>
+                <div className="text-xs font-semibold text-white">Music &amp; Audio Studio</div>
+                <div className="text-[10px] font-mono-code text-neutral-400">Publish original songs, audio tracks &amp; soundscapes</div>
               </div>
             </button>
 

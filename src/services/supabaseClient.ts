@@ -111,7 +111,18 @@ export async function uploadMediaToSupabase(
           if (nameParts.length > 1) {
             fileExt = nameParts.pop()!.toLowerCase();
           }
-          contentType = fileOrDataUrl.type || (fileExt === 'png' ? 'image/png' : fileExt === 'webp' ? 'image/webp' : fileExt === 'mp4' ? 'video/mp4' : 'image/jpeg');
+          contentType = fileOrDataUrl.type || (
+            fileExt === 'png' ? 'image/png' :
+            fileExt === 'webp' ? 'image/webp' :
+            fileExt === 'mp4' ? 'video/mp4' :
+            fileExt === 'mp3' ? 'audio/mpeg' :
+            fileExt === 'wav' ? 'audio/wav' :
+            fileExt === 'm4a' ? 'audio/mp4' :
+            fileExt === 'ogg' ? 'audio/ogg' :
+            fileExt === 'flac' ? 'audio/flac' :
+            fileExt === 'aac' ? 'audio/aac' :
+            'image/jpeg'
+          );
         } else {
           contentType = fileOrDataUrl.type || 'image/png';
           fileExt = contentType.split('/')[1] || 'png';
@@ -120,7 +131,13 @@ export async function uploadMediaToSupabase(
 
       // Ensure content type matches allowed storage MIME types
       if (!contentType || contentType === 'application/octet-stream') {
-        contentType = bucket === 'avatars' ? 'image/png' : 'image/jpeg';
+        if (bucket === 'avatars') {
+          contentType = 'image/png';
+        } else if (['mp3', 'wav', 'm4a', 'ogg', 'flac', 'aac'].includes(fileExt)) {
+          contentType = fileExt === 'mp3' ? 'audio/mpeg' : fileExt === 'wav' ? 'audio/wav' : fileExt === 'm4a' ? 'audio/mp4' : `audio/${fileExt}`;
+        } else {
+          contentType = fileExt === 'mp4' ? 'video/mp4' : 'image/jpeg';
+        }
       }
 
       const cleanFileName = `${bucket}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;

@@ -32,6 +32,56 @@ export interface UniversalSearchResult {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Community & Artist Uploaded Music Registry (Real-time in-memory + broadcast)
+// ─────────────────────────────────────────────────────────────────────────────
+export const COMMUNITY_MUSIC_TRACKS: UniversalTrack[] = [];
+
+export function registerCommunityTrack(trackData: {
+  id: string;
+  title: string;
+  artistName: string;
+  audioUrl: string;
+  coverUrl?: string;
+  album?: string;
+  genre?: string;
+  durationSeconds?: number;
+}): UniversalTrack {
+  const trackId = trackData.id.startsWith('community-') ? trackData.id : `community-${trackData.id}`;
+  const existingIdx = COMMUNITY_MUSIC_TRACKS.findIndex((t) => t.id === trackId);
+  const track: UniversalTrack = {
+    id: trackId,
+    title: trackData.title,
+    artist: trackData.artistName || 'Sanctuary Artist',
+    album: trackData.album || 'Atelier Original Music',
+    platform: 'vault',
+    sourceType: 'audio-stream',
+    streamUrl: trackData.audioUrl,
+    artworkUrl:
+      trackData.coverUrl ||
+      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
+    durationSeconds: trackData.durationSeconds || 210,
+    isOriginal: true,
+    versionType: 'original',
+    genre: trackData.genre || 'Original Composition',
+    subtitle: `${trackData.artistName || 'Artist'} • Sanctuary Community Master`,
+    collection: 'Vault Music',
+    isVaultExclusive: true
+  };
+
+  if (existingIdx >= 0) {
+    COMMUNITY_MUSIC_TRACKS[existingIdx] = track;
+  } else {
+    COMMUNITY_MUSIC_TRACKS.unshift(track);
+  }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('sanctuary:community-track-added', { detail: track }));
+  }
+
+  return track;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Dedicated Extracted Vault Music Collection
 // ─────────────────────────────────────────────────────────────────────────────
 export const VAULT_MUSIC_COLLECTION: UniversalTrack[] = [
@@ -302,28 +352,31 @@ export class UniversalMusicEngine {
    */
   static async searchAll(query: string): Promise<UniversalSearchResult> {
     const qTrim = query.trim();
+    const allCommunityAndMaster = [...COMMUNITY_MUSIC_TRACKS, ...MASTER_SANCTUARY_TRACKS];
+    const allCommunityAndVault = [...COMMUNITY_MUSIC_TRACKS, ...VAULT_MUSIC_COLLECTION];
+
     if (!qTrim) {
       return {
         query: '',
-        all: MASTER_SANCTUARY_TRACKS,
-        vault: VAULT_MUSIC_COLLECTION,
+        all: allCommunityAndMaster,
+        vault: allCommunityAndVault,
         youtube: [],
         spotify: [],
         jiosaavn: [],
-        sanctuary: MASTER_SANCTUARY_TRACKS
+        sanctuary: allCommunityAndMaster
       };
     }
 
     const qLower = qTrim.toLowerCase();
     const words = qLower.split(/\s+/).filter(Boolean);
 
-    // 1. Sanctuary Vault Local Matches
-    const sanctuaryMatches = MASTER_SANCTUARY_TRACKS.filter((t) => {
+    // 1. Sanctuary Vault Local Matches (with Community priority)
+    const sanctuaryMatches = allCommunityAndMaster.filter((t) => {
       const text = `${t.title} ${t.artist} ${t.album || ''} ${t.subtitle || ''}`.toLowerCase();
       return words.some((w) => text.includes(w));
     });
 
-    const vaultMatches = VAULT_MUSIC_COLLECTION.filter((t) => {
+    const vaultMatches = allCommunityAndVault.filter((t) => {
       const text = `${t.title} ${t.artist} ${t.album || ''} ${t.subtitle || ''}`.toLowerCase();
       return words.some((w) => text.includes(w));
     });

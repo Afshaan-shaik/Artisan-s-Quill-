@@ -1,4 +1,4 @@
-export type ArtCategory = 'all' | 'painting' | 'drawing' | 'digital' | 'video' | 'poetry';
+export type ArtCategory = 'all' | 'painting' | 'drawing' | 'digital' | 'video' | 'poetry' | 'music';
 
 export type PoetryTheme = 'obsidian' | 'vellum' | 'midnight' | 'emerald' | 'crimson';
 export type PoetryFont = 'cormorant' | 'newsreader' | 'playfair';
@@ -86,6 +86,23 @@ export interface VideoData {
   frameRate?: string;
 }
 
+export interface MusicTrackData {
+  audioUrl: string;
+  durationSeconds?: number;
+  duration?: string | number;
+  genre?: string;
+  album?: string;
+  lyrics?: string;
+  linerNotes?: string;
+  waveformPeaks?: number[];
+  audioSource?: 'upload' | 'stream' | 'youtube' | 'spotify';
+  isOriginalComposition?: boolean;
+  bpm?: number | string;
+  key?: string;
+  composer?: string;
+  coverArtUrl?: string;
+}
+
 export interface Artwork {
   id: string;
   title: string;
@@ -98,7 +115,7 @@ export interface Artwork {
     verified: boolean;
     location?: string;
   };
-  category: 'painting' | 'drawing' | 'digital' | 'video' | 'poetry';
+  category: 'painting' | 'drawing' | 'digital' | 'video' | 'poetry' | 'music';
   mediaUrl: string;
   thumbnailUrl?: string;
   dimensions?: string;
@@ -119,6 +136,7 @@ export interface Artwork {
   featured?: boolean;
   poetryContent?: PoetryData;
   videoData?: VideoData;
+  musicData?: MusicTrackData;
   exhibitionId?: string;
   exhibitionName?: string;
 }

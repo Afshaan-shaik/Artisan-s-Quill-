@@ -146,7 +146,7 @@ export const ArtisticCursor: React.FC = () => {
       <div
         ref={dotRef}
         aria-hidden="true"
-        className="fixed top-0 left-0 pointer-events-none z-[9999] w-1.5 h-1.5 rounded-full bg-[#c9a875] opacity-0 transition-opacity duration-200"
+        className="hidden md:block fixed top-0 left-0 pointer-events-none z-[9999] w-1.5 h-1.5 rounded-full bg-[#c9a875] opacity-0 transition-opacity duration-200"
         style={{ willChange: 'transform' }}
       />
 
@@ -154,7 +154,7 @@ export const ArtisticCursor: React.FC = () => {
       <div
         ref={ringRef}
         aria-hidden="true"
-        className="fixed top-0 left-0 pointer-events-none z-[9998] rounded-full border border-[#c9a875]/80 bg-transparent shadow-[0_0_8px_rgba(201,168,117,0.2)] w-7 h-7 opacity-0 transition-[width,height,background-color,border-color,box-shadow,transform] duration-300 ease-out"
+        className="hidden md:block fixed top-0 left-0 pointer-events-none z-[9998] rounded-full border border-[#c9a875]/80 bg-transparent shadow-[0_0_8px_rgba(201,168,117,0.2)] w-7 h-7 opacity-0 transition-[width,height,background-color,border-color,box-shadow,transform] duration-300 ease-out"
         style={{ willChange: 'transform' }}
       />
     </>

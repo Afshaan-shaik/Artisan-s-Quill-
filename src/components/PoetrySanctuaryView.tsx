@@ -802,7 +802,7 @@ export default function PoetrySanctuaryView({
     <div>
       {/* ── Sanctuary Header ── */}
       <div
-        className="relative mb-8 rounded-2xl overflow-hidden px-8 py-10"
+        className="relative mb-6 sm:mb-8 rounded-2xl overflow-hidden px-4 sm:px-8 py-6 sm:py-10"
         style={{
           background:
             'linear-gradient(135deg, rgba(20,14,8,0.97) 0%, rgba(30,20,10,0.98) 50%, rgba(20,14,8,0.97) 100%)',
@@ -840,10 +840,10 @@ export default function PoetrySanctuaryView({
             <p className="text-xs uppercase tracking-widest mb-2" style={{ color: '#6b5038' }}>
               The Artisan's Quill
             </p>
-            <h1 className="font-im-fell text-4xl leading-tight mb-2" style={{ color: '#DFC8A5' }}>
+            <h1 className="font-im-fell text-2xl min-[400px]:text-3xl sm:text-4xl leading-tight mb-2" style={{ color: '#DFC8A5' }}>
               Poetry Sanctuary
             </h1>
-            <p className="font-im-fell italic text-sm opacity-60" style={{ color: '#9b8060' }}>
+            <p className="font-im-fell italic text-xs sm:text-sm opacity-60" style={{ color: '#9b8060' }}>
               {poetryPoems.length} {poetryPoems.length === 1 ? 'poem' : 'poems'} —{' '}
               read, write, and linger
             </p>
@@ -882,17 +882,17 @@ export default function PoetrySanctuaryView({
           />
           {/* Scrollable shelf */}
           <div
+            className="p-4 sm:p-6 md:p-8"
             style={{
               background: 'linear-gradient(to bottom, rgba(20,12,6,0.98), rgba(15,10,4,0.98))',
-              padding: '24px 32px 32px',
               borderRadius: '0 0 16px 16px',
               border: '1px solid rgba(101,67,33,0.15)',
               borderTop: 'none',
             }}
           >
             <div
-              className="flex gap-6 overflow-x-auto pb-4"
-              style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none' }}
+              className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar touch-scroll"
+              style={{ scrollSnapType: 'x mandatory' }}
             >
               {poetryPoems.map((poem) => (
                 <div key={poem.id} style={{ scrollSnapAlign: 'start', flexShrink: 0 }}>

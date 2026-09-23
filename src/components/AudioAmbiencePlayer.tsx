@@ -347,6 +347,36 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
     };
   }, [isExpandedModal, isDropdownOpen]);
 
+  // Listen for real-time artist community tracks & external play requests
+  useEffect(() => {
+    const handleCommunityTrackAdded = (e: Event) => {
+      const customEvent = e as CustomEvent<UniversalTrack>;
+      if (customEvent.detail) {
+        const newTrack = customEvent.detail;
+        setSearchResults((prev) => ({
+          ...prev,
+          all: [newTrack, ...prev.all.filter((t) => t.id !== newTrack.id)],
+          vault: [newTrack, ...prev.vault.filter((t) => t.id !== newTrack.id)],
+          sanctuary: [newTrack, ...prev.sanctuary.filter((t) => t.id !== newTrack.id)]
+        }));
+      }
+    };
+
+    const handleExternalPlay = (e: Event) => {
+      const customEvent = e as CustomEvent<{ track: UniversalTrack }>;
+      if (customEvent.detail?.track) {
+        handlePlayTrack(customEvent.detail.track);
+      }
+    };
+
+    window.addEventListener('sanctuary:community-track-added', handleCommunityTrackAdded);
+    window.addEventListener('sanctuary:play-track', handleExternalPlay);
+    return () => {
+      window.removeEventListener('sanctuary:community-track-added', handleCommunityTrackAdded);
+      window.removeEventListener('sanctuary:play-track', handleExternalPlay);
+    };
+  }, []);
+
   // Master Playback Trigger for ANY Track from ANY Platform
   const handlePlayTrack = (track: UniversalTrack) => {
     setCurrentTrack(track);
@@ -947,7 +977,7 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
               </div>
 
               {/* Instant Trending Suggestions */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar touch-scroll py-0.5">
                 <span className="text-[9px] uppercase font-mono-code text-[#c9a875] font-bold shrink-0">
                   Trending Vault:
                 </span>
@@ -966,7 +996,7 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
               </div>
 
               {/* Multi-Platform & Collection Filter Tabs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar touch-scroll pt-0.5">
                 {[
                   { id: 'all', label: 'All Tracks', count: searchResults.all.length },
                   { id: 'vault', label: '👑 Vault Music Collection', count: searchResults.vault.length },

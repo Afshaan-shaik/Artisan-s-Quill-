@@ -851,7 +851,7 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
         {/* ── Hover 2-Option Aesthetic Switcher (Black & Gold vs Paper Aesthetic) ── */}
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute top-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-1 p-1 rounded-full bg-black/85 border border-[#c9a875]/50 backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.85)] pointer-events-auto"
+          className="absolute top-4 right-4 z-30 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 flex items-center gap-1 p-1 rounded-full bg-black/85 border border-[#c9a875]/50 backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.85)] pointer-events-auto"
         >
           <button
             type="button"
@@ -889,7 +889,7 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
         <div
           onClick={(e) => e.stopPropagation()}
           className={`absolute top-4 left-4 z-30 ${
-            isReciting ? 'opacity-100 ring-1 ring-[#c9a875]' : 'opacity-0 group-hover:opacity-100'
+            isReciting ? 'opacity-100 ring-1 ring-[#c9a875]' : 'opacity-90 sm:opacity-0 sm:group-hover:opacity-100'
           } transition-all duration-300 flex items-center gap-1 p-1 rounded-full bg-black/80 border border-white/15 backdrop-blur-md shadow-md pointer-events-auto`}
         >
           {onOpenBardModal && (
@@ -1087,14 +1087,35 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
         <div className="card-caption-plaque px-1">
           <div className="caption-top-row">
             <span className="caption-accession">{accessionCode}</span>
-            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-1.5 sm:gap-2" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={handleLikeWithConfetti}
-                className="caption-likes hover:text-rose-400 transition-colors cursor-pointer"
+                className="caption-likes hover:text-rose-400 transition-colors cursor-pointer min-w-[32px] min-h-[32px] flex items-center justify-center"
                 title="Applaud / Like Poem"
+                aria-label={`Like ${artwork.title}, currently ${artwork.likesCount || 0} likes`}
               >
-                <Heart className={`w-3 h-3 ${artwork.isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
+                <Heart className={`w-3.5 h-3.5 ${artwork.isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
                 <span>{artwork.likesCount || 0}</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleSave(artwork.id, e);
+                }}
+                className="caption-likes hover:text-[#dfbd87] transition-colors cursor-pointer min-w-[32px] min-h-[32px] flex items-center justify-center"
+                title="Save Poem to Vault"
+                aria-label={`Save ${artwork.title} to vault`}
+              >
+                <Bookmark className={`w-3.5 h-3.5 ${artwork.isSaved ? 'fill-[#c9a875] text-[#c9a875]' : ''}`} />
+                <span>{artwork.savesCount || 0}</span>
+              </button>
+              <button
+                onClick={handleShare}
+                className="caption-likes hover:text-[#c9a875] transition-colors cursor-pointer min-w-[32px] min-h-[32px] flex items-center justify-center"
+                title="Share Poem"
+                aria-label={`Share ${artwork.title}`}
+              >
+                <Share2 className="w-3.5 h-3.5 text-[#c9a875]" />
               </button>
             </div>
           </div>
