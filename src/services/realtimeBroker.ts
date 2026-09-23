@@ -88,10 +88,11 @@ class RealtimeBroker {
                     this.emit({ type: 'ARTWORK_DELETED', payload: { id: rec.id } }, false);
                   } else {
                     const artwork = mapRowToArtwork(rec);
+                    const { isSaved: _s, isLiked: _l, ...safeArtworkUpdates } = artwork;
                     this.emit(
                       {
                         type: 'ARTWORK_UPDATED',
-                        payload: { id: rec.id, updates: artwork }
+                        payload: { id: rec.id, updates: safeArtworkUpdates }
                       },
                       false
                     );

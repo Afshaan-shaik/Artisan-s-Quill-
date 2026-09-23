@@ -126,8 +126,8 @@ export function useRealtimeGallery() {
   );
 
   const toggleSave = useCallback(
-    (id: string) => {
-      toggleStoreSave(id);
+    (id: string, userId?: string) => {
+      toggleStoreSave(id, userId);
     },
     [toggleStoreSave]
   );

@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 import { Artwork, ArtCategory, Comment } from '../types';
 import { INITIAL_ARTWORKS, INITIAL_COMMENTS } from '../data/initialData';
-import { fetchArtworksFromSupabase, updateArtworkInSupabase } from '../services/supabaseClient';
+import {
+  fetchArtworksFromSupabase,
+  updateArtworkInSupabase,
+  fetchUserSavedArtworkIdsFromSupabase,
+  syncUserSavedArtworkIdsToSupabase
+} from '../services/supabaseClient';
 import { realtimeBroker } from '../services/realtimeBroker';
 
 const LIKED_STORAGE_KEY = 'atelier_user_liked_artwork_ids_v2';
@@ -33,7 +38,28 @@ export function getStoredSavedIds(): Set<string> {
   try {
     if (typeof window !== 'undefined') {
       const data = localStorage.getItem(SAVED_STORAGE_KEY);
-      if (data) return new Set(JSON.parse(data));
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return new Set(parsed);
+        }
+      }
+      // Zero data loss migration: check legacy saved keys
+      const legacyKeys = [
+        'atelier_user_saved_artwork_ids',
+        'atelier_saved_works',
+        'atelier_saved_artwork_ids',
+        'user_saved_artworks'
+      ];
+      for (const k of legacyKeys) {
+        const legacyData = localStorage.getItem(k);
+        if (legacyData) {
+          const parsed = JSON.parse(legacyData);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return new Set(parsed);
+          }
+        }
+      }
     }
   } catch {
     // Ignore error
@@ -63,6 +89,7 @@ function initializeArtworks(): Artwork[] {
 
 interface GalleryStoreState {
   artworks: Artwork[];
+  savedArtworkIds: Set<string>;
   comments: Record<string, Comment[]>;
   selectedCategory: ArtCategory;
   searchQuery: string;
@@ -80,12 +107,13 @@ interface GalleryStoreState {
   setIsLoading: (isLoading: boolean) => void;
   toggleLike: (id: string) => void;
   setLikesCount: (id: string, count: number) => void;
-  toggleSave: (id: string) => void;
+  toggleSave: (id: string, userId?: string) => void;
   setSavesCount: (id: string, count: number) => void;
   setCommentsForArtwork: (artworkId: string, comments: Comment[]) => void;
   addCommentToArtwork: (artworkId: string, comment: Comment) => void;
   getCommentsForArtwork: (artworkId: string) => Comment[];
-  loadArtworksFromDatabase: () => Promise<void>;
+  syncSavedArtworksFromSupabase: (userId?: string) => Promise<void>;
+  loadArtworksFromDatabase: (userId?: string) => Promise<void>;
 }
 
 // Pre-populate initial comments indexed by artworkId
@@ -99,6 +127,7 @@ INITIAL_COMMENTS.forEach((c) => {
 
 export const useGalleryStore = create<GalleryStoreState>((set, get) => ({
   artworks: initializeArtworks(),
+  savedArtworkIds: getStoredSavedIds(),
   comments: initialCommentsMap,
   selectedCategory: 'all',
   searchQuery: '',
@@ -109,7 +138,8 @@ export const useGalleryStore = create<GalleryStoreState>((set, get) => ({
     const existing = get().artworks;
     const mergedMap = new Map<string, Artwork>();
     const likedIds = getStoredLikedIds();
-    const savedIds = getStoredSavedIds();
+    const storeSavedIds = get().savedArtworkIds;
+    const savedIds = storeSavedIds && storeSavedIds.size > 0 ? storeSavedIds : getStoredSavedIds();
 
     // Deduplication signature: title + artist_handle + mediaUrl
     const seenSignatures = new Set<string>();
@@ -159,7 +189,8 @@ export const useGalleryStore = create<GalleryStoreState>((set, get) => ({
   prependArtwork: (artwork) => {
     set((state) => {
       const likedIds = getStoredLikedIds();
-      const savedIds = getStoredSavedIds();
+      const storeSavedIds = state.savedArtworkIds;
+      const savedIds = storeSavedIds && storeSavedIds.size > 0 ? storeSavedIds : getStoredSavedIds();
       const enriched: Artwork = {
         ...artwork,
         isLiked: likedIds.has(artwork.id),
@@ -180,7 +211,19 @@ export const useGalleryStore = create<GalleryStoreState>((set, get) => ({
 
   updateArtwork: (id, updates) => {
     set((state) => ({
-      artworks: state.artworks.map((a) => (a.id === id ? { ...a, ...updates } : a))
+      artworks: state.artworks.map((a) => {
+        if (a.id === id) {
+          // Never allow remote updates to wipe out local user isSaved preference
+          const currentIsSaved = state.savedArtworkIds ? state.savedArtworkIds.has(id) : a.isSaved;
+          const resolvedIsSaved = updates.isSaved !== undefined ? updates.isSaved : currentIsSaved;
+          return {
+            ...a,
+            ...updates,
+            isSaved: resolvedIsSaved
+          };
+        }
+        return a;
+      })
     }));
   },
 
@@ -231,20 +274,21 @@ export const useGalleryStore = create<GalleryStoreState>((set, get) => ({
     }));
   },
 
-  toggleSave: (id) => {
-    const savedIds = getStoredSavedIds();
-    const isCurrentlySaved = savedIds.has(id);
+  toggleSave: (id, userId) => {
+    const currentSaved = new Set(get().savedArtworkIds);
+    const isCurrentlySaved = currentSaved.has(id);
     const nextSaved = !isCurrentlySaved;
 
     if (nextSaved) {
-      savedIds.add(id);
+      currentSaved.add(id);
     } else {
-      savedIds.delete(id);
+      currentSaved.delete(id);
     }
-    saveStoredSavedIds(savedIds);
+    saveStoredSavedIds(currentSaved);
 
     let finalCount = 0;
     set((state) => ({
+      savedArtworkIds: currentSaved,
       artworks: state.artworks.map((a) => {
         if (a.id === id) {
           finalCount = Math.max(0, a.savesCount + (nextSaved ? 1 : -1));
@@ -258,7 +302,19 @@ export const useGalleryStore = create<GalleryStoreState>((set, get) => ({
       })
     }));
 
+    // Broadcast across live WebSocket & cross-tab channels
     realtimeBroker.broadcastSave(id, finalCount);
+
+    // Persist permanently into Supabase collections table
+    const targetUserId = userId || 'user-my-atelier';
+    syncUserSavedArtworkIdsToSupabase(targetUserId, Array.from(currentSaved)).catch((err) => {
+      console.warn('[useGalleryStore] Error syncing saved collection to Supabase:', err);
+    });
+
+    // Update saves_count in Supabase artworks table
+    updateArtworkInSupabase(id, { savesCount: finalCount }).catch((err) => {
+      console.warn('[useGalleryStore] Error updating artwork saves count in Supabase:', err);
+    });
   },
 
   setSavesCount: (id, count) => {
@@ -295,12 +351,66 @@ export const useGalleryStore = create<GalleryStoreState>((set, get) => ({
     return get().comments[artworkId] || [];
   },
 
-  loadArtworksFromDatabase: async () => {
+  syncSavedArtworksFromSupabase: async (userId?: string) => {
+    try {
+      const targetUserId = userId || 'user-my-atelier';
+      const remoteSavedIds = await fetchUserSavedArtworkIdsFromSupabase(targetUserId);
+      if (remoteSavedIds && remoteSavedIds.length > 0) {
+        const unifiedSaved = new Set(get().savedArtworkIds);
+        for (const sid of remoteSavedIds) {
+          unifiedSaved.add(sid);
+        }
+        for (const lid of getStoredSavedIds()) {
+          unifiedSaved.add(lid);
+        }
+        saveStoredSavedIds(unifiedSaved);
+        set((state) => ({
+          savedArtworkIds: unifiedSaved,
+          artworks: state.artworks.map((a) => ({
+            ...a,
+            isSaved: unifiedSaved.has(a.id)
+          }))
+        }));
+      }
+    } catch (e) {
+      console.warn('[useGalleryStore] syncSavedArtworksFromSupabase note:', e);
+    }
+  },
+
+  loadArtworksFromDatabase: async (userId?: string) => {
     try {
       set({ isLoading: true });
-      const remoteArtworks = await fetchArtworksFromSupabase();
+      const targetUserId = userId || 'user-my-atelier';
+
+      // Concurrently fetch artworks and saved collections from Supabase
+      const [remoteArtworks, remoteSavedIds] = await Promise.all([
+        fetchArtworksFromSupabase(),
+        fetchUserSavedArtworkIdsFromSupabase(targetUserId)
+      ]);
+
+      // Unify saved artwork IDs from Supabase + localStorage (zero data loss)
+      const unifiedSaved = new Set(get().savedArtworkIds);
+      if (remoteSavedIds && remoteSavedIds.length > 0) {
+        for (const sid of remoteSavedIds) {
+          unifiedSaved.add(sid);
+        }
+      }
+      for (const lid of getStoredSavedIds()) {
+        unifiedSaved.add(lid);
+      }
+      saveStoredSavedIds(unifiedSaved);
+
+      set({ savedArtworkIds: unifiedSaved });
+
       if (remoteArtworks && remoteArtworks.length > 0) {
         get().setArtworks(remoteArtworks);
+      } else {
+        set((state) => ({
+          artworks: state.artworks.map((a) => ({
+            ...a,
+            isSaved: unifiedSaved.has(a.id)
+          }))
+        }));
       }
     } catch (e) {
       console.warn('[useGalleryStore] Supabase initial load note:', e);

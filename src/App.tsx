@@ -119,6 +119,9 @@ export default function App() {
 
   const handleSelectView = (view: 'feed' | 'cosmos' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults') => {
     setActiveView(view);
+    if (view === 'saved') {
+      useGalleryStore.getState().syncSavedArtworksFromSupabase(currentUser.id).catch(() => {});
+    }
     if (typeof window !== 'undefined') {
       if (view === 'feed') {
         if (window.location.hash) {
@@ -437,6 +440,7 @@ export default function App() {
       }
 
       refreshArtworks();
+      useGalleryStore.getState().loadArtworksFromDatabase(activeProfile?.id).catch(() => {});
 
       // Deep linking: Immediately open the requested artwork if shared via direct link / WhatsApp / social
       const targetArtworkId = extractArtworkIdFromLocation();
@@ -451,6 +455,7 @@ export default function App() {
           GalleryService.saveCurrentUser(supaUser);
           setCurrentUser(supaUser);
           refreshArtworks();
+          useGalleryStore.getState().loadArtworksFromDatabase(supaUser.id).catch(() => {});
         }
       } else if (event === 'SIGNED_OUT') {
         const current = GalleryService.getCurrentUser();
@@ -574,8 +579,8 @@ export default function App() {
 
   const handleToggleSave = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleRealtimeSave(id);
-    GalleryService.toggleSaveArtwork(id);
+    toggleRealtimeSave(id, currentUser.id);
+    GalleryService.toggleSaveArtwork(id, currentUser.id);
     if (selectedArtwork && selectedArtwork.id === id) {
       setSelectedArtwork((prev) => {
         if (!prev) return null;

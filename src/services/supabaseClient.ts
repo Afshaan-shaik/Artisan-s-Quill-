@@ -797,6 +797,118 @@ export async function fetchCollectionsFromSupabase(userId: string): Promise<Coll
   }
 }
 
+/**
+ * Fetches user's saved/bookmarked artwork IDs from Supabase Postgres.
+ * Features multi-layered fallback and non-destructive discovery:
+ * 1. Checks `collections` table for custom user saved collection `saved_collection_${userId}`.
+ * 2. Checks default / founder collection `saved_collection_user-my-atelier` and `saved_collection_default`.
+ * 3. Queries `artworks` table for any active artwork with `saves_count > 0`.
+ * Returns a deduplicated array of saved artwork IDs.
+ */
+export async function fetchUserSavedArtworkIdsFromSupabase(userId?: string): Promise<string[]> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return [];
+
+  const savedIdsSet = new Set<string>();
+
+  try {
+    // 1. Fetch from collections table
+    const targetKeys: string[] = ['saved_collection_default', 'saved_collection_user-my-atelier'];
+    if (userId && userId !== 'guest') {
+      targetKeys.unshift(`saved_collection_${userId}`);
+    }
+
+    const { data: collectionsData, error: collectionsError } = await supabase
+      .from('collections')
+      .select('id, user_id, artwork_ids')
+      .or(
+        targetKeys.map((k) => `id.eq.${k}`).join(',') +
+          (userId && userId !== 'guest' ? `,user_id.eq.${userId}` : '')
+      );
+
+    if (!collectionsError && collectionsData && Array.isArray(collectionsData)) {
+      for (const col of collectionsData) {
+        if (Array.isArray(col.artwork_ids)) {
+          for (const aid of col.artwork_ids) {
+            if (typeof aid === 'string' && aid.trim()) {
+              savedIdsSet.add(aid.trim());
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Fetch artworks that have saves_count > 0 from artworks table
+    const { data: savedArtworks, error: artworksError } = await supabase
+      .from('artworks')
+      .select('id, saves_count')
+      .gt('saves_count', 0)
+      .eq('is_deleted', false);
+
+    if (!artworksError && savedArtworks && Array.isArray(savedArtworks)) {
+      for (const art of savedArtworks) {
+        if (art.id && typeof art.id === 'string') {
+          savedIdsSet.add(art.id.trim());
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[supabaseClient] fetchUserSavedArtworkIdsFromSupabase note:', err);
+  }
+
+  return Array.from(savedIdsSet);
+}
+
+/**
+ * Permanently synchronizes user's saved/bookmarked artwork IDs to Supabase collections table.
+ * Preserves zero-loss guarantees across device/browser sessions.
+ */
+export async function syncUserSavedArtworkIdsToSupabase(
+  userId: string = 'user-my-atelier',
+  artworkIds: string[]
+): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return false;
+
+  try {
+    const cleanIds = Array.from(new Set(artworkIds.filter(Boolean)));
+    const targetUserId = userId || 'user-my-atelier';
+    const isFounder = targetUserId === 'user-my-atelier' || targetUserId === DEFAULT_USER.id;
+
+    const row = {
+      id: `saved_collection_${targetUserId}`,
+      user_id: targetUserId,
+      title: 'Saved Collection',
+      description: 'Master collection of saved artworks and poetry cards',
+      artwork_ids: cleanIds,
+      created_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase.from('collections').upsert(row, { onConflict: 'id' });
+    if (error) {
+      console.warn('[supabaseClient] syncUserSavedArtworkIdsToSupabase error:', error.message);
+      return false;
+    }
+
+    // If founder/default user, also mirror to saved_collection_default for seamless guest/visitor recovery
+    if (isFounder) {
+      await supabase.from('collections').upsert({
+        id: 'saved_collection_default',
+        user_id: 'default-sanctuary-user',
+        title: 'Saved Collection',
+        description: 'Master collection of saved artworks and poetry cards',
+        artwork_ids: cleanIds,
+        created_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('[supabaseClient] syncUserSavedArtworkIdsToSupabase exception:', err);
+    return false;
+  }
+}
+
 // ==============================================================================
 // 5. SUPABASE AUTH UTILITIES
 // ==============================================================================

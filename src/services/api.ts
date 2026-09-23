@@ -17,6 +17,8 @@ import {
   saveExhibitionToSupabase,
   deleteExhibitionFromSupabase,
   fetchCollectionsFromSupabase,
+  fetchUserSavedArtworkIdsFromSupabase,
+  syncUserSavedArtworkIdsToSupabase,
   getActiveSupabaseUser,
   fetchArtworkByIdFromSupabase
 } from './supabaseClient';
@@ -161,6 +163,29 @@ export class GalleryService {
     this.syncFounderProfile().catch(() => {});
     this.syncAllProfilesFromCloud().catch(() => {});
     this.refreshArtworksFromCloud().catch(() => {});
+    this.syncUserSavedArtworksFromCloud().catch(() => {});
+  }
+
+  /**
+   * Synchronizes saved artwork IDs from Supabase Postgres collections table into local memory cache
+   */
+  static async syncUserSavedArtworksFromCloud(userId?: string): Promise<string[]> {
+    try {
+      const activeUser = this.getCurrentUser();
+      const targetUserId = userId || activeUser.id || 'user-my-atelier';
+      const savedIds = await fetchUserSavedArtworkIdsFromSupabase(targetUserId);
+      if (savedIds && savedIds.length > 0) {
+        const savedSet = new Set(savedIds);
+        this._artworksCache = this._artworksCache.map((art) => ({
+          ...art,
+          isSaved: savedSet.has(art.id)
+        }));
+        return savedIds;
+      }
+    } catch (e) {
+      console.warn('[GalleryService] Background saved artworks sync note:', e);
+    }
+    return [];
   }
 
   /**
@@ -913,7 +938,7 @@ export class GalleryService {
     return { artwork: list[index] };
   }
 
-  static toggleSave(id: string): { artwork?: Artwork; error?: string } {
+  static toggleSave(id: string, userId?: string): { artwork?: Artwork; error?: string } {
     const list = this.getStoredArtworks();
     const index = list.findIndex((a) => a.id === id);
     if (index === -1) {
@@ -927,13 +952,18 @@ export class GalleryService {
     list[index] = { ...artwork, isSaved, savesCount };
     this.saveArtworks(list);
 
+    const activeUser = this.getCurrentUser();
+    const targetUserId = userId || activeUser.id || 'user-my-atelier';
+    const allSavedIds = list.filter((a) => a.isSaved).map((a) => a.id);
+
+    syncUserSavedArtworkIdsToSupabase(targetUserId, allSavedIds).catch(() => {});
     updateArtworkInSupabase(id, { savesCount }).catch(() => {});
 
     return { artwork: list[index] };
   }
 
-  static toggleSaveArtwork(id: string): { artwork?: Artwork; error?: string } {
-    return this.toggleSave(id);
+  static toggleSaveArtwork(id: string, userId?: string): { artwork?: Artwork; error?: string } {
+    return this.toggleSave(id, userId);
   }
 
   static syncArtworkSaveState(id: string, isSaved: boolean): void {
