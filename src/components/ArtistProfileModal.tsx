@@ -167,8 +167,7 @@ export const ArtistProfileModal: React.FC<ArtistProfileModalProps> = ({
       (a.artist.id === artistId ||
         a.artist.handle === artistId ||
         (artist.handle && a.artist.handle?.toLowerCase() === artist.handle.toLowerCase()) ||
-        (artist.name && a.artist.name?.toLowerCase() === artist.name.toLowerCase()) ||
-        (artistId === 'artist-2' && (a.id === 'poetry-1' || a.id === 'poetry-4')))
+        (artist.name && a.artist.name?.toLowerCase() === artist.name.toLowerCase()))
   );
 
   const handleSelectWork = (art: Artwork) => {

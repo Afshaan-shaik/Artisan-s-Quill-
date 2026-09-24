@@ -49,30 +49,6 @@ const PRESET_MUSIC_TRACKS = [
     lyrics: 'Soft falls the lantern glow upon the keys,\nA wandering cadence adrift upon the breeze.\nNo words required when the shadows speak in chord,\nA quiet reverie that time and silence hoard.'
   },
   {
-    title: 'Elysian Pulse (M-Remix Edit)',
-    artist: 'Kaelen Vance',
-    audioUrl: '/audio/M-Remix.mp4',
-    coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=1200&q=80',
-    album: 'Analog Monoliths',
-    genre: 'Electronic Ambient / Modular Lo-Fi',
-    durationSeconds: 184,
-    key: 'F Minor',
-    bpm: '96 BPM',
-    lyrics: 'Rhythms of obsidian, pulses of gold,\nStories in low frequencies untold.'
-  },
-  {
-    title: 'Derry Solitude Theme',
-    artist: 'Julian Thorne',
-    audioUrl: '/audio/qwTop2qs1tE.mp4',
-    coverUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=1200&q=80',
-    album: 'Highland Nocturnes',
-    genre: 'Cinematic Orchestral',
-    durationSeconds: 115,
-    key: 'D Minor',
-    bpm: '65 BPM',
-    lyrics: 'Strings weep upon the desolate moor,\nA distant bell tolls by the mist-shrouded shore.'
-  },
-  {
     title: 'Starboy Midnight Reverie',
     artist: 'The Weeknd & Daft Punk',
     audioUrl: '/audio/Rif-RTvmmss.mp4',
