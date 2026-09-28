@@ -571,7 +571,7 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
           (node.artwork.tags &&
             node.artwork.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())));
 
-        const isHovered = hoveredNode?.artwork.id === node.artwork.id;
+        const isHovered = hoveredNodeRef.current?.artwork.id === node.artwork.id;
 
         projectedStars.push({
           node,
@@ -754,8 +754,8 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
     isOrbitActive,
     showLines,
     selectedMedium,
-    searchQuery,
-    hoveredNode
+    searchQuery
+    // hoveredNode intentionally excluded: read via hoveredNodeRef.current to avoid restarting the render loop on every hover
   ]);
 
   // Handle Mouse Hover to Detect Star Under Cursor

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Film,
   Feather,
@@ -7,7 +7,8 @@ import {
   ImageIcon,
   Sparkles,
   VolumeX,
-  Play
+  Play,
+  Music
 } from 'lucide-react';
 import { Artwork } from '../types';
 import { isVideoMedia, getMediaPoster } from '../utils/mediaUtils';
@@ -32,6 +33,15 @@ export const CosmosLiveArtworkMedia: React.FC<CosmosLiveArtworkMediaProps> = ({
     setMediaError(false);
     setImageLoaded(false);
   }, [artwork.id]);
+
+  // Detect if image is already cached (naturalWidth > 0 on mount) so shimmer doesn't stick
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const handleImgRef = useCallback((el: HTMLImageElement | null) => {
+    imgRef.current = el;
+    if (el && el.complete && el.naturalWidth > 0) {
+      setImageLoaded(true);
+    }
+  }, []);
 
   const isMusic = artwork.category === 'music' || Boolean(artwork.musicData);
 
@@ -277,11 +287,11 @@ export const CosmosLiveArtworkMedia: React.FC<CosmosLiveArtworkMediaProps> = ({
       )}
 
       <img
+        ref={handleImgRef}
         src={imageSrc}
         alt={artwork.title}
         loading="eager"
         decoding="async"
-        referrerPolicy="no-referrer"
         onLoad={() => setImageLoaded(true)}
         onError={() => setMediaError(true)}
         className={`w-full h-full object-cover transition-all duration-300 ${
