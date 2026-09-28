@@ -387,6 +387,9 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
   const poetry = artwork.poetryContent;
 
   const isAuthorAfshaan = isAfshaanShaikh(artwork.artist.name, artwork.artist.handle);
+  const currentUser = GalleryService.getCurrentUser();
+  const isAuthor = GalleryService.canUserManageArtwork(artwork, currentUser);
+  const canRecordVoice = isAuthor || isAuthorAfshaan;
   const [selectedAccent, setSelectedAccent] = useState<VoiceAccentOption>(
     () => poetry?.preferredVoiceAccent || (isAuthorAfshaan ? 'founder-poet' : 'auto-detect')
   );
@@ -997,8 +1000,8 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
                   })}
                 </div>
 
-                {/* If author is Afshaan or user is founder, show Record Oral Recital */}
-                {isAuthorAfshaan && (
+                {/* If author is Afshaan or current user is author, show Record Oral Recital */}
+                {canRecordVoice && (
                   <div className="pt-1 border-t border-white/10 mt-1">
                     <button
                       type="button"

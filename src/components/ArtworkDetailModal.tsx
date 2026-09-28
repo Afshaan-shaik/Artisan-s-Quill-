@@ -135,6 +135,8 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   const [isPlayingAudioRecording, setIsPlayingAudioRecording] = useState(false);
   const audioPlayerRef = React.useRef<HTMLAudioElement | null>(null);
   const isRecitingRef = React.useRef(false);
+  const leftViewportRef = React.useRef<HTMLDivElement | null>(null);
+  const accentMenuRef = React.useRef<HTMLDivElement | null>(null);
 
   // Spotify Scrubber & Recital Timeline Tracking (Minute/Second Seeking)
   const [audioCurrentTime, setAudioCurrentTime] = useState<number>(0);
@@ -201,6 +203,9 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
     setCurrentLineIndex(0);
     setCurrentVerseSnippet('');
     linePointerRef.current = 0;
+    if (leftViewportRef.current) {
+      leftViewportRef.current.scrollTop = 0;
+    }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -216,6 +221,18 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
       setSelectedAccent(artwork.poetryContent.preferredVoiceAccent || (isAfshaan ? 'founder-poet' : 'auto-detect'));
     }
   }, [artwork?.id]);
+
+  // Click outside to dismiss recitation accent dropdown
+  useEffect(() => {
+    if (!isAccentMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (accentMenuRef.current && !accentMenuRef.current.contains(e.target as Node)) {
+        setIsAccentMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isAccentMenuOpen]);
 
   useEffect(() => {
     return () => {
@@ -663,6 +680,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   if (!artwork) return null;
 
   const isAuthor = GalleryService.canUserManageArtwork(artwork, currentUser);
+  const canRecordVoice = isAuthor || isAuthorAfshaan;
   const poetry = artwork.poetryContent;
 
   const handleAddComment = (e: React.FormEvent) => {
@@ -890,16 +908,10 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
         </div>
 
         {/* Modal Main Content */}
-        <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 min-h-0">
+        <div className="flex-1 overflow-y-auto lg:overflow-y-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0">
           {/* Left Viewport: Artwork or Poetry Presentation */}
           <div
-            className={`lg:col-span-7 xl:col-span-8 relative flex ${
-              artwork.category === 'poetry' || artwork.category === 'music' || isAudioMedia(artwork)
-                ? 'flex-col items-center justify-center p-4 sm:p-6 md:p-10 overflow-y-auto'
-                : isZoomed
-                ? 'items-center justify-center p-4 sm:p-8 md:p-10 overflow-auto'
-                : 'items-center justify-center p-6 sm:p-8 md:p-10 overflow-hidden'
-            } transition-all duration-700 ${getLightingBackground()}`}
+            className={`lg:col-span-7 xl:col-span-8 h-full relative overflow-hidden flex flex-col transition-all duration-700 ${getLightingBackground()}`}
           >
             {/* Dynamic Curatorial Medium Backdrop (Aceternity UI & 21st.dev) */}
             <ModalMediumBackdrop
@@ -929,185 +941,197 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                 </button>
               </>
             )}
-            {artwork.category === 'poetry' && poetry ? (
-              /* Dedicated Poetry Reading Chamber */
-              <div className="relative z-10 w-full max-w-2xl bg-neutral-900/95 border border-[#c9a875]/20 rounded-xl p-8 sm:p-12 md:p-14 shadow-2xl flex flex-col items-center text-center my-auto">
-                <div className="mb-8 w-full flex flex-col items-center">
-                  <span className="px-3 py-1 mb-4 rounded-full bg-[#c9a875]/15 border border-[#c9a875]/40 text-[#dfbd87] text-[10px] uppercase font-bold tracking-[0.25em] shadow-[0_0_12px_rgba(201,168,117,0.2)]">
-                    Poetry Masterpiece
-                  </span>
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif-display font-medium tracking-tight text-white mb-3 uppercase max-w-xl leading-tight">
-                    {artwork.title}
-                  </h1>
-                  {poetry.subtitle && (
-                    <p className="text-xs uppercase tracking-[0.2em] text-[#c9a875] font-medium">
-                      {poetry.subtitle}
-                    </p>
-                  )}
-                  
-                  <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
-                    {onOpenBardModal && (
-                      <button
-                        onClick={() => {
-                          onOpenBardModal({
-                            title: artwork.title,
-                            author: typeof artwork.artist === 'string' ? artwork.artist : artwork.artist.name,
-                            authorHandle: typeof artwork.artist === 'object' ? artwork.artist.handle : undefined,
-                            content: poetry.stanzas.join('\n\n')
-                          });
-                        }}
-                        className="px-5 py-2.5 rounded-xl text-xs uppercase tracking-[0.2em] font-bold border border-[#dfbd87] bg-gradient-to-r from-[#c9a875]/35 via-[#dfbd87]/20 to-[#c9a875]/15 text-white hover:from-[#c9a875] hover:to-[#dfbd87] hover:text-black transition-all cursor-pointer flex items-center gap-2 shadow-[0_0_25px_rgba(201,168,117,0.35)] hover:scale-105 active:scale-95"
-                        title="Launch AI Poetic Bard Symphony Studio"
-                      >
-                        <Feather className="w-4 h-4 text-[#dfbd87]" />
-                        <span>Bard Symphony</span>
-                      </button>
+
+            {/* Scrollable Content Viewport */}
+            <div
+              ref={leftViewportRef}
+              className={`flex-1 w-full h-full relative flex ${
+                artwork.category === 'poetry' || artwork.category === 'music' || isAudioMedia(artwork)
+                  ? 'flex-col items-center justify-start p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto'
+                  : isZoomed
+                  ? 'items-center justify-center p-4 sm:p-8 md:p-10 overflow-auto'
+                  : 'items-center justify-center p-6 sm:p-8 md:p-10 overflow-hidden'
+              }`}
+            >
+              {artwork.category === 'poetry' && poetry ? (
+                /* Dedicated Poetry Reading Chamber */
+                <div className="relative z-10 w-full max-w-2xl bg-neutral-900/95 border border-[#c9a875]/20 rounded-xl p-6 sm:p-10 md:p-12 shadow-2xl flex flex-col items-center text-center my-auto shrink-0">
+                  <div className="mb-6 sm:mb-8 w-full flex flex-col items-center">
+                    <span className="px-3 py-1 mb-3 sm:mb-4 rounded-full bg-[#c9a875]/15 border border-[#c9a875]/40 text-[#dfbd87] text-[10px] uppercase font-bold tracking-[0.25em] shadow-[0_0_12px_rgba(201,168,117,0.2)]">
+                      Poetry Masterpiece
+                    </span>
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif-display font-medium tracking-tight text-white mb-2 sm:mb-3 uppercase max-w-xl leading-tight">
+                      {artwork.title}
+                    </h1>
+                    {poetry.subtitle && (
+                      <p className="text-xs uppercase tracking-[0.2em] text-[#c9a875] font-medium">
+                        {poetry.subtitle}
+                      </p>
                     )}
-
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={handleRecite}
-                        className={`px-4 py-2.5 rounded-xl text-xs uppercase tracking-[0.2em] font-bold border transition-all cursor-pointer flex items-center gap-2.5 shadow-lg ${
-                          isReciting 
-                            ? 'bg-[#c9a875] text-black border-[#dfbd87] shadow-[0_0_20px_rgba(201,168,117,0.5)]' 
-                            : 'bg-black/60 border-[#c9a875]/50 text-[#e8c690] hover:bg-[#c9a875] hover:text-black'
-                        }`}
-                        title={
-                          isReciting
-                            ? 'Pause Recital'
-                            : poetry.audioRecitationUrl
-                            ? 'Listen to Genuine Voice Recital'
-                            : 'Listen to Voice Recitation'
-                        }
-                      >
-                        {isReciting ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-[#c9a875]" />}
-                        <span>
-                          {isReciting
-                            ? 'Pause Recital'
-                            : poetry.audioRecitationUrl
-                            ? 'Listen Recital (Original)'
-                            : 'Listen Recital'}
-                        </span>
-                      </button>
-
-                      {/* Accent & Voice Profile Dropdown */}
-                      <div className="relative">
+                    
+                    <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 mt-4 sm:mt-6 w-full max-w-xl mx-auto">
+                      {onOpenBardModal && (
                         <button
-                          type="button"
-                          onClick={() => setIsAccentMenuOpen(!isAccentMenuOpen)}
-                          className="px-3 py-2.5 rounded-xl border border-[#c9a875]/50 bg-black/60 text-[#dfbd87] hover:bg-[#c9a875]/20 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-lg text-xs font-mono-code font-bold"
-                          title="Select Voice Recital Accent & Style"
+                          onClick={() => {
+                            onOpenBardModal({
+                              title: artwork.title,
+                              author: typeof artwork.artist === 'string' ? artwork.artist : artwork.artist.name,
+                              authorHandle: typeof artwork.artist === 'object' ? artwork.artist.handle : undefined,
+                              content: poetry.stanzas.join('\n\n')
+                            });
+                          }}
+                          className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs uppercase tracking-[0.15em] font-bold border border-[#dfbd87] bg-gradient-to-r from-[#c9a875]/35 via-[#dfbd87]/20 to-[#c9a875]/15 text-white hover:from-[#c9a875] hover:to-[#dfbd87] hover:text-black transition-all cursor-pointer flex items-center gap-2 shadow-[0_0_25px_rgba(201,168,117,0.35)] hover:scale-105 active:scale-95 shrink-0"
+                          title="Launch AI Poetic Bard Symphony Studio"
                         >
-                          <span>{VOICE_ACCENT_PROFILES.find((p) => p.id === selectedAccent)?.flag || '✨'}</span>
-                          <span className="hidden sm:inline text-[11px]">
-                            {VOICE_ACCENT_PROFILES.find((p) => p.id === selectedAccent)?.shortLabel || 'Voice'}
+                          <Feather className="w-4 h-4 text-[#dfbd87]" />
+                          <span>Bard Symphony</span>
+                        </button>
+                      )}
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={handleRecite}
+                          className={`px-4 py-2 sm:py-2.5 rounded-xl text-xs uppercase tracking-[0.15em] font-bold border transition-all cursor-pointer flex items-center gap-2 shadow-lg ${
+                            isReciting 
+                              ? 'bg-[#c9a875] text-black border-[#dfbd87] shadow-[0_0_20px_rgba(201,168,117,0.5)]' 
+                              : 'bg-black/60 border-[#c9a875]/50 text-[#e8c690] hover:bg-[#c9a875] hover:text-black'
+                          }`}
+                          title={
+                            isReciting
+                              ? 'Pause Recital'
+                              : poetry.audioRecitationUrl
+                              ? 'Listen to Genuine Voice Recital'
+                              : 'Listen to Voice Recitation'
+                          }
+                        >
+                          {isReciting ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-[#c9a875]" />}
+                          <span>
+                            {isReciting
+                              ? 'Pause Recital'
+                              : poetry.audioRecitationUrl
+                              ? 'Listen Recital (Original)'
+                              : 'Listen Recital'}
                           </span>
-                          <ChevronDown className="w-3.5 h-3.5 opacity-75" />
                         </button>
 
-                        {isAccentMenuOpen && (
-                          <div
-                            onClick={(e) => e.stopPropagation()}
-                            className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 rounded-xl bg-[#0d0f17]/95 border border-[#c9a875]/60 shadow-[0_12px_40px_rgba(0,0,0,0.95)] p-1.5 backdrop-blur-2xl z-50 animate-in fade-in zoom-in-95 duration-150 text-left"
+                        {/* Accent & Voice Profile Dropdown */}
+                        <div className="relative" ref={accentMenuRef}>
+                          <button
+                            type="button"
+                            onClick={() => setIsAccentMenuOpen(!isAccentMenuOpen)}
+                            className="px-3 py-2 sm:py-2.5 rounded-xl border border-[#c9a875]/50 bg-black/60 text-[#dfbd87] hover:bg-[#c9a875]/20 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-lg text-xs font-mono-code font-bold"
+                            title="Select Voice Recital Accent & Style"
                           >
-                            <div className="px-3 py-1.5 border-b border-white/10 text-[10px] font-mono-code uppercase tracking-wider text-[#c9a875] font-semibold flex items-center justify-between">
-                              <span>Recitation Voice Style</span>
-                              <span className="text-[8px] text-neutral-400">5 Options</span>
-                            </div>
+                            <span>{VOICE_ACCENT_PROFILES.find((p) => p.id === selectedAccent)?.flag || '✨'}</span>
+                            <span className="hidden sm:inline text-[11px]">
+                              {VOICE_ACCENT_PROFILES.find((p) => p.id === selectedAccent)?.shortLabel || 'Voice'}
+                            </span>
+                            <ChevronDown className="w-3.5 h-3.5 opacity-75" />
+                          </button>
 
-                            <div className="py-1 space-y-0.5">
-                              {VOICE_ACCENT_PROFILES.map((profile) => {
-                                const isSelected = selectedAccent === profile.id;
-                                return (
+                          {isAccentMenuOpen && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 rounded-xl bg-[#0d0f17]/95 border border-[#c9a875]/60 shadow-[0_12px_40px_rgba(0,0,0,0.95)] p-1.5 backdrop-blur-2xl z-50 animate-in fade-in zoom-in-95 duration-150 text-left"
+                            >
+                              <div className="px-3 py-1.5 border-b border-white/10 text-[10px] font-mono-code uppercase tracking-wider text-[#c9a875] font-semibold flex items-center justify-between">
+                                <span>Recitation Voice Style</span>
+                                <span className="text-[8px] text-neutral-400">5 Options</span>
+                              </div>
+
+                              <div className="py-1 space-y-0.5">
+                                {VOICE_ACCENT_PROFILES.map((profile) => {
+                                  const isSelected = selectedAccent === profile.id;
+                                  return (
+                                    <button
+                                      key={profile.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedAccent(profile.id);
+                                        setIsAccentMenuOpen(false);
+                                        if (isReciting) {
+                                          window.speechSynthesis.cancel();
+                                          setIsReciting(false);
+                                        }
+                                      }}
+                                      className={`w-full px-2.5 py-1.5 rounded-lg text-left text-xs transition-colors flex items-start gap-2 cursor-pointer ${
+                                        isSelected
+                                          ? 'bg-[#c9a875]/25 border border-[#c9a875]/60 text-white font-medium'
+                                          : 'text-neutral-300 hover:bg-white/10 hover:text-white'
+                                      }`}
+                                    >
+                                      <span className="text-sm mt-0.5">{profile.flag}</span>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-xs font-semibold text-[#f8e7c9] truncate">{profile.label}</span>
+                                          {isSelected && <span className="text-[10px] text-[#dfbd87]">✓</span>}
+                                        </div>
+                                        <p className="text-[10px] text-neutral-400 leading-tight truncate">{profile.description}</p>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
+                              {canRecordVoice && (
+                                <div className="pt-1 mt-1 border-t border-white/10">
                                   <button
-                                    key={profile.id}
                                     type="button"
                                     onClick={() => {
-                                      setSelectedAccent(profile.id);
                                       setIsAccentMenuOpen(false);
-                                      if (isReciting) {
-                                        window.speechSynthesis.cancel();
-                                        setIsReciting(false);
-                                      }
+                                      setIsVoiceStudioOpen(true);
                                     }}
-                                    className={`w-full px-2.5 py-1.5 rounded-lg text-left text-xs transition-colors flex items-start gap-2 cursor-pointer ${
-                                      isSelected
-                                        ? 'bg-[#c9a875]/25 border border-[#c9a875]/60 text-white font-medium'
-                                        : 'text-neutral-300 hover:bg-white/10 hover:text-white'
-                                    }`}
+                                    className="w-full px-2 py-1.5 rounded-lg bg-gradient-to-r from-[#c9a875]/30 to-[#dfbd87]/15 hover:from-[#c9a875]/40 hover:to-[#dfbd87]/30 text-white text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-[#c9a875]/50 shadow-sm"
                                   >
-                                    <span className="text-sm mt-0.5">{profile.flag}</span>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-xs font-semibold text-[#f8e7c9] truncate">{profile.label}</span>
-                                        {isSelected && <span className="text-[10px] text-[#dfbd87]">✓</span>}
-                                      </div>
-                                      <p className="text-[10px] text-neutral-400 leading-tight truncate">{profile.description}</p>
-                                    </div>
+                                    <Mic className="w-3.5 h-3.5 text-[#dfbd87]" />
+                                    <span>Record in My Genuine Voice</span>
                                   </button>
-                                );
-                              })}
+                                </div>
+                              )}
                             </div>
-
-                            {isAuthorAfshaan && (
-                              <div className="pt-1 mt-1 border-t border-white/10">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setIsAccentMenuOpen(false);
-                                    setIsVoiceStudioOpen(true);
-                                  }}
-                                  className="w-full px-2 py-1.5 rounded-lg bg-gradient-to-r from-[#c9a875]/30 to-[#dfbd87]/15 hover:from-[#c9a875]/40 hover:to-[#dfbd87]/30 text-white text-[11px] font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-[#c9a875]/50 shadow-sm"
-                                >
-                                  <Mic className="w-3.5 h-3.5 text-[#dfbd87]" />
-                                  <span>Record in My Genuine Voice</span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
+
+                      {canRecordVoice && (
+                        <button
+                          onClick={() => setIsVoiceStudioOpen(true)}
+                          className="px-4 py-2 sm:py-2.5 rounded-xl text-xs uppercase tracking-[0.15em] font-bold border border-[#c9a875]/60 bg-gradient-to-r from-black/80 via-[#c9a875]/20 to-black/80 text-[#dfbd87] hover:border-[#dfbd87] hover:text-white transition-all cursor-pointer flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 shrink-0"
+                          title="Record authentic oral recitation in your genuine voice"
+                        >
+                          <Mic className="w-4 h-4 text-[#c9a875]" />
+                          <span>{poetry.audioRecitationUrl ? 'Re-record Recital' : 'Record in My Voice'}</span>
+                        </button>
+                      )}
+
+                      {onOpenScrollModal && (
+                        <button
+                          onClick={() => {
+                            onOpenScrollModal({
+                              title: artwork.title,
+                              author: typeof artwork.artist === 'string' ? artwork.artist : artwork.artist.name,
+                              authorHandle: typeof artwork.artist === 'object' ? artwork.artist.handle : undefined,
+                              stanzas: poetry.stanzas,
+                              subtitle: poetry.subtitle
+                            });
+                          }}
+                          className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs uppercase tracking-[0.15em] font-bold border border-[#c9a875]/50 bg-black/60 text-[#e8c690] hover:bg-[#c9a875] hover:text-black transition-all cursor-pointer flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 shrink-0"
+                          title="Unroll poem as an Ancient Illuminated Vellum Scroll"
+                        >
+                          <Layers className="w-4 h-4 text-[#c9a875]" />
+                          <span>Ancient Scroll</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => setIsStoryExporterOpen(true)}
+                        className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs uppercase tracking-[0.15em] font-bold border border-[#c9a875]/50 bg-black/60 text-[#e8c690] hover:bg-[#c9a875] hover:text-black transition-all cursor-pointer flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 shrink-0"
+                        title="Transform stanza into 9:16 Instagram Story or Wallpaper"
+                      >
+                        <Smartphone className="w-4 h-4 text-[#c9a875]" />
+                        <span>Export Story Card</span>
+                      </button>
                     </div>
-
-                    {isAuthorAfshaan && (
-                      <button
-                        onClick={() => setIsVoiceStudioOpen(true)}
-                        className="px-4 py-2.5 rounded-xl text-xs uppercase tracking-[0.15em] font-bold border border-[#c9a875]/60 bg-gradient-to-r from-black/80 via-[#c9a875]/20 to-black/80 text-[#dfbd87] hover:border-[#dfbd87] hover:text-white transition-all cursor-pointer flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95"
-                        title="Record authentic oral recitation in your genuine voice"
-                      >
-                        <Mic className="w-4 h-4 text-[#c9a875]" />
-                        <span>{poetry.audioRecitationUrl ? 'Re-record Recital' : 'Record in My Voice'}</span>
-                      </button>
-                    )}
-
-                    {onOpenScrollModal && (
-                      <button
-                        onClick={() => {
-                          onOpenScrollModal({
-                            title: artwork.title,
-                            author: typeof artwork.artist === 'string' ? artwork.artist : artwork.artist.name,
-                            authorHandle: typeof artwork.artist === 'object' ? artwork.artist.handle : undefined,
-                            stanzas: poetry.stanzas,
-                            subtitle: poetry.subtitle
-                          });
-                        }}
-                        className="px-5 py-2.5 rounded-xl text-xs uppercase tracking-[0.2em] font-bold border border-[#c9a875]/50 bg-black/60 text-[#e8c690] hover:bg-[#c9a875] hover:text-black transition-all cursor-pointer flex items-center gap-2 shadow-lg"
-                        title="Unroll poem as an Ancient Illuminated Vellum Scroll"
-                      >
-                        <Layers className="w-4 h-4 text-[#c9a875]" />
-                        <span>Ancient Scroll</span>
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => setIsStoryExporterOpen(true)}
-                      className="px-5 py-2.5 rounded-xl text-xs uppercase tracking-[0.2em] font-bold border border-[#c9a875]/50 bg-black/60 text-[#e8c690] hover:bg-[#c9a875] hover:text-black transition-all cursor-pointer flex items-center gap-2 shadow-lg"
-                      title="Transform stanza into 9:16 Instagram Story or Wallpaper"
-                    >
-                      <Smartphone className="w-4 h-4 text-[#c9a875]" />
-                      <span>Export Story Card</span>
-                    </button>
-                  </div>
 
                   {/* Spotify Recital Player Scrubber Bar (Minute/Second Seeking & Stanza Jump) */}
                   {(isReciting || Boolean(poetry.audioRecitationUrl)) && (
@@ -1283,10 +1307,11 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                 </div>
               </div>
             )}
-          </div>
+              </div>
+            </div>
 
           {/* Right Sidebar: Curatorial Statement, Metadata, Features & Critique */}
-          <div className="lg:col-span-5 xl:col-span-4 border-t lg:border-t-0 lg:border-l border-white/10 bg-[#0d0f14] flex flex-col overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
+          <div className="lg:col-span-5 xl:col-span-4 h-full border-t lg:border-t-0 lg:border-l border-white/10 bg-[#0d0f14] flex flex-col overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
             
             {/* Artwork Master Header */}
             <div className="pb-6 border-b border-white/10 space-y-3">
