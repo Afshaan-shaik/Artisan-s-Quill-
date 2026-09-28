@@ -415,42 +415,78 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
     if (!ctx) return;
 
     let time = 0;
+    let lastFrameTime = 0;
+    let cachedBgGrad: CanvasGradient | null = null;
+    let cachedGradWidth = 0;
+    let cachedGradHeight = 0;
+    // Track last known canvas size to avoid per-frame resize (huge perf win)
+    let lastCanvasW = 0;
+    let lastCanvasH = 0;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    // Background Twinkling Dust Particles
+    // Pre-size canvas once
+    {
+      const w = (canvas.offsetWidth || 1200) * dpr;
+      const h = (canvas.offsetHeight || 800) * dpr;
+      canvas.width = w;
+      canvas.height = h;
+      lastCanvasW = w;
+      lastCanvasH = h;
+    }
+
+    // Resize observer instead of resizing every frame
+    const ro = new ResizeObserver(() => {
+      const w = (canvas.offsetWidth || 1200) * dpr;
+      const h = (canvas.offsetHeight || 800) * dpr;
+      if (w !== lastCanvasW || h !== lastCanvasH) {
+        canvas.width = w;
+        canvas.height = h;
+        lastCanvasW = w;
+        lastCanvasH = h;
+        cachedBgGrad = null; // invalidate cached gradient
+      }
+    });
+    ro.observe(canvas);
+
+    // Background Twinkling Dust Particles — initialized once
     const dustStars: { x: number; y: number; size: number; alpha: number; speed: number }[] = [];
-    for (let i = 0; i < 180; i++) {
+    for (let i = 0; i < 140; i++) {
       dustStars.push({
         x: Math.random() * 2000 - 1000,
         y: Math.random() * 2000 - 1000,
-        size: Math.random() * 1.6 + 0.5,
-        alpha: Math.random() * 0.7 + 0.2,
+        size: Math.random() * 1.4 + 0.4,
+        alpha: Math.random() * 0.6 + 0.2,
         speed: Math.random() * 0.02 + 0.01
       });
     }
 
-    const render = () => {
+    const render = (now: number) => {
       animFrameIdRef.current = requestAnimationFrame(render);
+
+      // ~60 fps cap – skip frames on high-refresh screens to stay smooth without burning CPU
+      if (now - lastFrameTime < 14) return;
+      lastFrameTime = now;
+
       time += 0.016;
 
-      const dpr = window.devicePixelRatio || 1;
-      const width = (canvas.width = canvas.offsetWidth * dpr || 1200);
-      const height = (canvas.height = canvas.offsetHeight * dpr || 800);
+      const width = lastCanvasW || 1200;
+      const height = lastCanvasH || 800;
 
       ctx.clearRect(0, 0, width, height);
 
-      // Deep Void Cosmic Nebula Background
-      const bgGrad = ctx.createRadialGradient(
-        width / 2,
-        height / 2,
-        50 * dpr,
-        width / 2,
-        height / 2,
-        Math.max(width, height) * 0.75
-      );
-      bgGrad.addColorStop(0, '#0a0d18');
-      bgGrad.addColorStop(0.5, '#05060b');
-      bgGrad.addColorStop(1, '#020306');
-      ctx.fillStyle = bgGrad;
+      // Deep Void Cosmic Nebula Background — cached per canvas size
+      if (!cachedBgGrad || cachedGradWidth !== width || cachedGradHeight !== height) {
+        cachedBgGrad = ctx.createRadialGradient(
+          width / 2, height / 2, 50 * dpr,
+          width / 2, height / 2, Math.max(width, height) * 0.75
+        );
+        cachedBgGrad.addColorStop(0, '#0a0d18');
+        cachedBgGrad.addColorStop(0.5, '#05060b');
+        cachedBgGrad.addColorStop(1, '#020306');
+        cachedGradWidth = width;
+        cachedGradHeight = height;
+      }
+      ctx.fillStyle = cachedBgGrad;
       ctx.fillRect(0, 0, width, height);
 
       // Draw cosmic background dust particles
@@ -552,34 +588,32 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
       // Depth sorting from far to near (Painter's Algorithm)
       projectedStars.sort((a, b) => a.pz - b.pz);
 
-      // Draw Constellation Connective Laser Lines
+      // Draw Constellation Connective Lines
+      // Capped at MAX_LINE_NODES to avoid O(n^2) blowup with large galleries
+      const MAX_LINE_NODES = 40;
       if (showLines && projectedStars.length > 1) {
-        ctx.lineWidth = 1 * dpr;
-        for (let i = 0; i < projectedStars.length; i++) {
-          for (let j = i + 1; j < projectedStars.length; j++) {
-            const a = projectedStars[i];
-            const b = projectedStars[j];
+        const lineStars = projectedStars.slice(0, MAX_LINE_NODES);
+        ctx.lineWidth = 0.8 * dpr;
+        for (let i = 0; i < lineStars.length; i++) {
+          for (let j = i + 1; j < lineStars.length; j++) {
+            const a = lineStars[i];
+            const b = lineStars[j];
 
             if (!a.isMediumSelected || !b.isMediumSelected) continue;
 
-            // Connect stars sharing medium or author or nearby in space
             const isSameCategory = a.node.artwork.category === b.node.artwork.category;
             const isSameArtist = a.node.artwork.artist?.id === b.node.artwork.artist?.id;
 
             const dx = a.px - b.px;
             const dy = a.py - b.py;
             const dist2D = Math.sqrt(dx * dx + dy * dy);
-            const maxLinkDist = (isSameCategory ? 260 : 160) * dpr * zoom;
+            const maxLinkDist = (isSameCategory ? 240 : 140) * dpr * zoom;
 
-            if (dist2D < maxLinkDist && (isSameCategory || isSameArtist || dist2D < 110 * dpr)) {
+            if (dist2D < maxLinkDist && (isSameCategory || isSameArtist || dist2D < 100 * dpr)) {
               const alphaRatio = Math.max(0, 1 - dist2D / maxLinkDist);
-              const lineAlpha = (isSameCategory ? 0.38 : 0.16) * alphaRatio * (a.isMatch && b.isMatch ? 1 : 0.2);
-
-              const strokeGrad = ctx.createLinearGradient(a.px, a.py, b.px, b.py);
-              strokeGrad.addColorStop(0, a.node.color);
-              strokeGrad.addColorStop(1, b.node.color);
-
-              ctx.strokeStyle = strokeGrad;
+              const lineAlpha = (isSameCategory ? 0.28 : 0.12) * alphaRatio * (a.isMatch && b.isMatch ? 1 : 0.2);
+              // Use solid averaged color — much cheaper than createLinearGradient per line
+              ctx.strokeStyle = a.node.color;
               ctx.globalAlpha = lineAlpha;
               ctx.beginPath();
               ctx.moveTo(a.px, a.py);
@@ -708,12 +742,13 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
       });
     };
 
-    render();
+    requestAnimationFrame(render);
 
     return () => {
       if (animFrameIdRef.current) {
         cancelAnimationFrame(animFrameIdRef.current);
       }
+      ro.disconnect();
     };
   }, [
     isOrbitActive,

@@ -1668,14 +1668,30 @@ export const MediaUploadModal: React.FC<MediaUploadModalProps> = ({
             <button
               id="submit-artwork-btn"
               type="submit"
-              className="flex items-center gap-2 px-7 py-3 rounded-full bg-[#c9a875] hover:bg-[#dfba88] text-[#0c0d10] font-semibold text-sm transition-all cursor-pointer shadow-xl shadow-[#c9a875]/20 hover:scale-[1.02]"
+              disabled={isUploadingMedia}
+              className={`flex items-center gap-2 px-7 py-3 rounded-full text-[#0c0d10] font-semibold text-sm transition-all shadow-xl shadow-[#c9a875]/20 ${
+                isUploadingMedia
+                  ? 'bg-[#c9a875]/50 cursor-not-allowed opacity-80'
+                  : 'bg-[#c9a875] hover:bg-[#dfba88] hover:scale-[1.02] cursor-pointer'
+              }`}
             >
-              <Check className="w-4 h-4" />
-              {activeTab === 'poetry'
-                ? 'Publish Formatted Poetry Card'
-                : activeTab === 'music'
-                ? 'Press Vinyl & Broadcast Song'
-                : 'Inaugurate to Sanctuary'}
+              {isUploadingMedia ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#0c0d10]" />
+                  <span>Uploading to Sanctuary Storage...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>
+                    {activeTab === 'poetry'
+                      ? 'Publish Formatted Poetry Card'
+                      : activeTab === 'music'
+                      ? 'Press Vinyl & Broadcast Song'
+                      : 'Inaugurate to Sanctuary'}
+                  </span>
+                </>
+              )}
             </button>
           </div>
         </form>

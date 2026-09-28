@@ -12,6 +12,10 @@ import {
   Sparkles,
   Music,
   Check,
+  Maximize2,
+  Minimize2,
+  Image as ImageIcon,
+  Sliders,
   Share2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -20,9 +24,13 @@ import { UniversalTrack, registerCommunityTrack } from '../services/musicEngine'
 
 interface AudioSanctuaryChamberProps {
   artwork: Artwork;
+  onOpenFragmentInspector?: (artwork: Artwork) => void;
 }
 
-export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ artwork }) => {
+export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({
+  artwork,
+  onOpenFragmentInspector
+}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState<number>(() => {
@@ -30,19 +38,32 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
   });
   const [volume, setVolume] = useState(0.85);
   const [isMuted, setIsMuted] = useState(false);
-  const [activeTab, setActiveTab] = useState<'player' | 'lyrics'>('player');
+  const [activeTab, setActiveTab] = useState<'player' | 'cover' | 'lyrics'>('player');
   const [isSentToAmbience, setIsSentToAmbience] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState<number>(1);
+  const [isZoomedCover, setIsZoomedCover] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const audioUrl = artwork.musicData?.audioUrl || artwork.mediaUrl;
-  const coverUrl =
-    artwork.thumbnailUrl ||
-    artwork.musicData?.coverArtUrl ||
-    artwork.mediaUrl ||
-    'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80';
+
+  const isVideoExt = (url?: string) => Boolean(url && url.match(/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i));
+  const fallbackCover = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&auto=format&fit=crop&q=80';
+
+  const rawCover =
+    (artwork.thumbnailUrl && !isVideoExt(artwork.thumbnailUrl) ? artwork.thumbnailUrl : '') ||
+    (artwork.musicData?.coverArtUrl && !isVideoExt(artwork.musicData.coverArtUrl) ? artwork.musicData.coverArtUrl : '') ||
+    (!isVideoExt(artwork.mediaUrl) ? artwork.mediaUrl : '') ||
+    fallbackCover;
+
+  const [activeCoverSrc, setActiveCoverSrc] = useState(rawCover);
+
+  useEffect(() => {
+    setActiveCoverSrc(rawCover);
+  }, [rawCover, artwork.id]);
+
   const genre = artwork.musicData?.genre || artwork.medium || 'Original Composition';
-  const album = artwork.musicData?.album || 'Atelier Master Sessions';
+  const album = artwork.musicData?.album || artwork.dimensions || 'Atelier Master Sessions';
   const lyrics = artwork.musicData?.lyrics;
 
   // Format mm:ss
@@ -59,6 +80,13 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
       audioRef.current.volume = isMuted ? 0 : volume;
     }
   }, [volume, isMuted]);
+
+  // Sync playback rate
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate]);
 
   // Pause when unmounting or switching artwork
   useEffect(() => {
@@ -100,16 +128,22 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
     setCurrentTime(target);
   };
 
+  const handleCycleSpeed = () => {
+    const speeds = [1, 1.25, 1.5, 2];
+    const nextIdx = (speeds.indexOf(playbackRate) + 1) % speeds.length;
+    setPlaybackRate(speeds[nextIdx]);
+  };
+
   const handleSendToAmbience = () => {
     const track: UniversalTrack = {
       id: artwork.id.startsWith('community-') ? artwork.id : `community-${artwork.id}`,
       title: artwork.title,
-      artist: artwork.artist?.name || 'Sanctuary Artist',
+      artist: typeof artwork.artist === 'object' ? artwork.artist.name : artwork.artist || 'Sanctuary Artist',
       album: album,
       platform: 'vault',
       sourceType: 'audio-stream',
       streamUrl: audioUrl,
-      artworkUrl: coverUrl,
+      artworkUrl: activeCoverSrc,
       durationSeconds: duration,
       genre: genre,
       isOriginal: true,
@@ -121,9 +155,9 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
     registerCommunityTrack({
       id: artwork.id,
       title: artwork.title,
-      artistName: artwork.artist?.name || 'Sanctuary Artist',
+      artistName: typeof artwork.artist === 'object' ? artwork.artist.name : artwork.artist || 'Sanctuary Artist',
       audioUrl: audioUrl,
-      coverUrl: coverUrl,
+      coverUrl: activeCoverSrc,
       album: album,
       genre: genre,
       durationSeconds: duration
@@ -154,9 +188,20 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
   };
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const artistName = typeof artwork.artist === 'object' ? artwork.artist.name : artwork.artist || 'Sanctuary Artist';
 
   return (
-    <div className="relative z-10 w-full max-w-3xl rounded-3xl p-6 sm:p-10 bg-gradient-to-b from-[#141620]/95 via-[#0e1017]/95 to-[#08090d]/95 border border-[#c9a875]/40 shadow-[0_30px_90px_rgba(0,0,0,0.9)] my-auto text-white backdrop-blur-2xl">
+    <div className="relative z-10 w-full max-w-3xl rounded-3xl p-5 sm:p-8 md:p-10 bg-gradient-to-b from-[#141620]/95 via-[#0e1017]/95 to-[#08090d]/95 border border-[#c9a875]/40 shadow-[0_30px_90px_rgba(0,0,0,0.95)] my-auto text-white backdrop-blur-2xl transition-all">
+      {/* Ambient Dynamic Cover Art Glow */}
+      <div
+        className="absolute inset-0 pointer-events-none -z-10 rounded-3xl overflow-hidden blur-3xl opacity-20 scale-105 transition-all duration-700"
+        style={{
+          backgroundImage: `radial-gradient(circle at center, rgba(201, 168, 117, 0.45), transparent 75%), url(${activeCoverSrc})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      />
+
       {/* Hidden Audio Element */}
       <audio
         ref={audioRef}
@@ -173,6 +218,9 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
         onEnded={() => {
           setIsPlaying(false);
           setCurrentTime(0);
+        }}
+        onError={(err) => {
+          console.warn('[AudioSanctuaryChamber] Audio playback warning:', err);
         }}
       />
 
@@ -192,44 +240,61 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {lyrics && (
-            <div className="flex rounded-lg bg-black/40 border border-white/10 p-0.5 text-xs font-mono-code">
-              <button
-                type="button"
-                onClick={() => setActiveTab('player')}
-                className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
-                  activeTab === 'player'
-                    ? 'bg-[#c9a875] text-[#0a0b0e] font-semibold'
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                Vinyl Master
-              </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Mode Switcher */}
+          <div className="flex rounded-xl bg-black/50 border border-white/10 p-0.5 text-xs font-mono-code shadow-inner">
+            <button
+              type="button"
+              onClick={() => setActiveTab('player')}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'player'
+                  ? 'bg-[#c9a875] text-[#0a0b0e] font-bold shadow-md'
+                  : 'text-white/60 hover:text-white'
+              }`}
+              title="Vinyl Turntable & Interactive Player"
+            >
+              <Disc3 className="w-3.5 h-3.5" />
+              <span>Vinyl Master</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('cover')}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'cover'
+                  ? 'bg-[#c9a875] text-[#0a0b0e] font-bold shadow-md'
+                  : 'text-white/60 hover:text-white'
+              }`}
+              title="View High-Resolution Album Cover Artwork"
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span>Album Cover</span>
+            </button>
+            {lyrics && (
               <button
                 type="button"
                 onClick={() => setActiveTab('lyrics')}
-                className={`px-3 py-1 rounded-md transition-colors cursor-pointer flex items-center gap-1 ${
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'lyrics'
-                    ? 'bg-[#c9a875] text-[#0a0b0e] font-semibold'
+                    ? 'bg-[#c9a875] text-[#0a0b0e] font-bold shadow-md'
                     : 'text-white/60 hover:text-white'
                 }`}
+                title="Liner Notes & Lyrics"
               >
-                <FileText className="w-3 h-3" />
-                Liner Notes
+                <FileText className="w-3.5 h-3.5" />
+                <span>Lyrics</span>
               </button>
-            </div>
-          )}
+            )}
+          </div>
 
           <button
             type="button"
             onClick={handleSendToAmbience}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-mono-code transition-all cursor-pointer shadow-lg ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono-code transition-all cursor-pointer shadow-lg ${
               isSentToAmbience
                 ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300'
                 : 'bg-[#c9a875]/15 border-[#c9a875]/60 text-[#c9a875] hover:bg-[#c9a875] hover:text-[#0a0b0e]'
             }`}
-            title="Stream this track in the background floating player"
+            title="Stream this track in the background sanctuary player"
           >
             {isSentToAmbience ? (
               <>
@@ -239,32 +304,200 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
             ) : (
               <>
                 <Radio className="w-3.5 h-3.5 animate-pulse" />
-                <span>Send to Ambience</span>
+                <span className="hidden sm:inline">Send to Ambience</span>
+                <span className="sm:hidden">Ambience</span>
               </>
             )}
           </button>
         </div>
       </div>
 
-      {activeTab === 'player' ? (
-        /* Vinyl Turntable & Interactive Player */
-        <div className="space-y-6">
-          {/* Main Visual Chamber: Sleeve & Rotating Vinyl Record */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 py-4">
-            {/* Album Sleeve */}
-            <div className="relative group w-44 h-44 sm:w-52 sm:h-52 rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-[#c9a875]/40 shrink-0 bg-black">
+      {activeTab === 'cover' ? (
+        /* Expanded High-Resolution Album Cover Exhibition View */
+        <div className="space-y-6 animate-fadeIn">
+          <div className="flex flex-col items-center justify-center">
+            <div className="relative group inline-flex items-center justify-center max-w-full rounded-2xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.95)] border-2 border-[#c9a875]/60 bg-black/60 p-1">
               <img
-                src={coverUrl}
+                src={activeCoverSrc}
                 alt={artwork.title}
+                referrerPolicy="no-referrer"
+                onError={() => {
+                  if (activeCoverSrc !== fallbackCover) {
+                    setActiveCoverSrc(fallbackCover);
+                  }
+                }}
+                onClick={() => setIsZoomedCover(!isZoomedCover)}
+                className={`w-auto h-auto max-w-full max-h-[44vh] sm:max-h-[52vh] object-contain rounded-xl transition-transform duration-500 cursor-zoom-in block ${
+                  isZoomedCover ? 'scale-125 cursor-zoom-out' : 'scale-100 hover:scale-[1.02]'
+                }`}
+                title="Click to zoom album artwork"
+              />
+
+              {/* Sleeve Gold Trim Plaque */}
+              <div className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-black/85 backdrop-blur-md border border-[#c9a875]/60 text-[10px] font-mono-code font-bold uppercase tracking-wider text-[#dfbd87] shadow-lg flex items-center gap-1.5 pointer-events-none">
+                <Sparkles className="w-3 h-3 text-[#c9a875]" />
+                <span>High-Fidelity Album Cover</span>
+              </div>
+
+              {/* Interactive Deep View Fragment Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onOpenFragmentInspector) {
+                    onOpenFragmentInspector(artwork);
+                  } else {
+                    setIsZoomedCover(!isZoomedCover);
+                  }
+                }}
+                className="absolute bottom-3 right-3 flex items-center gap-1.5 text-[11px] font-mono-code font-bold uppercase tracking-wider text-[#dfbd87] bg-black/90 hover:bg-[#c9a875] hover:text-black backdrop-blur-md px-3 py-1.5 border border-[#c9a875]/70 hover:border-[#dfbd87] rounded-lg shadow-xl transition-all cursor-pointer z-20 group"
+                title="Open High-Resolution Deep Fragment Inspector"
+              >
+                <Maximize2 className="w-3.5 h-3.5 text-[#c9a875] group-hover:text-black transition-colors" />
+                <span>{isZoomedCover ? 'RESET ZOOM' : 'DEEP VIEW'}</span>
+              </button>
+            </div>
+
+            <div className="mt-3 text-center space-y-1">
+              <p className="text-xs uppercase tracking-[0.2em] text-[#c9a875] font-mono-code font-semibold">
+                {album} • {genre}
+              </p>
+              <p className="text-[11px] text-white/50 font-mono-code">
+                Click cover to zoom • Mastered in {artwork.year || 2026}
+              </p>
+            </div>
+          </div>
+
+          {/* Compact Transport Bar for Cover View */}
+          <div className="pt-2 border-t border-white/10 space-y-3">
+            <div className="space-y-1">
+              <div className="relative flex items-center">
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 100}
+                  step={0.1}
+                  value={currentTime}
+                  onChange={handleSeek}
+                  className="w-full h-2 bg-black/60 rounded-lg appearance-none cursor-pointer accent-[#c9a875] focus:outline-none"
+                  style={{
+                    background: `linear-gradient(to right, #c9a875 ${progressPercent}%, rgba(255,255,255,0.15) ${progressPercent}%)`
+                  }}
+                />
+              </div>
+              <div className="flex justify-between text-[11px] font-mono-code text-white/50">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
+                  title={isMuted ? 'Unmute' : 'Mute'}
+                >
+                  {isMuted || volume === 0 ? (
+                    <VolumeX className="w-4 h-4 text-rose-400" />
+                  ) : (
+                    <Volume2 className="w-4 h-4 text-[#c9a875]" />
+                  )}
+                </button>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => {
+                    setVolume(parseFloat(e.target.value));
+                    if (isMuted) setIsMuted(false);
+                  }}
+                  className="w-16 sm:w-20 h-1 bg-white/20 rounded appearance-none cursor-pointer accent-[#c9a875]"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleSkip(-15)}
+                  className="p-2 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
+                  title="Rewind 15 seconds"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={togglePlay}
+                  className="w-12 h-12 rounded-full bg-gradient-to-r from-[#c9a875] to-[#dfba88] text-[#0a0b0e] flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  title={isPlaying ? 'Pause' : 'Play'}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5 fill-current" />
+                  ) : (
+                    <Play className="w-5 h-5 fill-current ml-0.5" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSkip(15)}
+                  className="p-2 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
+                  title="Forward 15 seconds"
+                >
+                  <RotateCw className="w-4 h-4" />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCycleSpeed}
+                className="px-2.5 py-1 rounded-lg bg-black/60 border border-white/15 text-[11px] font-mono-code text-[#dfbd87] hover:border-[#c9a875] transition-all cursor-pointer font-bold"
+                title="Change playback speed"
+              >
+                {playbackRate}x
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : activeTab === 'player' ? (
+        /* Vinyl Turntable & Interactive Player */
+        <div className="space-y-6 animate-fadeIn">
+          {/* Main Visual Chamber: Sleeve & Rotating Vinyl Record */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 py-2 sm:py-4">
+            {/* Album Sleeve with interactive hover expand */}
+            <div
+              onClick={() => setActiveTab('cover')}
+              className="relative group w-44 h-44 sm:w-52 sm:h-52 rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.85)] border-2 border-[#c9a875]/40 hover:border-[#c9a875] shrink-0 bg-black cursor-pointer transition-all duration-300 hover:shadow-[0_0_35px_rgba(201,168,117,0.35)]"
+              title="Click to expand high-resolution album cover artwork"
+            >
+              <img
+                src={activeCoverSrc}
+                alt={artwork.title}
+                referrerPolicy="no-referrer"
+                onError={() => {
+                  if (activeCoverSrc !== fallbackCover) {
+                    setActiveCoverSrc(fallbackCover);
+                  }
+                }}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-3">
-                <p className="text-[10px] text-[#c9a875] font-mono-code uppercase tracking-wider truncate">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-3 transition-opacity">
+                <p className="text-[10px] text-[#c9a875] font-mono-code uppercase tracking-wider truncate font-semibold">
                   {album}
                 </p>
                 <p className="text-xs font-serif font-bold text-white truncate">
-                  {artwork.artist.name}
+                  {artistName}
                 </p>
+              </div>
+
+              {/* Hover Expand Overlay Badge */}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-300 backdrop-blur-[2px]">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/90 border border-[#c9a875] text-[#dfbd87] text-[11px] font-mono-code font-bold uppercase tracking-wider shadow-xl transform scale-90 group-hover:scale-100 transition-transform">
+                  <Maximize2 className="w-3.5 h-3.5 text-[#c9a875]" />
+                  <span>Expand Cover Art</span>
+                </div>
               </div>
             </div>
 
@@ -290,9 +523,15 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
                 {/* Center Label Badge */}
                 <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[#c9a875] shadow-lg bg-[#11131a] flex items-center justify-center p-1 text-center">
                   <img
-                    src={coverUrl}
+                    src={activeCoverSrc}
                     alt="Center Label"
-                    className="absolute inset-0 w-full h-full object-cover opacity-60"
+                    referrerPolicy="no-referrer"
+                    onError={() => {
+                      if (activeCoverSrc !== fallbackCover) {
+                        setActiveCoverSrc(fallbackCover);
+                      }
+                    }}
+                    className="absolute inset-0 w-full h-full object-cover opacity-70"
                   />
                   <div className="relative z-10 w-4 h-4 rounded-full bg-[#0a0b0e] border-2 border-[#c9a875]" />
                 </div>
@@ -305,8 +544,8 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
             <h3 className="text-2xl sm:text-3xl font-serif-display font-bold text-white tracking-tight">
               {artwork.title}
             </h3>
-            <p className="text-xs sm:text-sm font-mono-code text-[#c9a875] uppercase tracking-widest">
-              {artwork.artist.name} • {genre}
+            <p className="text-xs sm:text-sm font-mono-code text-[#c9a875] uppercase tracking-widest font-semibold">
+              {artistName} • {genre}
             </p>
 
             {/* Live Frequency Equalizer Bars */}
@@ -356,7 +595,7 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
           {/* Transport Controls */}
           <div className="flex items-center justify-between pt-2">
             {/* Volume Slider */}
-            <div className="flex items-center gap-2 w-32">
+            <div className="flex items-center gap-2 w-28 sm:w-36">
               <button
                 type="button"
                 onClick={() => setIsMuted(!isMuted)}
@@ -379,7 +618,7 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
                   setVolume(parseFloat(e.target.value));
                   if (isMuted) setIsMuted(false);
                 }}
-                className="w-20 h-1 bg-white/20 rounded appearance-none cursor-pointer accent-[#c9a875]"
+                className="w-16 sm:w-20 h-1 bg-white/20 rounded appearance-none cursor-pointer accent-[#c9a875]"
               />
             </div>
 
@@ -417,15 +656,18 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
               </button>
             </div>
 
-            {/* Quick Metadata Pill */}
-            <div className="text-right w-32 hidden sm:block">
-              {artwork.musicData?.key && (
-                <span className="text-[10px] font-mono-code text-[#c9a875] block">
-                  Key: {artwork.musicData.key}
-                </span>
-              )}
+            {/* Speed & Metadata Controls */}
+            <div className="flex items-center justify-end gap-2 w-28 sm:w-36">
+              <button
+                type="button"
+                onClick={handleCycleSpeed}
+                className="px-2.5 py-1 rounded-lg bg-black/60 border border-white/15 text-[11px] font-mono-code text-[#dfbd87] hover:border-[#c9a875] transition-all cursor-pointer font-bold"
+                title="Playback speed"
+              >
+                {playbackRate}x
+              </button>
               {artwork.musicData?.bpm && (
-                <span className="text-[10px] font-mono-code text-white/40 block">
+                <span className="text-[10px] font-mono-code text-white/40 hidden md:inline">
                   {artwork.musicData.bpm}
                 </span>
               )}
@@ -434,7 +676,7 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({ ar
         </div>
       ) : (
         /* Lyrics & Liner Notes View */
-        <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
+        <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 animate-fadeIn">
           <div className="p-5 rounded-2xl bg-black/40 border border-white/10 font-serif leading-relaxed text-neutral-200 whitespace-pre-line text-sm sm:text-base">
             <h4 className="text-xs font-mono-code uppercase tracking-wider text-[#c9a875] mb-3 font-semibold">
               Original Composition Lyrics & Verse

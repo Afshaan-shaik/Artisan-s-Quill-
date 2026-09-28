@@ -77,7 +77,24 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
     if (!canvas || !nodeLayer) return;
 
     let isDisposed = false;
+    // Hoisted so cleanup return can dispose Three.js regardless of async RAF timing
+    let _renderer: THREE.WebGLRenderer | null = null;
+    let _scene: THREE.Scene | null = null;
+    let _onMouseMove: ((e: MouseEvent) => void) | null = null;
+    let _onResize: (() => void) | null = null;
+
+    // Double-RAF defer: let the browser paint the dark overlay first before GPU work
+    let initRafId: number = 0;
+    const initRaf1 = requestAnimationFrame(() => {
+      initRafId = requestAnimationFrame(() => {
+        if (isDisposed) return;
+        initScene();
+      });
+    });
+
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function initScene() {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
@@ -94,10 +111,13 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
     const renderer = new THREE.WebGLRenderer({
       canvas,
       alpha: true,
-      antialias: true,
+      antialias: false,
+      powerPreference: 'high-performance',
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setSize(window.innerWidth, window.innerHeight);
+    _renderer = renderer;
+    _scene = scene;
 
     const world = new THREE.Group();
     scene.add(world);
@@ -154,8 +174,8 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
       return pts;
     }
 
-    const farStars = starField(2400, 20, 90, 0.55, 0.55);
-    const nearDust = starField(500, 6, 30, 1.3, 0.85);
+    const farStars = starField(1200, 20, 90, 0.55, 0.55);
+    const nearDust = starField(200, 6, 30, 1.3, 0.85);
 
     const nodeMeshes: Array<{ sprite: THREE.Sprite; pos: THREE.Vector3; activeAt: number }> = [];
     const lineMeshes: Array<{ line: THREE.Line; from: THREE.Vector3; to: THREE.Vector3; activeAt: number } | null> = [];
@@ -229,6 +249,7 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
       mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouse.y = (e.clientY / window.innerHeight) * 2 - 1;
     };
+    _onMouseMove = onMouseMove;
     window.addEventListener("mousemove", onMouseMove);
 
     const onResize = () => {
@@ -236,6 +257,7 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     };
+    _onResize = onResize;
     window.addEventListener("resize", onResize);
 
     const clock = new THREE.Clock();
@@ -311,14 +333,17 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
       renderer.render(scene, camera);
     }
     animate();
+    } // end initScene
 
     return () => {
       isDisposed = true;
+      cancelAnimationFrame(initRaf1);
+      cancelAnimationFrame(initRafId);
       cancelAnimationFrame(animFrameRef.current);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("resize", onResize);
-      renderer.dispose();
-      scene.clear();
+      if (_onMouseMove) window.removeEventListener("mousemove", _onMouseMove);
+      if (_onResize) window.removeEventListener("resize", _onResize);
+      if (_renderer) { _renderer.dispose(); }
+      if (_scene) { _scene.clear(); }
     };
   }, [dismiss]);
 

@@ -265,7 +265,19 @@ export function mapRowToArtwork(row: CloudArtworkRow): Artwork {
     isSaved: false,
     featured: row.featured ?? false,
     poetryContent: row.poetry_content,
-    videoData: row.video_data,
+    videoData: row.category === 'video' ? row.video_data : undefined,
+    musicData: row.category === 'music' ? {
+      audioUrl: (row.video_data && row.video_data.audioUrl) ? row.video_data.audioUrl : row.media_url,
+      coverArtUrl: (row.video_data && row.video_data.coverArtUrl) ? row.video_data.coverArtUrl : (row.thumbnail_url || row.media_url),
+      album: (row.video_data && row.video_data.album) ? row.video_data.album : (row.dimensions || 'Atelier Master Sessions'),
+      durationSeconds: (row.video_data && row.video_data.durationSeconds) ? row.video_data.durationSeconds : 215,
+      genre: (row.video_data && row.video_data.genre) ? row.video_data.genre : (row.medium || 'Original Composition'),
+      lyrics: (row.video_data && row.video_data.lyrics) ? row.video_data.lyrics : '',
+      key: (row.video_data && row.video_data.key) ? row.video_data.key : '',
+      bpm: (row.video_data && row.video_data.bpm) ? row.video_data.bpm : '',
+      isOriginalComposition: true,
+      composer: (row.video_data && row.video_data.composer) ? row.video_data.composer : (row.artist_name || 'Sanctuary Musician')
+    } : undefined,
     exhibitionId: row.exhibition_id,
     isDeleted: row.is_deleted ?? false
   };
@@ -288,6 +300,14 @@ export function mapArtworkToRow(artwork: Artwork): CloudArtworkRow {
                   artwork.artist.id.startsWith('artist-') || 
                   artwork.artist.id === 'guest');
 
+  const resolvedMediaUrl = (artwork.category === 'music' && artwork.musicData?.audioUrl)
+    ? artwork.musicData.audioUrl
+    : (artwork.mediaUrl || '/curatorial-masterpiece.svg');
+
+  const resolvedThumbnailUrl = (artwork.category === 'music' && (artwork.thumbnailUrl || artwork.musicData?.coverArtUrl))
+    ? (artwork.thumbnailUrl || artwork.musicData?.coverArtUrl || '/curatorial-masterpiece.svg')
+    : (artwork.thumbnailUrl || artwork.mediaUrl || '/curatorial-masterpiece.svg');
+
   return {
     id: artwork.id,
     user_id: isFounder ? DEFAULT_USER.id : (isGuest ? undefined : artwork.artist.id),
@@ -296,10 +316,10 @@ export function mapArtworkToRow(artwork: Artwork): CloudArtworkRow {
     artist_avatar: resolvedAvatar,
     title: artwork.title || 'Untitled Masterpiece',
     category: artwork.category || 'digital',
-    media_url: artwork.mediaUrl || '/curatorial-masterpiece.svg',
-    thumbnail_url: artwork.thumbnailUrl || artwork.mediaUrl || '/curatorial-masterpiece.svg',
-    dimensions: artwork.dimensions || 'Original Canvas',
-    medium: artwork.medium || 'Fine Art',
+    media_url: resolvedMediaUrl,
+    thumbnail_url: resolvedThumbnailUrl,
+    dimensions: artwork.dimensions || (artwork.category === 'music' ? (artwork.musicData?.album || 'Master Vinyl Studio Recording') : 'Original Canvas'),
+    medium: artwork.medium || (artwork.category === 'music' ? `Original Master • ${artwork.musicData?.genre || 'Ambient Piano'}` : 'Fine Art'),
     year: typeof artwork.year === 'number' ? artwork.year : parseInt(String(artwork.year)) || new Date().getFullYear(),
     description: artwork.description || '',
     curator_note: artwork.curatorNote || undefined,
@@ -307,11 +327,13 @@ export function mapArtworkToRow(artwork: Artwork): CloudArtworkRow {
     likes_count: artwork.likesCount || 0,
     views_count: artwork.viewsCount || 1,
     saves_count: artwork.savesCount || 0,
-    aspect_ratio: artwork.aspectRatio || 'tall',
+    aspect_ratio: artwork.aspectRatio || (artwork.category === 'music' ? 'square' : 'tall'),
     color_palette: Array.isArray(artwork.colorPalette) && artwork.colorPalette.length > 0 ? artwork.colorPalette : ['#12141c', '#c9a875', '#333b4d', '#f0f3fa'],
     featured: artwork.featured ?? false,
     poetry_content: artwork.poetryContent || undefined,
-    video_data: artwork.videoData || undefined,
+    video_data: artwork.category === 'music'
+      ? (artwork.musicData as any)
+      : (artwork.videoData || undefined),
     exhibition_id: artwork.exhibitionId || undefined,
     is_deleted: artwork.isDeleted ?? false,
     created_at: artwork.createdAt || new Date().toISOString()

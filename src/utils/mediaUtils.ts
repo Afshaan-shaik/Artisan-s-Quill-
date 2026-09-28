@@ -6,6 +6,11 @@ import { Artwork } from '../types';
  */
 export function isVideoMedia(artwork: Artwork | null | undefined): boolean {
   if (!artwork) return false;
+  // If categorized as music or audio, NEVER treat as video (audio files may be in .mp4/m4a containers)
+  if (artwork.category === 'music' || (artwork.category as string) === 'audio') return false;
+  if (artwork.category === 'poetry') return false;
+  if (artwork.musicData && Boolean(artwork.musicData.audioUrl)) return false;
+
   if (artwork.category === 'video') return true;
   if (artwork.videoData && Object.keys(artwork.videoData).length > 0) return true;
 
@@ -33,7 +38,7 @@ export function isAudioMedia(artwork: Artwork | null | undefined): boolean {
   if (artwork.musicData && Boolean(artwork.musicData.audioUrl)) return true;
 
   const url = (artwork.mediaUrl || '').toLowerCase().trim();
-  const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
+  const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac', '.opus', '.weba'];
   return audioExtensions.some(ext => url.includes(ext));
 }
 

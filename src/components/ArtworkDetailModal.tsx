@@ -894,8 +894,8 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
           {/* Left Viewport: Artwork or Poetry Presentation */}
           <div
             className={`lg:col-span-7 xl:col-span-8 relative flex ${
-              artwork.category === 'poetry'
-                ? 'flex-col items-center justify-start p-6 sm:p-8 md:p-12 overflow-y-auto'
+              artwork.category === 'poetry' || artwork.category === 'music' || isAudioMedia(artwork)
+                ? 'flex-col items-center justify-center p-4 sm:p-6 md:p-10 overflow-y-auto'
                 : isZoomed
                 ? 'items-center justify-center p-4 sm:p-8 md:p-10 overflow-auto'
                 : 'items-center justify-center p-6 sm:p-8 md:p-10 overflow-hidden'
@@ -1221,6 +1221,12 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                   <span className="text-neutral-500 font-mono-code">{poetry.readingTimeMinutes} min read</span>
                 </div>
               </div>
+            ) : isAudioMedia(artwork) ? (
+              /* Audio / Sound Art Composition with Luxury Vinyl Chamber & Equalizer */
+              <AudioSanctuaryChamber
+                artwork={artwork}
+                onOpenFragmentInspector={onOpenFragmentInspector}
+              />
             ) : isVideoMedia(artwork) ? (
               /* High-Res Video / Digital Motion Cinema with YouTube-Style Scrubber & Down Volume */
               <div className="relative z-10 w-full max-w-4xl my-auto animate-fadeIn">
@@ -1234,9 +1240,6 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
                   initialMuted={false}
                 />
               </div>
-            ) : isAudioMedia(artwork) ? (
-              /* Audio / Sound Art Composition with Luxury Vinyl Chamber & Equalizer */
-              <AudioSanctuaryChamber artwork={artwork} />
             ) : (
               /* High Resolution Visual Artwork (Painting / Drawing / Digital) */
               <div className="relative z-10 flex items-center justify-center max-w-full max-h-full my-auto">

@@ -33,13 +33,16 @@ export const CosmosLiveArtworkMedia: React.FC<CosmosLiveArtworkMediaProps> = ({
     setImageLoaded(false);
   }, [artwork.id]);
 
+  const isMusic = artwork.category === 'music' || Boolean(artwork.musicData);
+
   // Robust medium detection
   const isVideo =
-    artwork.category === 'video' ||
-    isVideoMedia(artwork) ||
-    Boolean(artwork.videoData && Object.keys(artwork.videoData).length > 0) ||
-    Boolean(artwork.mediaUrl?.match(/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i)) ||
-    Boolean(artwork.thumbnailUrl?.match(/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i));
+    !isMusic &&
+    (artwork.category === 'video' ||
+      isVideoMedia(artwork) ||
+      Boolean(artwork.videoData && Object.keys(artwork.videoData).length > 0) ||
+      Boolean(artwork.mediaUrl?.match(/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i)) ||
+      Boolean(artwork.thumbnailUrl?.match(/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i)));
 
   const isPoetry = artwork.category === 'poetry' || Boolean(artwork.poetryContent);
 
@@ -67,6 +70,8 @@ export const CosmosLiveArtworkMedia: React.FC<CosmosLiveArtworkMediaProps> = ({
         return <ImageIcon className="w-5 h-5 text-[#a855f7]" />;
       case 'video':
         return <Film className="w-5 h-5 text-[#10b981]" />;
+      case 'music':
+        return <Music className="w-5 h-5 text-[#dfbd87]" />;
       case 'poetry':
       default:
         return <Feather className="w-5 h-5 text-[#dfbd87]" />;
@@ -208,11 +213,18 @@ export const CosmosLiveArtworkMedia: React.FC<CosmosLiveArtworkMediaProps> = ({
   // ─────────────────────────────────────────────────────────────
   // 3. PAINTING, DRAWING, DIGITAL OR GENERAL IMAGE
   // ─────────────────────────────────────────────────────────────
-  const rawImageSrc = artwork.thumbnailUrl || artwork.mediaUrl;
+  const isVideoExt = (url?: string) => Boolean(url && url.match(/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i));
+  const rawImageSrc = isMusic
+    ? ((artwork.thumbnailUrl && !isVideoExt(artwork.thumbnailUrl) ? artwork.thumbnailUrl : '') ||
+       (artwork.musicData?.coverArtUrl && !isVideoExt(artwork.musicData.coverArtUrl) ? artwork.musicData.coverArtUrl : '') ||
+       (!isVideoExt(artwork.mediaUrl) ? artwork.mediaUrl : '') ||
+       'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80')
+    : (artwork.thumbnailUrl || artwork.mediaUrl);
+
   // Safety guard: if rawImageSrc looks like a video URL, avoid passing to <img>
-  const isSuspiciousVideoUrl =
+  const isSuspiciousVideoUrl = !isMusic && (
     Boolean(rawImageSrc?.match(/\.(mp4|webm|mov|m4v)(\?.*)?$/i)) ||
-    (rawImageSrc && (rawImageSrc.includes('video/') || rawImageSrc.includes('videos/')));
+    Boolean(rawImageSrc && (rawImageSrc.includes('video/') || rawImageSrc.includes('videos/'))));
 
   const imageSrc = isSuspiciousVideoUrl ? undefined : rawImageSrc;
 
