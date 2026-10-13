@@ -31,6 +31,7 @@ const NODES: ConstellationNode[] = [
   { id: "paintings",   label: "Paintings & Drawings",         pos: [-9,  2,  -8], hash: "#feed" },
   { id: "digital",     label: "Digital Media & Motion Loops", pos: [-6, -6, -13], hash: "#feed" },
   { id: "poetry",      label: "Poetry Cards",                 pos: [ 9,  4, -10], hash: "#feed" },
+  { id: "music",       label: "Original Music Sanctuary",     pos: [ 1, -7, -11], hash: "#music" },
   { id: "cosmos",      label: "3D Cosmos — Starmap",          pos: [ 6, -5, -17], hash: "#cosmos" },
   { id: "exhibitions", label: "Curated Exhibitions",          pos: [-3, -1,  -6], hash: "#exhibitions" },
   { id: "bard",        label: "Bard Symphony",                pos: [ 3,  6, -15], hash: "__bard__" },

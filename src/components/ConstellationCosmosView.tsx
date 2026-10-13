@@ -15,7 +15,11 @@ import {
   ImageIcon,
   Film,
   Compass,
-  Layers
+  Layers,
+  Music,
+  Disc3,
+  Play,
+  Pause
 } from 'lucide-react';
 import { Artwork, ArtCategory } from '../types';
 import { CosmosLiveArtworkMedia } from './CosmosLiveArtworkMedia';
@@ -24,7 +28,7 @@ interface ConstellationCosmosViewProps {
   artworks: Artwork[];
   onSelectArtwork: (artwork: Artwork) => void;
   onOpenUpload: (category?: ArtCategory) => void;
-  onSwitchToGallery: () => void;
+  onSwitchToGallery: (category?: ArtCategory) => void;
 }
 
 interface StarNode3D {
@@ -88,6 +92,12 @@ const MEDIUM_METRICS: Record<
     color: '#10b981',
     glow: 'rgba(16, 185, 129, 0.5)',
     icon: <Film className="w-3 h-3" />
+  },
+  music: {
+    label: 'Original Music',
+    color: '#eab308',
+    glow: 'rgba(234, 179, 8, 0.55)',
+    icon: <Disc3 className="w-3 h-3 text-[#eab308]" />
   }
 };
 
@@ -120,6 +130,44 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
   const animFrameIdRef = useRef<number | null>(null);
   const nodesRef = useRef<StarNode3D[]>([]);
   const hoveredNodeRef = useRef<typeof hoveredNode>(null);
+
+  const [previewTrackId, setPreviewTrackId] = useState<string | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handleTogglePreviewAudio = (e: React.MouseEvent, art: Artwork) => {
+    e.stopPropagation();
+    const audioUrl = art.musicData?.audioUrl || art.mediaUrl;
+    if (!audioUrl) return;
+
+    if (previewTrackId === art.id) {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+      }
+      setPreviewTrackId(null);
+    } else {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+      }
+      const audio = new Audio(audioUrl);
+      audio.volume = 0.75;
+      audio.play().then(() => {
+        setPreviewTrackId(art.id);
+      }).catch(() => {
+        setPreviewTrackId(null);
+      });
+      audio.onended = () => setPreviewTrackId(null);
+      previewAudioRef.current = audio;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+        previewAudioRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     hoveredNodeRef.current = hoveredNode;
@@ -166,7 +214,8 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
       poetry: 0,
       digital: 0,
       drawing: 0,
-      video: 0
+      video: 0,
+      music: 0
     };
     artworks.forEach((art) => {
       const cat = art.category || 'digital';
@@ -211,13 +260,14 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
         }
 
         case 'clusters': {
-          // 5 Distinct spatial nebular clusters by medium
+          // 6 Distinct spatial nebular clusters by medium
           const clusterCenters: Record<string, { x: number; y: number; z: number }> = {
             painting: { x: 200, y: 80, z: -80 },
             poetry: { x: -220, y: 100, z: 70 },
             digital: { x: 160, y: -130, z: 120 },
             drawing: { x: -180, y: -100, z: -90 },
-            video: { x: 0, y: 190, z: 140 }
+            video: { x: 0, y: 190, z: 140 },
+            music: { x: 140, y: 150, z: -150 }
           };
           const center = clusterCenters[artwork.category] || { x: 0, y: 0, z: 0 };
           const clusterAngle = (index * 1.37) % (2 * Math.PI);
@@ -697,6 +747,21 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
           ctx.restore();
         }
 
+        // Special Sonic Resonance Harmonic Rings for Music Stars
+        if (node.artwork.category === 'music' || Boolean(node.artwork.musicData)) {
+          ctx.save();
+          ctx.translate(px, py);
+          const sonicWavePulse = Math.sin(time * 3 + node.twinkleOffset) * 0.18 + 1;
+          ctx.strokeStyle = `rgba(234, 179, 8, ${0.55 * alpha * sonicWavePulse})`;
+          ctx.lineWidth = 1.2 * dpr;
+          ctx.setLineDash([3 * dpr, 3 * dpr]);
+          ctx.beginPath();
+          ctx.arc(0, 0, currentRadius * 2.2 * sonicWavePulse, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.restore();
+        }
+
         // 3. Dense Spherical Star Core
         const coreGrad = ctx.createRadialGradient(
           px - currentRadius * 0.25,
@@ -962,7 +1027,7 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
         {/* Switch to Gallery Grid Button */}
         <button
           id="cosmos-switch-grid-btn"
-          onClick={onSwitchToGallery}
+          onClick={() => onSwitchToGallery()}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-900/90 hover:bg-neutral-800 text-neutral-200 hover:text-white border border-white/15 hover:border-[#c9a875]/50 transition-all duration-200 shadow-lg cursor-pointer shrink-0"
           title="Return to Standard Gallery Grid"
         >
@@ -1014,8 +1079,19 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
             )}
           </div>
 
-          {/* Right Action Suite: Add Star & Sound Toggle */}
+          {/* Right Action Suite: Music Lounge, Add Star & Sound Toggle */}
           <div className="flex items-center gap-2">
+            <button
+              id="cosmos-music-lounge-btn"
+              onClick={() => onSwitchToGallery('music')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono-code uppercase tracking-wider bg-amber-500/15 border border-amber-500/40 hover:border-amber-400 text-amber-300 hover:text-white shadow-[0_0_12px_rgba(245,158,11,0.2)] transition-all cursor-pointer hover:scale-105 active:scale-95"
+              title="Open Original Music & Acoustic Lounge"
+            >
+              <Disc3 className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Original</span>
+              <span>Music Lounge</span>
+            </button>
+
             <button
               id="cosmos-add-star-btn"
               onClick={() => onOpenUpload()}
@@ -1186,6 +1262,45 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
                     )}
                   </div>
                 </div>
+
+                {/* Music Track Preview Controls */}
+                {(hoveredNode.artwork.category === 'music' || Boolean(hoveredNode.artwork.musicData)) && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-2"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
+                        <Disc3 className={`w-4 h-4 text-amber-400 ${previewTrackId === hoveredNode.artwork.id ? 'animate-spin' : ''}`} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-mono-code font-bold text-amber-300 truncate">
+                          {hoveredNode.artwork.musicData?.genre || 'Original Audio'}
+                        </p>
+                        <p className="text-[9px] font-mono-code text-neutral-400 truncate">
+                          {hoveredNode.artwork.musicData?.album || 'Studio Master Recording'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={(e) => handleTogglePreviewAudio(e, hoveredNode.artwork)}
+                      className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-mono-code font-bold text-[10px] flex items-center gap-1 shadow-[0_0_10px_rgba(245,158,11,0.4)] transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0"
+                    >
+                      {previewTrackId === hoveredNode.artwork.id ? (
+                        <>
+                          <Pause className="w-3 h-3 fill-current" />
+                          <span>Pause</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-3 h-3 fill-current" />
+                          <span>Play</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
 
                 {/* Artist Row */}
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10 text-xs">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, Compass, Eye, Filter, Zap, Info, Feather } from 'lucide-react';
+import { X, Sparkles, Compass, Eye, Filter, Zap, Info, Feather, Music, Disc3 } from 'lucide-react';
 import { Artwork } from '../types';
 import { CosmosLiveArtworkMedia } from './CosmosLiveArtworkMedia';
 
@@ -23,6 +23,7 @@ interface StarNode {
 
 const THEMES = [
   { id: 'all', label: 'All Constellations', color: '#dfbd87' },
+  { id: 'music', label: 'Original Music', color: '#eab308' },
   { id: 'poetry', label: 'Poetic Verses', color: '#c9a875' },
   { id: 'starlight', label: 'Starlight & Night', color: '#88a4e6' },
   { id: 'gold', label: 'Gold Leaf & Atelier', color: '#ffd700' },
@@ -63,10 +64,12 @@ export const ConstellationStarMapModal: React.FC<ConstellationStarMapModalProps>
       const y = radius * Math.sin(theta) * Math.sin(phi);
       const z = radius * Math.cos(phi);
 
-      const theme =
-        art.category === 'poetry'
-          ? 'poetry'
-          : assignedThemes[(idx + (art.title?.length || 0)) % assignedThemes.length];
+      const isMusic = art.category === 'music' || Boolean(art.musicData);
+      const theme = isMusic
+        ? 'music'
+        : art.category === 'poetry'
+        ? 'poetry'
+        : assignedThemes[(idx + (art.title?.length || 0)) % assignedThemes.length];
 
       const themeObj = THEMES.find((t) => t.id === theme) || THEMES[0];
 
@@ -216,6 +219,15 @@ export const ConstellationStarMapModal: React.FC<ConstellationStarMapModalProps>
         ctx.beginPath();
         ctx.arc(node.px, node.py, starRadius * 0.5, 0, Math.PI * 2);
         ctx.fill();
+
+        // Musical harmonic ring for original music nodes
+        if (node.theme === 'music' || node.artwork.category === 'music') {
+          ctx.strokeStyle = `rgba(234, 179, 8, ${isHovered ? 0.9 : 0.4})`;
+          ctx.lineWidth = 1 * window.devicePixelRatio;
+          ctx.beginPath();
+          ctx.arc(node.px, node.py, starRadius * 1.8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
 
         // Text label on hover or if primary
         if (isHovered) {

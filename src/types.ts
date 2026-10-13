@@ -101,6 +101,7 @@ export interface MusicTrackData {
   key?: string;
   composer?: string;
   coverArtUrl?: string;
+  coverUrl?: string;
 }
 
 export interface Artwork {

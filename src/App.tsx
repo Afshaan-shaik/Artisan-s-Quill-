@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Sparkles,
   Search,
@@ -18,7 +18,11 @@ import {
   Clock,
   Award,
   Film,
-  ArrowRight
+  ArrowRight,
+  Disc3,
+  Music,
+  Play,
+  Pause
 } from 'lucide-react';
 import { Artwork, ArtCategory, UserProfile, Exhibition } from './types';
 import { DEFAULT_USER } from './data/initialData';
@@ -57,6 +61,7 @@ import CustomPoemModal, { type PoemFormData } from './components/CustomPoemModal
 import { AIPoeticBardModal } from './components/AIPoeticBardModal';
 import { ConstellationStarMapModal } from './components/ConstellationStarMapModal';
 import { ConstellationCosmosView } from './components/ConstellationCosmosView';
+import { OriginalMusicSection } from './components/OriginalMusicSection';
 import { Collector3DVaultModal } from './components/Collector3DVaultModal';
 import { PoeticScrollModal } from './components/PoeticScrollModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -248,6 +253,41 @@ export default function App() {
 
   const [selectedExhibitionId, setSelectedExhibitionId] = useState<string | null>(null);
 
+  // Original Music Shelf Audio Preview State (for All Works view)
+  const [shelfAudioPlayingId, setShelfAudioPlayingId] = useState<string | null>(null);
+  const shelfAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handleToggleShelfAudio = (track: Artwork, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const audioUrl = track.musicData?.audioUrl || track.mediaUrl;
+    if (!audioUrl) return;
+
+    if (shelfAudioPlayingId === track.id) {
+      if (shelfAudioRef.current) {
+        shelfAudioRef.current.pause();
+      }
+      setShelfAudioPlayingId(null);
+    } else {
+      if (!shelfAudioRef.current) {
+        shelfAudioRef.current = new Audio();
+        shelfAudioRef.current.onended = () => setShelfAudioPlayingId(null);
+        shelfAudioRef.current.onerror = () => setShelfAudioPlayingId(null);
+      }
+      shelfAudioRef.current.src = audioUrl;
+      shelfAudioRef.current.play().catch(() => {});
+      setShelfAudioPlayingId(track.id);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (shelfAudioRef.current) {
+        shelfAudioRef.current.pause();
+        shelfAudioRef.current = null;
+      }
+    };
+  }, []);
+
   const triggerNotification = (message: string, type: 'success' | 'info' | 'error' = 'info') => {
     setStatusNotification({ message, type });
     setTimeout(() => setStatusNotification(null), 4500);
@@ -314,11 +354,29 @@ export default function App() {
 
       // Feed filter
       if (activeView !== 'saved') {
-         if (feedFilter === 'popular') {
-           list.sort((a, b) => b.likesCount - a.likesCount);
-         } else if (feedFilter === 'latest') {
-           list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-         }
+        if (feedFilter === 'popular') {
+          list.sort((a, b) => b.likesCount - a.likesCount);
+        } else if (feedFilter === 'latest') {
+          list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        } else if (feedFilter === 'curated' && selectedCategory === 'all' && !searchQuery) {
+          // Category-priority ordering: Digital Media → Motion Loops → Original Music → Paintings → Drawings → Poetry
+          const CATEGORY_ORDER: Record<string, number> = {
+            digital: 0,
+            video: 1,
+            music: 2,
+            painting: 3,
+            drawing: 4,
+            poetry: 5,
+          };
+          list.sort((a, b) => {
+            const aPriority = CATEGORY_ORDER[a.category] ?? 6;
+            const bPriority = CATEGORY_ORDER[b.category] ?? 6;
+            if (aPriority !== bPriority) return aPriority - bPriority;
+            // Within same category: featured first, then by date descending
+            if (a.featured !== b.featured) return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+        }
       }
 
       // Date range filter
@@ -335,9 +393,6 @@ export default function App() {
         if (exh) {
           list = list.filter(a => exh.artworkIds.includes(a.id));
         }
-      }
-      if (dateRangeFilter.end) {
-        list = list.filter(a => new Date(a.createdAt) <= new Date(dateRangeFilter.end!));
       }
     }
     
@@ -966,7 +1021,10 @@ export default function App() {
             artworks={realtimeArtworks}
             onSelectArtwork={handleOpenArtwork}
             onOpenUpload={handleOpenUpload}
-            onSwitchToGallery={() => handleSelectView('feed')}
+            onSwitchToGallery={(cat) => {
+              if (cat) setSelectedCategory(cat);
+              handleSelectView('feed');
+            }}
           />
         )}
 
@@ -1024,6 +1082,7 @@ export default function App() {
                 </div>
               </div>
             </div>
+
 
             {/* Feed Subheader & Curatorial Filter Suite */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-4 border-b border-white/10">
@@ -1144,7 +1203,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Masonry Grid / Poetry Sanctuary */}
+            {/* Masonry Grid / Poetry Sanctuary / Dedicated Original Music Section */}
             {selectedCategory === 'poetry' ? (
               <PoetrySanctuaryView
                 poems={artworks}
@@ -1152,6 +1211,19 @@ export default function App() {
                 onEditPoem={handleEditPoem}
                 onDeletePoem={handleDeletePoem}
                 canManage={(poem) => GalleryService.canUserManageArtwork(poem, currentUser)}
+              />
+            ) : selectedCategory === 'music' ? (
+              <OriginalMusicSection
+                artworks={artworks.length > 0 ? artworks : realtimeArtworks}
+                currentUser={currentUser}
+                onSelectArtwork={handleOpenArtwork}
+                onToggleLike={handleToggleLike}
+                onToggleSave={handleToggleSave}
+                onSelectArtist={handleSelectArtist}
+                onShareArtwork={(art) => setArtworkToShare(art)}
+                onAddToMoodBoard={(art) => setArtworkForMoodBoard(art)}
+                onOpenUpload={handleOpenUpload}
+                onSwitchToCosmos={() => handleSelectView('cosmos')}
               />
             ) : (
               <MasonryGrid
@@ -1166,6 +1238,149 @@ export default function App() {
                 onOpenUpload={handleOpenUpload}
                 onOpenBardModal={handleOpenBardWithPoem}
               />
+            )}
+
+            {/* Original Music & Soundscape Horizon Showcase Shelf (Anchored Below Artwork Feed) */}
+            {selectedCategory === 'all' && (
+              <div
+                id="original-music-showcase-shelf"
+                className="mt-12 relative overflow-hidden rounded-2xl p-5 bg-gradient-to-r from-[#0b0c16]/95 via-[#131726]/90 to-[#0b0c16]/95 border border-[#c9a875]/40 shadow-2xl backdrop-blur-xl"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-[#c9a875]/20 border border-[#c9a875]/40 text-[#c9a875] shadow-[0_0_15px_rgba(201,168,117,0.3)]">
+                      <Disc3 className="w-5 h-5 animate-[spin_6s_linear_infinite]" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-[#c9a875]/20 border border-[#c9a875]/40 text-[10px] font-mono-code font-bold uppercase tracking-wider text-[#dfbd87]">
+                          ✦ Master Audiophile Vault
+                        </span>
+                        <span className="text-xs font-mono-code text-neutral-400">
+                          • {realtimeArtworks.filter(a => a.category === 'music' || a.musicData).length} Original Tracks Active
+                        </span>
+                      </div>
+                      <h3 className="text-lg sm:text-xl font-serif-display font-medium text-white flex items-center gap-2 mt-0.5">
+                        <span>Original Music &amp; Soundscape Horizon</span>
+                      </h3>
+                      <p className="text-xs font-mono-code text-neutral-300">
+                        Acoustic reveries, founder Afshaan Shaikh's &ldquo;Musafir&rdquo;, and curated sonic atmospheres.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <button
+                      id="shelf-upload-track-btn"
+                      onClick={() => handleOpenUpload('music', 'original song')}
+                      className="px-3 py-1.5 rounded-xl border border-white/20 hover:border-[#c9a875]/70 text-xs font-mono-code uppercase tracking-wider text-neutral-300 hover:text-white hover:bg-white/5 transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-[#c9a875]" />
+                      <span className="hidden md:inline">Publish </span>Track
+                    </button>
+
+                    <button
+                      id="shelf-view-all-music-btn"
+                      onClick={() => {
+                        setSelectedCategory('music');
+                      }}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-mono-code text-xs font-bold uppercase tracking-wider hover:scale-105 hover:shadow-[0_0_18px_rgba(201,168,117,0.5)] transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>Enter Music Lounge</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Horizontal Scrolling Music Track Rail */}
+                <div className="mt-4 flex items-center gap-3.5 overflow-x-auto no-scrollbar py-1">
+                  {realtimeArtworks
+                    .filter(a => a.category === 'music' || a.musicData)
+                    .map((track) => {
+                      const isPlaying = shelfAudioPlayingId === track.id;
+                      const isFounderTrack = track.artist?.name?.toLowerCase().includes('afshaan') || track.artist?.handle?.toLowerCase().includes('afshaan');
+                      const cover = track.musicData?.coverArtUrl || track.musicData?.coverUrl || track.thumbnailUrl || track.mediaUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80';
+
+                      return (
+                        <div
+                          key={`shelf-track-${track.id}`}
+                          onClick={() => handleOpenArtwork(track)}
+                          className={`group relative shrink-0 w-64 sm:w-72 p-3 rounded-xl border transition-all duration-300 cursor-pointer flex items-center gap-3 select-none ${
+                            isPlaying
+                              ? 'bg-[#151929]/95 border-[#c9a875] shadow-[0_0_20px_rgba(201,168,117,0.35)]'
+                              : 'bg-white/[0.04] hover:bg-white/[0.08] border-white/10 hover:border-[#c9a875]/50'
+                          }`}
+                        >
+                          {/* Cover Thumbnail with Vinyl Edge & Play Button Overlay */}
+                          <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 border border-white/15 bg-black/60">
+                            <img
+                              src={cover}
+                              alt={track.title}
+                              className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${
+                                isPlaying ? 'brightness-75' : ''
+                              }`}
+                            />
+                            {/* Vinyl groove ring */}
+                            <div className="absolute inset-0 rounded-lg border border-white/10 pointer-events-none" />
+
+                            <button
+                              type="button"
+                              onClick={(e) => handleToggleShelfAudio(track, e)}
+                              className={`absolute inset-0 m-auto w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                                isPlaying
+                                  ? 'bg-[#c9a875] text-black shadow-lg scale-100'
+                                  : 'bg-black/70 hover:bg-[#c9a875] text-white hover:text-black opacity-90 group-hover:opacity-100 hover:scale-110'
+                              }`}
+                              title={isPlaying ? 'Pause preview' : 'Play preview'}
+                            >
+                              {isPlaying ? (
+                                <Pause className="w-4 h-4 fill-current" />
+                              ) : (
+                                <Play className="w-4 h-4 fill-current ml-0.5" />
+                              )}
+                            </button>
+                          </div>
+
+                          {/* Track Details */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              {isFounderTrack && (
+                                <span className="px-1.5 py-0.2 rounded bg-[#c9a875]/25 border border-[#c9a875]/50 text-[9px] font-mono-code font-bold text-[#f3e3cb] uppercase tracking-wider">
+                                  Founder
+                                </span>
+                              )}
+                              <span className="text-[10px] font-mono-code text-[#c9a875] truncate">
+                                {track.musicData?.genre || 'Original Audio'}
+                              </span>
+                            </div>
+
+                            <h4 className="text-xs sm:text-sm font-medium text-white group-hover:text-[#f3e3cb] truncate mt-0.5 font-serif-display">
+                              {track.title}
+                            </h4>
+
+                            <div className="flex items-center justify-between mt-1 text-[11px] font-mono-code text-neutral-400">
+                              <span className="truncate max-w-[130px]">{track.artist?.name || 'Sanctuary Artist'}</span>
+                              <span>
+                                {track.musicData?.durationSeconds
+                                  ? `${Math.floor(track.musicData.durationSeconds / 60)}:${(track.musicData.durationSeconds % 60).toString().padStart(2, '0')}`
+                                  : 'Track'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Animated Sound Waveform Indicator */}
+                          {isPlaying && (
+                            <div className="shrink-0 flex items-end gap-0.5 h-4 pr-1">
+                              <span className="w-0.5 bg-[#c9a875] animate-[bounce_0.6s_ease-in-out_infinite_alternate]" style={{ height: '80%' }} />
+                              <span className="w-0.5 bg-[#c9a875] animate-[bounce_0.4s_ease-in-out_infinite_alternate_0.2s]" style={{ height: '100%' }} />
+                              <span className="w-0.5 bg-[#c9a875] animate-[bounce_0.8s_ease-in-out_infinite_alternate_0.1s]" style={{ height: '50%' }} />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
             )}
           </>
         )}

@@ -83,12 +83,12 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const categories: { id: ArtCategory; label: string; icon: React.ReactNode; desc: string }[] = [
     { id: 'all', label: 'All Works', icon: <Layers className="w-3.5 h-3.5" />, desc: 'Curated complete atelier' },
-    { id: 'poetry', label: 'Poetry Cards', icon: <Feather className="w-3.5 h-3.5 text-[#e0c49a]" />, desc: 'Verse, stanzas & lyrical cards' },
-    { id: 'painting', label: 'Paintings', icon: <Palette className="w-3.5 h-3.5 text-[#e8b482]" />, desc: 'Oil, acrylic & canvas' },
-    { id: 'drawing', label: 'Drawings & Ink', icon: <PenTool className="w-3.5 h-3.5 text-[#b9c6ea]" />, desc: 'Charcoal, pencil & ink wash' },
     { id: 'digital', label: 'Digital Media', icon: <ImageIcon className="w-3.5 h-3.5 text-[#8ed8b5]" />, desc: 'Generative, 3D & render art' },
     { id: 'video', label: 'Motion Loops', icon: <Film className="w-3.5 h-3.5 text-[#f0a8d0]" />, desc: 'Cinematic loops & audiovisual' },
-    { id: 'music', label: 'Original Music', icon: <Disc3 className="w-3.5 h-3.5 text-[#c9a875]" />, desc: 'Original songs, audio tracks & soundscapes' }
+    { id: 'music', label: 'Original Music', icon: <Disc3 className="w-3.5 h-3.5 text-[#c9a875]" />, desc: 'Original songs, audio tracks & soundscapes' },
+    { id: 'painting', label: 'Paintings', icon: <Palette className="w-3.5 h-3.5 text-[#e8b482]" />, desc: 'Oil, acrylic & canvas' },
+    { id: 'drawing', label: 'Drawings & Ink', icon: <PenTool className="w-3.5 h-3.5 text-[#b9c6ea]" />, desc: 'Charcoal, pencil & ink wash' },
+    { id: 'poetry', label: 'Poetry Cards', icon: <Feather className="w-3.5 h-3.5 text-[#e0c49a]" />, desc: 'Verse, stanzas & lyrical cards' },
   ];
 
   const hasActiveDateFilter = Boolean(dateRange.start || dateRange.end);
@@ -362,6 +362,24 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <span>{activeView === 'exhibitions' ? '✦' : '✧'}</span>
               <span>Exhibitions</span>
+            </button>
+
+            {/* Dedicated Original Music Section Trigger */}
+            <button
+              id="nav-original-music-btn"
+              onClick={() => {
+                onSelectView('feed');
+                onSelectCategory('music');
+              }}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-[11px] uppercase font-mono-code tracking-[0.18em] transition-all cursor-pointer whitespace-nowrap ${
+                activeView === 'feed' && selectedCategory === 'music'
+                  ? 'text-[#c9a875] font-bold bg-[#c9a875]/15 border border-[#c9a875]/40 shadow-[0_0_16px_rgba(201,168,117,0.25)]'
+                  : 'text-neutral-400 hover:text-[#dfbd87] hover:bg-white/[0.05]'
+              }`}
+              title="Original Music & Soundscape Sanctuary"
+            >
+              <Disc3 className={`w-3 h-3 ${activeView === 'feed' && selectedCategory === 'music' ? 'text-[#c9a875] animate-spin' : 'text-neutral-400'}`} />
+              <span>Original Music</span>
             </button>
 
             {/* 3D Constellation Star Map Modal Trigger */}
@@ -1006,6 +1024,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <Compass className="w-4 h-4 text-[#c9a875]" />
                   <span className="font-medium">Curated Exhibitions</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    onSelectView('feed');
+                    onSelectCategory('music');
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-neutral-200 hover:text-white hover:bg-white/5 transition-all text-left cursor-pointer"
+                >
+                  <Disc3 className="w-4 h-4 text-[#c9a875]" />
+                  <span className="font-medium">Original Music Lounge</span>
                 </button>
 
                 <button
