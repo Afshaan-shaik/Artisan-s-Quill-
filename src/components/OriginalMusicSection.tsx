@@ -31,6 +31,7 @@ import confetti from 'canvas-confetti';
 import { Artwork, ArtCategory, UserProfile } from '../types';
 import { MusicArtworkCard } from './MusicArtworkCard';
 import { registerCommunityTrack } from '../services/musicEngine';
+import { resolveAudioUrl, getAudioFallbackUrl } from '../utils/audioResolver';
 
 interface OriginalMusicSectionProps {
   artworks: Artwork[];
@@ -81,7 +82,7 @@ export const OriginalMusicSection: React.FC<OriginalMusicSectionProps> = ({
   const currentTrack = musicArtworks[activeTrackIndex] || musicArtworks[0];
 
   // Resolve audio & cover URLs
-  const audioUrl = currentTrack?.musicData?.audioUrl || currentTrack?.mediaUrl || '';
+  const audioUrl = resolveAudioUrl(currentTrack);
   const coverUrl =
     currentTrack?.thumbnailUrl ||
     currentTrack?.musicData?.coverArtUrl ||
@@ -101,8 +102,10 @@ export const OriginalMusicSection: React.FC<OriginalMusicSectionProps> = ({
     if (!audioRef.current || !audioUrl) return;
 
     const audio = audioRef.current;
-    audio.src = audioUrl;
-    audio.load();
+    if (audio.src !== audioUrl) {
+      audio.src = audioUrl;
+      audio.load();
+    }
 
     if (isPlaying) {
       audio.play().catch(() => setIsPlaying(false));
@@ -148,16 +151,30 @@ export const OriginalMusicSection: React.FC<OriginalMusicSectionProps> = ({
       }
     };
 
+    const handleError = () => {
+      const fallback = getAudioFallbackUrl(audio.src);
+      if (fallback && audio.src !== fallback) {
+        console.log('[OriginalMusicSection] Falling back to:', fallback);
+        audio.src = fallback;
+        audio.load();
+        if (isPlaying) {
+          audio.play().catch(() => setIsPlaying(false));
+        }
+      }
+    };
+
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
     };
-  }, [isLooping, activeTrackIndex, musicArtworks.length]);
+  }, [isLooping, activeTrackIndex, musicArtworks.length, isPlaying]);
 
   // Handle Play / Pause
   const togglePlay = () => {
@@ -170,7 +187,14 @@ export const OriginalMusicSection: React.FC<OriginalMusicSectionProps> = ({
         setIsPlaying(true);
       }).catch((err) => {
         console.warn('Playback error:', err);
-        setIsPlaying(false);
+        const fallback = getAudioFallbackUrl(audioRef.current?.src);
+        if (fallback && audioRef.current && audioRef.current.src !== fallback) {
+          audioRef.current.src = fallback;
+          audioRef.current.load();
+          audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        } else {
+          setIsPlaying(false);
+        }
       });
     }
   };

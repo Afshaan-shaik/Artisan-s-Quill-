@@ -21,6 +21,7 @@ import {
 import confetti from 'canvas-confetti';
 import { Artwork } from '../types';
 import { UniversalTrack, registerCommunityTrack } from '../services/musicEngine';
+import { resolveAudioUrl, getAudioFallbackUrl, extractYouTubeId } from '../utils/audioResolver';
 
 interface AudioSanctuaryChamberProps {
   artwork: Artwork;
@@ -45,7 +46,17 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const audioUrl = artwork.musicData?.audioUrl || artwork.mediaUrl;
+  const rawAudioUrl = artwork.musicData?.audioUrl || artwork.mediaUrl;
+  const initialResolved = resolveAudioUrl(artwork);
+  const [currentAudioSrc, setCurrentAudioSrc] = useState(initialResolved);
+
+  useEffect(() => {
+    const nextSrc = resolveAudioUrl(artwork);
+    setCurrentAudioSrc(nextSrc);
+    if (artwork.musicData?.durationSeconds) {
+      setDuration(artwork.musicData.durationSeconds);
+    }
+  }, [artwork.id, artwork.musicData?.audioUrl, artwork.mediaUrl]);
 
   const isVideoExt = (url?: string) => Boolean(url && url.match(/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i));
   const fallbackCover = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&auto=format&fit=crop&q=80';
@@ -109,6 +120,19 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({
         .then(() => setIsPlaying(true))
         .catch((err) => {
           console.warn('[AudioSanctuaryChamber] Playback error:', err);
+          // Automatic resilient fallback
+          const fallback = getAudioFallbackUrl(currentAudioSrc);
+          if (fallback && fallback !== currentAudioSrc) {
+            console.log('[AudioSanctuaryChamber] Retrying play with fallback URL:', fallback);
+            setCurrentAudioSrc(fallback);
+            setTimeout(() => {
+              if (audioRef.current) {
+                audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+              }
+            }, 100);
+          } else {
+            setIsPlaying(false);
+          }
         });
     }
   };
@@ -135,6 +159,7 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({
   };
 
   const handleSendToAmbience = () => {
+    const ytId = extractYouTubeId(rawAudioUrl) || (artwork as any).videoData?.youtubeId || undefined;
     const track: UniversalTrack = {
       id: artwork.id.startsWith('community-') ? artwork.id : `community-${artwork.id}`,
       title: artwork.title,
@@ -142,7 +167,8 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({
       album: album,
       platform: 'vault',
       sourceType: 'audio-stream',
-      streamUrl: audioUrl,
+      streamUrl: currentAudioSrc,
+      youtubeId: ytId,
       artworkUrl: activeCoverSrc,
       durationSeconds: duration,
       genre: genre,
@@ -156,7 +182,7 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({
       id: artwork.id,
       title: artwork.title,
       artistName: typeof artwork.artist === 'object' ? artwork.artist.name : artwork.artist || 'Sanctuary Artist',
-      audioUrl: audioUrl,
+      audioUrl: currentAudioSrc,
       coverUrl: activeCoverSrc,
       album: album,
       genre: genre,
@@ -202,16 +228,23 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({
         }}
       />
 
-      {/* Hidden Audio Element */}
+      {/* Hidden Audio Element with Self-Healing Fallback */}
       <audio
         ref={audioRef}
-        src={audioUrl}
+        src={currentAudioSrc}
         preload="metadata"
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
         onTimeUpdate={() => {
           if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
         }}
         onDurationChange={() => {
-          if (audioRef.current && audioRef.current.duration) {
+          if (audioRef.current && audioRef.current.duration && !isNaN(audioRef.current.duration)) {
+            setDuration(audioRef.current.duration);
+          }
+        }}
+        onLoadedMetadata={() => {
+          if (audioRef.current && audioRef.current.duration && !isNaN(audioRef.current.duration)) {
             setDuration(audioRef.current.duration);
           }
         }}
@@ -221,6 +254,11 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({
         }}
         onError={(err) => {
           console.warn('[AudioSanctuaryChamber] Audio playback warning:', err);
+          const fallback = getAudioFallbackUrl(currentAudioSrc);
+          if (fallback && fallback !== currentAudioSrc) {
+            console.log('[AudioSanctuaryChamber] Switching to fallback audio stream:', fallback);
+            setCurrentAudioSrc(fallback);
+          }
         }}
       />
 
@@ -430,6 +468,7 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({
                 </button>
                 <button
                   type="button"
+                  id="chamber-mini-play-btn"
                   onClick={togglePlay}
                   className="w-12 h-12 rounded-full bg-gradient-to-r from-[#c9a875] to-[#dfba88] text-[#0a0b0e] flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
                   title={isPlaying ? 'Pause' : 'Play'}
@@ -635,6 +674,7 @@ export const AudioSanctuaryChamber: React.FC<AudioSanctuaryChamberProps> = ({
 
               <button
                 type="button"
+                id="chamber-master-play-btn"
                 onClick={togglePlay}
                 className="w-14 h-14 rounded-full bg-gradient-to-r from-[#c9a875] to-[#dfba88] text-[#0a0b0e] flex items-center justify-center shadow-xl shadow-[#c9a875]/25 hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 title={isPlaying ? 'Pause' : 'Play Master Audio'}

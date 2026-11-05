@@ -28,6 +28,7 @@ import {
   VAULT_MUSIC_COLLECTION,
   MusicPlatform
 } from '../services/musicEngine';
+import { resolveAudioUrl, isYouTubeWatchUrl, extractYouTubeId } from '../utils/audioResolver';
 
 declare global {
   interface Window {
@@ -394,8 +395,13 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
       return updated;
     });
 
-    // 1. Direct HTML5 Audio Stream (JioSaavn / Spotify direct MP3/AAC)
-    if (track.sourceType === 'audio-stream' && track.streamUrl) {
+    // Resolve stream URL if possible (converting YouTube URLs to pre-indexed direct audio)
+    const effectiveYtId = track.youtubeId || (track.streamUrl ? extractYouTubeId(track.streamUrl) : null);
+    const resolvedStream = track.streamUrl ? resolveAudioUrl(track.streamUrl, effectiveYtId || undefined) : '';
+    const isDirectPlayable = Boolean(resolvedStream && !isYouTubeWatchUrl(resolvedStream));
+
+    // 1. Direct HTML5 Audio Stream (Local/Cloud MP4/M4A, JioSaavn / Spotify direct MP3/AAC)
+    if (isDirectPlayable) {
       if (ytPlayerRef.current && typeof ytPlayerRef.current.pauseVideo === 'function') {
         try {
           ytPlayerRef.current.pauseVideo();
@@ -405,7 +411,7 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
       }
 
       if (audioRef.current) {
-        audioRef.current.src = track.streamUrl;
+        audioRef.current.src = resolvedStream;
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {
           setIsPlaying(true);
@@ -417,20 +423,21 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
     }
 
     // 2. YouTube IFrame Stream (Full-length official tracks)
-    if (track.youtubeId) {
+    const targetYtId = effectiveYtId || track.youtubeId;
+    if (targetYtId) {
       if (audioRef.current) {
         audioRef.current.pause();
       }
 
       if (ytPlayerRef.current) {
         try {
-          if (loadedVideoIdRef.current !== track.youtubeId) {
+          if (loadedVideoIdRef.current !== targetYtId) {
             if (typeof ytPlayerRef.current.loadVideoById === 'function') {
               ytPlayerRef.current.loadVideoById({
-                videoId: track.youtubeId,
+                videoId: targetYtId,
                 startSeconds: 0
               });
-              loadedVideoIdRef.current = track.youtubeId;
+              loadedVideoIdRef.current = targetYtId;
             }
           } else {
             if (typeof ytPlayerRef.current.seekTo === 'function') {
@@ -448,6 +455,7 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
       } else {
         setIsPlaying(true);
       }
+      return;
     }
   };
 

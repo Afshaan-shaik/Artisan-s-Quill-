@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Artwork, ArtCategory } from '../types';
 import { CosmosLiveArtworkMedia } from './CosmosLiveArtworkMedia';
+import { resolveAudioUrl } from '../utils/audioResolver';
 
 interface ConstellationCosmosViewProps {
   artworks: Artwork[];
@@ -136,7 +137,7 @@ export const ConstellationCosmosView: React.FC<ConstellationCosmosViewProps> = (
 
   const handleTogglePreviewAudio = (e: React.MouseEvent, art: Artwork) => {
     e.stopPropagation();
-    const audioUrl = art.musicData?.audioUrl || art.mediaUrl;
+    const audioUrl = resolveAudioUrl(art);
     if (!audioUrl) return;
 
     if (previewTrackId === art.id) {

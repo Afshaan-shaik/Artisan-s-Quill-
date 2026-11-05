@@ -27,6 +27,7 @@ import {
 import { Artwork, ArtCategory, UserProfile, Exhibition } from './types';
 import { DEFAULT_USER } from './data/initialData';
 import { GalleryService, isFounderUser } from './services/api';
+import { resolveAudioUrl } from './utils/audioResolver';
 import { useRealtimeGallery } from './hooks/useRealtimeGallery';
 import { useGalleryStore } from './store/useGalleryStore';
 import { Navbar } from './components/Navbar';
@@ -259,7 +260,7 @@ export default function App() {
 
   const handleToggleShelfAudio = (track: Artwork, e: React.MouseEvent) => {
     e.stopPropagation();
-    const audioUrl = track.musicData?.audioUrl || track.mediaUrl;
+    const audioUrl = resolveAudioUrl(track);
     if (!audioUrl) return;
 
     if (shelfAudioPlayingId === track.id) {

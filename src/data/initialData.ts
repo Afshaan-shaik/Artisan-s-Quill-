@@ -752,7 +752,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       verified: true
     },
     category: 'music',
-    mediaUrl: 'https://img.youtube.com/vi/tvcaYU7uofY/hqdefault.jpg',
+    mediaUrl: '/audio/tvcaYU7uofY.mp4',
     thumbnailUrl: 'https://img.youtube.com/vi/tvcaYU7uofY/hqdefault.jpg',
     medium: 'Original Master • Indie Soul / Acoustic',
     dimensions: 'Master Acoustic Single',
@@ -772,7 +772,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     musicData: {
       album: 'Hum - Masterpiece Single',
       genre: 'Indie Soul / Acoustic',
-      audioUrl: 'https://www.youtube.com/watch?v=tvcaYU7uofY',
+      audioUrl: '/audio/tvcaYU7uofY.mp4',
       composer: 'Murtaza Qizilbash',
       coverArtUrl: 'https://img.youtube.com/vi/tvcaYU7uofY/hqdefault.jpg',
       durationSeconds: 276,
@@ -791,7 +791,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       verified: true
     },
     category: 'music',
-    mediaUrl: 'https://img.youtube.com/vi/0enmMyV1Q48/hqdefault.jpg',
+    mediaUrl: '/audio/0enmMyV1Q48.mp4',
     thumbnailUrl: 'https://img.youtube.com/vi/0enmMyV1Q48/hqdefault.jpg',
     medium: 'Original Master • Indie Pop',
     dimensions: 'Studio Single',
@@ -811,7 +811,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     musicData: {
       album: 'Tum - Single',
       genre: 'Indie Pop',
-      audioUrl: 'https://www.youtube.com/watch?v=0enmMyV1Q48',
+      audioUrl: '/audio/0enmMyV1Q48.mp4',
       composer: 'Murtaza Qizilbash',
       coverArtUrl: 'https://img.youtube.com/vi/0enmMyV1Q48/hqdefault.jpg',
       durationSeconds: 259,
@@ -830,7 +830,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       verified: true
     },
     category: 'music',
-    mediaUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80',
+    mediaUrl: '/audio/1F3Xb_f07Y4.mp4',
     thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80',
     medium: 'Original Master • Acoustic Soul Ballad',
     dimensions: 'Acoustic Lyrical Ballad',
@@ -850,7 +850,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     musicData: {
       album: 'Sanctuary Duets',
       genre: 'Acoustic Soul Ballad',
-      audioUrl: 'https://www.youtube.com/watch?v=1F3Xb_f07Y4',
+      audioUrl: '/audio/1F3Xb_f07Y4.mp4',
       composer: 'Akhil Sachdeva',
       coverArtUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80',
       durationSeconds: 285,

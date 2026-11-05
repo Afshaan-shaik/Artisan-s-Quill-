@@ -19,6 +19,7 @@ import confetti from 'canvas-confetti';
 import { Artwork } from '../types';
 import { Avatar } from './Avatar';
 import { registerCommunityTrack } from '../services/musicEngine';
+import { resolveAudioUrl } from '../utils/audioResolver';
 
 interface MusicArtworkCardProps {
   artwork: Artwork;
@@ -49,7 +50,7 @@ export const MusicArtworkCard: React.FC<MusicArtworkCardProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const audioUrl = artwork.musicData?.audioUrl || artwork.mediaUrl;
+  const audioUrl = resolveAudioUrl(artwork);
   const coverUrl =
     artwork.thumbnailUrl ||
     artwork.mediaUrl ||

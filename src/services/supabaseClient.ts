@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient, User as SupabaseUser, Session as SupabaseSession } from '@supabase/supabase-js';
 import { Artwork, Comment, MarginReflection, UserProfile, Exhibition, Collection, Inquiry } from '../types';
 import { INITIAL_ARTWORKS, DEFAULT_USER, INITIAL_ARTIST_PROFILES, INITIAL_COMMENTS, INITIAL_MARGIN_REFLECTIONS, INITIAL_EXHIBITIONS } from '../data/initialData';
+import { resolveAudioUrl } from '../utils/audioResolver';
 
 // Environment variable resolution supporting browser Vite and Node/Serverless runtimes
 const getEnvVar = (viteKey: string, processKey: string, fallback = ''): string => {
@@ -267,7 +268,7 @@ export function mapRowToArtwork(row: CloudArtworkRow): Artwork {
     poetryContent: row.poetry_content,
     videoData: row.category === 'video' ? row.video_data : undefined,
     musicData: row.category === 'music' ? {
-      audioUrl: (row.video_data && row.video_data.audioUrl) ? row.video_data.audioUrl : row.media_url,
+      audioUrl: resolveAudioUrl((row.video_data && row.video_data.audioUrl) ? row.video_data.audioUrl : row.media_url, row.video_data?.youtubeId),
       coverArtUrl: (row.video_data && row.video_data.coverArtUrl) ? row.video_data.coverArtUrl : (row.thumbnail_url || row.media_url),
       album: (row.video_data && row.video_data.album) ? row.video_data.album : (row.dimensions || 'Atelier Master Sessions'),
       durationSeconds: (row.video_data && row.video_data.durationSeconds) ? row.video_data.durationSeconds : 215,
