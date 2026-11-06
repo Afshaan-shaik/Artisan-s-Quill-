@@ -31,6 +31,9 @@ import { resolveAudioUrl } from './utils/audioResolver';
 import { useRealtimeGallery } from './hooks/useRealtimeGallery';
 import { useGalleryStore } from './store/useGalleryStore';
 import { Navbar } from './components/Navbar';
+import { MagnifyingDockNavbar } from './components/MagnifyingDockNavbar';
+import { GallerySpineNavbar } from './components/GallerySpineNavbar';
+import { DynamicIslandNavbar } from './components/DynamicIslandNavbar';
 import { MasonryGrid } from './components/MasonryGrid';
 import { MediaUploadModal } from './components/MediaUploadModal';
 import { realtimeBroker } from './services/realtimeBroker';
@@ -99,6 +102,35 @@ export default function App() {
       return DEFAULT_USER;
     }
   });
+  const [headerVariant, setHeaderVariant] = useState<'dock' | 'classic' | 'spine' | 'island'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const ui = params.get('ui') || params.get('concept');
+      if (ui === 'island' || ui === 'dynamic-island' || ui === '10' || window.location.port === '5175' || window.location.port === '5176') return 'island';
+      if (ui === 'spine' || ui === '2' || ui === 'gallery-spine' || window.location.port === '5174') return 'spine';
+      if (ui === 'classic' || ui === '1') return 'classic';
+      if (ui === 'dock' || ui === '3' || window.location.port === '5173') return 'dock';
+    }
+    return 'island';
+  });
+
+  useEffect(() => {
+    const handleUrlCheck = () => {
+      const params = new URLSearchParams(window.location.search);
+      const ui = params.get('ui') || params.get('concept');
+      if (ui === 'island' || ui === 'dynamic-island' || ui === '10' || window.location.port === '5175' || window.location.port === '5176') {
+        setHeaderVariant('island');
+      } else if (ui === 'spine' || ui === '2' || ui === 'gallery-spine' || window.location.port === '5174') {
+        setHeaderVariant('spine');
+      } else if (ui === 'dock' || ui === '3' || window.location.port === '5173') {
+        setHeaderVariant('dock');
+      } else if (ui === 'classic' || ui === '1') {
+        setHeaderVariant('classic');
+      }
+    };
+    window.addEventListener('popstate', handleUrlCheck);
+    return () => window.removeEventListener('popstate', handleUrlCheck);
+  }, []);
 
   // Navigation & Filtering State
   const getValidViewFromUrl = (): 'feed' | 'cosmos' | 'exhibitions' | 'saved' | 'about' | 'recycle-bin' | 'community' | 'vaults' => {
@@ -927,47 +959,172 @@ export default function App() {
         </div>
       )}
 
-      {/* Navbar Header */}
-      <Navbar
-        selectedCategory={selectedCategory}
-        onSelectCategory={(cat) => {
-          setSelectedCategory(cat);
-          handleSelectView('feed');
-        }}
-        searchQuery={searchQuery}
-        onSearchChange={(q) => {
-          setSearchQuery(q);
-          if (q && activeView !== 'feed' && activeView !== 'saved') {
+      {/* Navigation Suite: Dynamic Island (Concept 3), Gallery Spine (Concept 2), Magnifying Dock, or Classic */}
+      {headerVariant === 'island' ? (
+        <DynamicIslandNavbar
+          selectedCategory={selectedCategory}
+          onSelectCategory={(cat) => {
+            setSelectedCategory(cat);
             handleSelectView('feed');
-          }
-        }}
-        dateRange={dateRangeFilter}
-        onDateRangeChange={setDateRangeFilter}
-        activeView={activeView}
-        onSelectView={handleSelectView}
-        onOpenUpload={handleOpenUpload}
-        onOpenInkStudio={() => setIsInkStudioOpen(true)}
-        onOpenBardModal={() => handleOpenBardWithPoem()}
-        onOpenConstellationModal={() => setIsConstellationOpen(true)}
-        onOpenCollectorVault={() => setIsCollectorVaultOpen(true)}
-        onSelectCurrentUser={() => setSelectedArtistId(currentUser.id)}
-        onOpenEditProfile={() => {
-          setIsAddProfileCreateMode(false);
-          setAddProfileModalInitialTab('details');
-          setIsAddProfileModalOpen(true);
-        }}
-        onOpenCreateProfile={() => {
-          setAuthModalMode('signup');
-          setIsAuthModalOpen(true);
-        }}
-        onOpenLoginModal={() => {
-          setAuthModalMode('login');
-          setIsAuthModalOpen(true);
-        }}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        onOpenCinemaMode={() => setIsCinemaModeOpen(true)}
-      />
+          }}
+          searchQuery={searchQuery}
+          onSearchChange={(q) => {
+            setSearchQuery(q);
+            if (q && activeView !== 'feed' && activeView !== 'saved') {
+              handleSelectView('feed');
+            }
+          }}
+          dateRange={dateRangeFilter}
+          onDateRangeChange={setDateRangeFilter}
+          activeView={activeView}
+          onSelectView={handleSelectView}
+          onOpenUpload={handleOpenUpload}
+          onOpenInkStudio={() => setIsInkStudioOpen(true)}
+          onOpenBardModal={() => handleOpenBardWithPoem()}
+          onOpenConstellationModal={() => setIsConstellationOpen(true)}
+          onOpenCollectorVault={() => setIsCollectorVaultOpen(true)}
+          onSelectCurrentUser={() => setSelectedArtistId(currentUser.id)}
+          onOpenEditProfile={() => {
+            setIsAddProfileCreateMode(false);
+            setAddProfileModalInitialTab('details');
+            setIsAddProfileModalOpen(true);
+          }}
+          onOpenCreateProfile={() => {
+            setAuthModalMode('signup');
+            setIsAuthModalOpen(true);
+          }}
+          onOpenLoginModal={() => {
+            setAuthModalMode('login');
+            setIsAuthModalOpen(true);
+          }}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          onOpenCinemaMode={() => setIsCinemaModeOpen(true)}
+        />
+      ) : headerVariant === 'spine' ? (
+        <GallerySpineNavbar
+          selectedCategory={selectedCategory}
+          onSelectCategory={(cat) => {
+            setSelectedCategory(cat);
+            handleSelectView('feed');
+          }}
+          searchQuery={searchQuery}
+          onSearchChange={(q) => {
+            setSearchQuery(q);
+            if (q && activeView !== 'feed' && activeView !== 'saved') {
+              handleSelectView('feed');
+            }
+          }}
+          dateRange={dateRangeFilter}
+          onDateRangeChange={setDateRangeFilter}
+          activeView={activeView}
+          onSelectView={handleSelectView}
+          onOpenUpload={handleOpenUpload}
+          onOpenInkStudio={() => setIsInkStudioOpen(true)}
+          onOpenBardModal={() => handleOpenBardWithPoem()}
+          onOpenConstellationModal={() => setIsConstellationOpen(true)}
+          onOpenCollectorVault={() => setIsCollectorVaultOpen(true)}
+          onSelectCurrentUser={() => setSelectedArtistId(currentUser.id)}
+          onOpenEditProfile={() => {
+            setIsAddProfileCreateMode(false);
+            setAddProfileModalInitialTab('details');
+            setIsAddProfileModalOpen(true);
+          }}
+          onOpenCreateProfile={() => {
+            setAuthModalMode('signup');
+            setIsAuthModalOpen(true);
+          }}
+          onOpenLoginModal={() => {
+            setAuthModalMode('login');
+            setIsAuthModalOpen(true);
+          }}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          onOpenCinemaMode={() => setIsCinemaModeOpen(true)}
+        />
+      ) : headerVariant === 'dock' ? (
+        <MagnifyingDockNavbar
+          selectedCategory={selectedCategory}
+          onSelectCategory={(cat) => {
+            setSelectedCategory(cat);
+            handleSelectView('feed');
+          }}
+          searchQuery={searchQuery}
+          onSearchChange={(q) => {
+            setSearchQuery(q);
+            if (q && activeView !== 'feed' && activeView !== 'saved') {
+              handleSelectView('feed');
+            }
+          }}
+          dateRange={dateRangeFilter}
+          onDateRangeChange={setDateRangeFilter}
+          activeView={activeView}
+          onSelectView={handleSelectView}
+          onOpenUpload={handleOpenUpload}
+          onOpenInkStudio={() => setIsInkStudioOpen(true)}
+          onOpenBardModal={() => handleOpenBardWithPoem()}
+          onOpenConstellationModal={() => setIsConstellationOpen(true)}
+          onOpenCollectorVault={() => setIsCollectorVaultOpen(true)}
+          onSelectCurrentUser={() => setSelectedArtistId(currentUser.id)}
+          onOpenEditProfile={() => {
+            setIsAddProfileCreateMode(false);
+            setAddProfileModalInitialTab('details');
+            setIsAddProfileModalOpen(true);
+          }}
+          onOpenCreateProfile={() => {
+            setAuthModalMode('signup');
+            setIsAuthModalOpen(true);
+          }}
+          onOpenLoginModal={() => {
+            setAuthModalMode('login');
+            setIsAuthModalOpen(true);
+          }}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          onOpenCinemaMode={() => setIsCinemaModeOpen(true)}
+        />
+      ) : (
+        <Navbar
+          selectedCategory={selectedCategory}
+          onSelectCategory={(cat) => {
+            setSelectedCategory(cat);
+            handleSelectView('feed');
+          }}
+          searchQuery={searchQuery}
+          onSearchChange={(q) => {
+            setSearchQuery(q);
+            if (q && activeView !== 'feed' && activeView !== 'saved') {
+              handleSelectView('feed');
+            }
+          }}
+          dateRange={dateRangeFilter}
+          onDateRangeChange={setDateRangeFilter}
+          activeView={activeView}
+          onSelectView={handleSelectView}
+          onOpenUpload={handleOpenUpload}
+          onOpenInkStudio={() => setIsInkStudioOpen(true)}
+          onOpenBardModal={() => handleOpenBardWithPoem()}
+          onOpenConstellationModal={() => setIsConstellationOpen(true)}
+          onOpenCollectorVault={() => setIsCollectorVaultOpen(true)}
+          onSelectCurrentUser={() => setSelectedArtistId(currentUser.id)}
+          onOpenEditProfile={() => {
+            setIsAddProfileCreateMode(false);
+            setAddProfileModalInitialTab('details');
+            setIsAddProfileModalOpen(true);
+          }}
+          onOpenCreateProfile={() => {
+            setAuthModalMode('signup');
+            setIsAuthModalOpen(true);
+          }}
+          onOpenLoginModal={() => {
+            setAuthModalMode('login');
+            setIsAuthModalOpen(true);
+          }}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          onOpenCinemaMode={() => setIsCinemaModeOpen(true)}
+        />
+      )}
 
       {/* Real-Time Deep Link Resolution Banner */}
       {isResolvingDeepLink && (
@@ -983,7 +1140,15 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-[1760px] mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 pt-4 sm:pt-8 pb-28 md:pb-12 space-y-6 sm:space-y-8 relative z-10">
+      <main className={`flex-1 w-full max-w-[1760px] mx-auto ${
+        headerVariant === 'spine'
+          ? 'pl-20 sm:pl-[96px] pr-3 sm:pr-6 lg:pr-8 pt-20 sm:pt-24 pb-20'
+          : headerVariant === 'island'
+          ? 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-36 sm:pt-40 pb-28 md:pb-24'
+          : headerVariant === 'dock'
+          ? 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-28 sm:pt-36 pb-36'
+          : 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-4 sm:pt-8 pb-28 md:pb-12'
+      } space-y-6 sm:space-y-8 relative z-10`}>
         
 
 

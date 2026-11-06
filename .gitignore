@@ -8,3 +8,6 @@ coverage/
 !.env.example
 .vercel
 scratch/
+*.png
+proxy*.cjs
+test_*.mjs
