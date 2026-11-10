@@ -136,6 +136,44 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
   const progressIntervalRef = useRef<number | null>(null);
   const searchDebounceRef = useRef<number | null>(null);
   const loadedVideoIdRef = useRef<string>('');
+  const hoverCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearCloseTimer = () => {
+    if (hoverCloseTimerRef.current) {
+      clearTimeout(hoverCloseTimerRef.current);
+      hoverCloseTimerRef.current = null;
+    }
+  };
+
+  // Smooth hover-to-open interaction with 250ms close grace period
+  const handleMouseEnter = () => {
+    if (isExpandedModal) return;
+    clearCloseTimer();
+    setIsDropdownOpen(true);
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent) => {
+    // If the mouse is moving between the button and the popover (or vice versa), do not close
+    if (
+      dropdownRef.current &&
+      e.relatedTarget instanceof Node &&
+      dropdownRef.current.contains(e.relatedTarget)
+    ) {
+      clearCloseTimer();
+      return;
+    }
+    clearCloseTimer();
+    hoverCloseTimerRef.current = setTimeout(() => {
+      setIsDropdownOpen(false);
+    }, 250);
+  };
+
+  // Cleanup hover close timer on unmount
+  useEffect(() => {
+    return () => {
+      clearCloseTimer();
+    };
+  }, []);
 
   // 1. Initialize HTML5 Audio Element for Direct Streams (JioSaavn / Spotify Lossless Streams)
   useEffect(() => {
@@ -665,7 +703,14 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
       {/* ─────────────────────────────────────────────────────────────
           2. TOP NAVIGATION CAPSULE PILL OR MOBILE CIRCULAR BUTTON
          ───────────────────────────────────────────────────────────── */}
-      <div id="ambient-audio-suite" className="relative inline-flex items-center" ref={dropdownRef}>
+      <div
+        id="ambient-audio-suite"
+        className="relative inline-flex items-center"
+        ref={dropdownRef}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onMouseMove={clearCloseTimer}
+      >
         {variant === 'circular' ? (
           <button
             id="toggle-ambience-music-btn"
@@ -749,8 +794,11 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
         {isDropdownOpen && (
           <div
             id="music-ambience-popover"
-            className="absolute top-full right-0 mt-2 w-84 sm:w-96 max-w-[calc(100vw-2rem)] max-h-[80vh] bg-[#0c0e14]/98 border border-[#c9a875]/40 rounded-xl shadow-2xl backdrop-blur-2xl p-3.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col overflow-hidden"
-            style={{ transformOrigin: 'top right' }}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onMouseMove={clearCloseTimer}
+            className="fixed sm:absolute top-[58px] sm:top-full left-3 sm:left-0 right-3 sm:right-auto sm:mt-2 w-auto sm:w-96 max-w-[calc(100vw-1.5rem)] sm:max-w-[calc(100vw-2rem)] max-h-[calc(100vh-96px)] bg-[#0c0e14]/98 border border-[#c9a875]/50 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_30px_rgba(201,168,117,0.2)] backdrop-blur-2xl p-3.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col overflow-hidden before:content-[''] before:absolute before:-top-4 before:left-0 before:right-0 before:h-4 before:pointer-events-auto"
+            style={{ transformOrigin: 'top left' }}
           >
             {/* Popover Header (Protected flex-shrink-0) */}
             <div className="flex items-center justify-between pb-2.5 border-b border-white/10 shrink-0">
