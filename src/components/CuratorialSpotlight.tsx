@@ -20,11 +20,14 @@ import {
 import { Artwork } from '../types';
 import { Avatar } from './Avatar';
 import { DEFAULT_USER } from '../data/initialData';
+import { useSoundEngine } from '../hooks/useSoundEngine';
 
 import { isVideoMedia, isAudioMedia, getMediaPoster } from '../utils/mediaUtils';
+import { MasterpieceResult } from '../services/masterpieceEngine';
 
 interface CuratorialSpotlightProps {
   artworks: Artwork[];
+  dailyMasterpiece?: MasterpieceResult | null;
   onSelectArtwork: (artwork: Artwork) => void;
   onToggleLike: (id: string, e: React.MouseEvent) => void;
   onToggleSave: (id: string, e: React.MouseEvent) => void;
@@ -34,39 +37,39 @@ interface CuratorialSpotlightProps {
 
 export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
   artworks,
+  dailyMasterpiece,
   onSelectArtwork,
   onToggleLike,
   onToggleSave,
   onSelectArtist,
   onShareArtwork
 }) => {
-  // Extract standout candidates with "I Suppose" video explicitly at #1
+  const { play: playSound } = useSoundEngine();
+
+  // Intelligent Masterpiece of the Day at Vernissage #1 + Curatorial Nominees Carousel
   const candidateSpotlights = React.useMemo(() => {
     if (!artworks || artworks.length === 0) return [];
     
     const validArtworks = artworks.filter((a) => !a.isDeleted);
-    
-    // Check for "I Suppose"
-    const isISuppose = (a: Artwork) =>
-      a.id === 'art-1787665037985-nnxxg' ||
-      a.title.toLowerCase().trim() === 'i suppose' ||
-      a.title.toLowerCase().includes('i suppose');
-
-    const iSupposeWork = validArtworks.find(isISuppose);
-    const otherFeatured = validArtworks.filter((a) => a.featured && !isISuppose(a));
-    const regularWorks = validArtworks.filter((a) => !a.featured && !isISuppose(a));
-
     const result: Artwork[] = [];
-    if (iSupposeWork) {
-      result.push(iSupposeWork);
-    }
-    result.push(...otherFeatured);
-    if (result.length < 5) {
-      result.push(...regularWorks.slice(0, 5 - result.length));
+
+    // Vernissage I is always the selected Masterpiece of the Day from the fair algorithm
+    const masterpieceWork = dailyMasterpiece?.artwork || validArtworks[0];
+    if (masterpieceWork) {
+      result.push(masterpieceWork);
     }
 
-    return result.length > 0 ? result : validArtworks.slice(0, 5);
-  }, [artworks]);
+    // Other featured and notable works form the carousel nominees
+    const otherFeatured = validArtworks.filter((a) => a.id !== masterpieceWork?.id && a.featured);
+    const regularWorks = validArtworks.filter((a) => a.id !== masterpieceWork?.id && !a.featured);
+
+    result.push(...otherFeatured);
+    if (result.length < 8) {
+      result.push(...regularWorks.slice(0, 8 - result.length));
+    }
+
+    return result.length > 0 ? result : validArtworks.slice(0, 8);
+  }, [artworks, dailyMasterpiece]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
@@ -89,11 +92,13 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
+    playSound('carousel-nav');
     setCurrentIndex((prev) => (prev - 1 + candidateSpotlights.length) % candidateSpotlights.length);
   };
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
+    playSound('carousel-nav');
     setCurrentIndex((prev) => (prev + 1) % candidateSpotlights.length);
   };
 
@@ -164,15 +169,40 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
   const romanIndex = romanNumerals[activeIndex] || `${activeIndex + 1}`;
 
   return (
-    <section
-      id="curatorial-spotlight-hero"
-      aria-label="Curatorial Spotlight Hero Section"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-[#c9a875]/30 bg-[#06070a] shadow-[0_20px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(201,168,117,0.12)] transition-all duration-300 group"
-    >
+    <div className="w-full space-y-3">
+      {/* Editorial Section Header: Curatorial Spotlight • Masterpiece of the Day */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-1">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2 py-0.5 rounded-full bg-[#c9a875]/20 border border-[#c9a875]/40 text-[10px] font-mono-code font-bold uppercase tracking-widest text-[#e8ca95]">
+              ✦ Daily Archival Selection
+            </span>
+            <span className="text-[11px] font-mono-code text-neutral-400">
+              • IST ({dailyMasterpiece?.dateKey || 'Asia/Kolkata'})
+            </span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-serif-display tracking-[0.08em] text-white flex items-center gap-2.5">
+            <span>CURATORIAL SPOTLIGHT</span>
+            <span className="text-[#c9a875] text-sm">✦</span>
+            <span className="text-neutral-300 font-light text-base sm:text-lg">MASTERPIECE OF THE DAY</span>
+          </h2>
+        </div>
+        <div className="text-xs font-mono-code text-neutral-400 flex items-center gap-2">
+          <span>Fair Community Curation</span>
+          <span className="text-[#c9a875]">•</span>
+          <span>Automatic 24H Cycle</span>
+        </div>
+      </div>
+
+      <section
+        id="curatorial-spotlight-hero"
+        aria-label="Curatorial Spotlight Hero Section"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-[#c9a875]/30 bg-[#06070a] shadow-[0_20px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(201,168,117,0.12)] transition-all duration-300 group"
+      >
       {/* ─────────────────────────────────────────────────────────────
           1. Continuous Ken Burns Background Image Layer / Live Video Background
          ───────────────────────────────────────────────────────────── */}
@@ -225,11 +255,19 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
                 <span className="px-1.5 py-0.5 rounded bg-[#c9a875] text-black font-extrabold text-[10px]">
                   VERNISSAGE {romanIndex}
                 </span>
-                <span className="hidden sm:inline text-neutral-300">
+                <span className="text-neutral-200">
                   {activeIndex === 0 ? 'Masterpiece of the Day' : 'Curatorial Spotlight'}
                 </span>
               </span>
             </div>
+
+            {/* First-time Debut Creator Recognition */}
+            {activeIndex === 0 && dailyMasterpiece?.isFirstTimeFeatured && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#c9a875]/20 border border-[#c9a875]/60 backdrop-blur-md text-[10px] font-mono-code text-[#f8f5eb] shadow-[0_0_15px_rgba(201,168,117,0.3)]">
+                <Sparkles className="w-3 h-3 text-[#e8ca95]" />
+                <span className="font-bold text-[#e8ca95]">Debut Spotlight Artist</span>
+              </div>
+            )}
 
             {/* Accession Code Plaque */}
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 border border-white/15 backdrop-blur-md text-[10px] font-mono-code tracking-widest text-[#dfbd87]">
@@ -257,6 +295,7 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
               </span>
               <button
                 id="spotlight-prev-btn"
+                onMouseEnter={() => playSound('button-hover')}
                 onClick={handlePrev}
                 aria-label="Previous Spotlight Masterpiece"
                 className="p-1.5 rounded-full hover:bg-white/15 text-neutral-300 hover:text-[#c9a875] transition-all cursor-pointer"
@@ -265,6 +304,7 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
               </button>
               <button
                 id="spotlight-next-btn"
+                onMouseEnter={() => playSound('button-hover')}
                 onClick={handleNext}
                 aria-label="Next Spotlight Masterpiece"
                 className="p-1.5 rounded-full hover:bg-white/15 text-neutral-300 hover:text-[#c9a875] transition-all cursor-pointer"
@@ -279,6 +319,7 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
         <div className="my-6 sm:my-8 max-w-3xl space-y-4 sm:space-y-5">
           {/* Artist Byline Card */}
           <div
+            onMouseEnter={() => playSound('button-hover')}
             onClick={(e) => onSelectArtist(currentWork.artist.id, e)}
             className="inline-flex items-center gap-3 p-1.5 pr-4 rounded-full bg-[#0a0c12]/80 hover:bg-black/90 border border-white/15 hover:border-[#c9a875]/60 transition-all cursor-pointer backdrop-blur-md shadow-md group/artist"
             title={`View profile of ${currentWork.artist.name}`}
@@ -308,7 +349,11 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
 
           {/* Masterpiece Title */}
           <h1
-            onClick={() => onSelectArtwork(currentWork)}
+            onMouseEnter={() => playSound('button-hover')}
+            onClick={() => {
+              playSound('view-masterpiece');
+              onSelectArtwork(currentWork);
+            }}
             className="text-2xl min-[400px]:text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-serif-display font-light tracking-[0.03em] text-white hover:text-[#f8f0de] transition-colors cursor-pointer leading-[1.1] sm:leading-[1.08] drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]"
           >
             {currentWork.title}
@@ -354,7 +399,11 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
             {/* Sleek 'View Masterpiece' Button */}
             <button
               id="view-masterpiece-spotlight-btn"
-              onClick={() => onSelectArtwork(currentWork)}
+              onMouseEnter={() => playSound('button-hover')}
+              onClick={() => {
+                playSound('view-masterpiece');
+                onSelectArtwork(currentWork);
+              }}
               className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 sm:px-9 py-2.5 sm:py-3.5 min-h-[44px] rounded-full bg-gradient-to-r from-[#c9a875] via-[#dfbd87] to-[#e4cb9c] text-black text-xs sm:text-sm font-bold uppercase tracking-[0.14em] sm:tracking-[0.18em] shadow-[0_0_28px_rgba(201,168,117,0.55)] hover:shadow-[0_0_40px_rgba(201,168,117,0.8)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
             >
               <Eye className="w-4 h-4 text-black shrink-0" />
@@ -364,7 +413,11 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
             {/* Like Counter Button */}
             <button
               id={`spotlight-like-${currentWork.id}`}
-              onClick={(e) => onToggleLike(currentWork.id, e)}
+              onMouseEnter={() => playSound('button-hover')}
+              onClick={(e) => {
+                playSound('like-action');
+                onToggleLike(currentWork.id, e);
+              }}
               aria-label={`Like masterpiece, currently ${currentWork.likesCount || 0} likes`}
               className={`flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-full border text-xs font-semibold uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer hover:scale-105 active:scale-95 ${
                 currentWork.isLiked
@@ -383,7 +436,11 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
             {/* Bookmark / Save Button */}
             <button
               id={`spotlight-save-${currentWork.id}`}
-              onClick={(e) => onToggleSave(currentWork.id, e)}
+              onMouseEnter={() => playSound('button-hover')}
+              onClick={(e) => {
+                playSound('save-action');
+                onToggleSave(currentWork.id, e);
+              }}
               aria-label={`Bookmark masterpiece, currently ${currentWork.savesCount || 0} saves`}
               className={`flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-full border text-xs font-semibold uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer hover:scale-105 active:scale-95 ${
                 currentWork.isSaved
@@ -402,8 +459,10 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
             {/* Curatorial Share Button */}
             <button
               id={`spotlight-share-${currentWork.id}`}
+              onMouseEnter={() => playSound('button-hover')}
               onClick={(e) => {
                 e.stopPropagation();
+                playSound('share-action');
                 if (onShareArtwork) {
                   onShareArtwork(currentWork);
                 } else {
@@ -446,7 +505,11 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
           {candidateSpotlights.map((item, idx) => (
             <button
               key={item.id}
-              onClick={() => setCurrentIndex(idx)}
+              onMouseEnter={() => playSound('button-hover')}
+              onClick={() => {
+                playSound('carousel-nav');
+                setCurrentIndex(idx);
+              }}
               aria-label={`Jump to spotlight nomination ${idx + 1}`}
               className={`h-1 rounded-full transition-all duration-300 cursor-pointer ${
                 idx === activeIndex ? 'w-6 bg-[#c9a875]' : 'w-1.5 bg-white/20 hover:bg-white/40'
@@ -456,5 +519,6 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
         </div>
       )}
     </section>
+  </div>
   );
 };

@@ -19,6 +19,7 @@ import { GalleryService } from '../services/api';
 
 interface PoetryCardProps {
   artwork: Artwork;
+  isMasterpiece?: boolean;
   onSelect: (artwork: Artwork) => void;
   onToggleLike: (id: string, e: React.MouseEvent) => void;
   onToggleSave: (id: string, e: React.MouseEvent) => void;
@@ -366,6 +367,7 @@ const ZenOverlay: React.FC<ZenOverlayProps> = ({
 
 export const PoetryCard: React.FC<PoetryCardProps> = ({
   artwork,
+  isMasterpiece = false,
   onSelect,
   onToggleLike,
   onToggleSave,
@@ -848,9 +850,18 @@ export const PoetryCard: React.FC<PoetryCardProps> = ({
       <div
         id={`poetry-card-${artwork.id}`}
         data-artwork-title={artwork.title}
+        data-card-category="poetry"
         onClick={() => onSelect(artwork)}
-        className="relative group overflow-hidden museum-shadowbox rounded-xl border border-white/10 hover:border-[#c9a875]/60 shadow-2xl cursor-pointer w-full transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_25px_rgba(201,168,117,0.2)] hover:z-10 bg-[#06080d] p-2 sm:p-2.5 flex flex-col justify-between"
+        className="card-chromatic relative group overflow-hidden museum-shadowbox rounded-xl border border-white/10 hover:border-[#c9a875]/60 shadow-2xl cursor-pointer w-full transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_25px_rgba(201,168,117,0.2)] hover:z-10 bg-[#06080d] p-2 sm:p-2.5 flex flex-col justify-between"
       >
+        {/* Masterpiece Badge */}
+        {isMasterpiece && (
+          <div className="absolute top-3 left-3 z-30 flex items-center gap-1.5 px-2.5 py-1 bg-[#c9a875] text-black text-[9px] font-extrabold tracking-widest uppercase shadow-[0_0_12px_rgba(201,168,117,0.5)] rounded-md">
+            <Sparkles className="w-3 h-3 text-black" />
+            <span>#1 Masterpiece</span>
+          </div>
+        )}
+
         {/* ── Hover 2-Option Aesthetic Switcher (Black & Gold vs Paper Aesthetic) ── */}
         <div
           onClick={(e) => e.stopPropagation()}

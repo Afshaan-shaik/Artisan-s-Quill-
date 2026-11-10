@@ -24,6 +24,7 @@ import { resolveAudioUrl } from '../utils/audioResolver';
 interface MusicArtworkCardProps {
   artwork: Artwork;
   index: number;
+  isMasterpiece?: boolean;
   onSelectArtwork: (artwork: Artwork) => void;
   onToggleLike: (id: string, e: React.MouseEvent) => void;
   onToggleSave: (id: string, e: React.MouseEvent) => void;
@@ -35,6 +36,7 @@ interface MusicArtworkCardProps {
 export const MusicArtworkCard: React.FC<MusicArtworkCardProps> = ({
   artwork,
   index,
+  isMasterpiece = false,
   onSelectArtwork,
   onToggleLike,
   onToggleSave,
@@ -157,8 +159,9 @@ export const MusicArtworkCard: React.FC<MusicArtworkCardProps> = ({
       onMouseLeave={() => setIsHovered(false)}
       id={`music-card-${artwork.id}`}
       data-artwork-title={artwork.title}
+      data-card-category="music"
       onClick={() => onSelectArtwork(artwork)}
-      className="relative group overflow-hidden museum-shadowbox rounded-2xl border border-white/10 hover:border-[#c9a875]/70 shadow-2xl cursor-pointer w-full transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(201,168,117,0.22)] hover:z-10 bg-gradient-to-b from-[#0b0d14] via-[#07090e] to-[#040508]"
+      className="card-chromatic relative group overflow-hidden museum-shadowbox rounded-2xl border border-white/10 hover:border-[#c9a875]/70 shadow-2xl cursor-pointer w-full transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(201,168,117,0.22)] hover:z-10 bg-gradient-to-b from-[#0b0d14] via-[#07090e] to-[#040508]"
     >
       {/* Hidden Native Audio Element */}
       {audioUrl && (
@@ -173,6 +176,13 @@ export const MusicArtworkCard: React.FC<MusicArtworkCardProps> = ({
           1. VINYL TURNTABLE & ALBUM SLEEVE SHOWCASE
          ───────────────────────────────────────────────────────────── */}
       <div className="relative w-full aspect-square overflow-hidden bg-[#030407] rounded-t-xl p-3 sm:p-4 flex items-center justify-center border-b border-white/5">
+        {/* Masterpiece Badge */}
+        {isMasterpiece && (
+          <div className="absolute top-3 right-3 z-30 flex items-center gap-1.5 px-2.5 py-1 bg-[#c9a875] text-black text-[9px] font-extrabold tracking-widest uppercase shadow-[0_0_12px_rgba(201,168,117,0.5)] rounded-md">
+            <Sparkles className="w-3 h-3 text-black" />
+            <span>#1 Masterpiece</span>
+          </div>
+        )}
         
         {/* Dynamic Vinyl Groove Disc */}
         <div

@@ -4,8 +4,9 @@ import { Artwork, ArtCategory } from '../types';
 import { PoetryCard } from './PoetryCard';
 import { MusicArtworkCard } from './MusicArtworkCard';
 import confetti from 'canvas-confetti';
-import { motion } from 'motion/react';
+import { motion, LayoutGroup } from 'motion/react';
 import { isVideoMedia, isAudioMedia, getMediaPoster } from '../utils/mediaUtils';
+import { useSoundEngine } from '../hooks/useSoundEngine';
 
 const formatCardVideoTime = (seconds: number): string => {
   if (isNaN(seconds) || seconds < 0) return '0:00';
@@ -18,7 +19,7 @@ const formatCardVideoTime = (seconds: number): string => {
 
 export type GridDensity = 'grande' | 'curatorial' | 'archive';
 
-interface MasonryGridProps {
+export interface MasonryGridProps {
   artworks: Artwork[];
   onSelectArtwork: (artwork: Artwork) => void;
   onToggleLike: (id: string, e: React.MouseEvent) => void;
@@ -30,11 +31,15 @@ interface MasonryGridProps {
   onAddToMoodBoard?: (artwork: Artwork) => void;
   onOpenBardModal?: (poem: { title: string; author: string; authorHandle?: string; content: string }) => void;
   density?: GridDensity;
+  feedFilter?: 'curated' | 'popular' | 'latest';
+  isModalOpen?: boolean;
+  masterpieceId?: string;
 }
 
 interface ArtworkParallaxCardProps {
   artwork: Artwork;
   index: number;
+  isMasterpiece?: boolean;
   onSelectArtwork: (artwork: Artwork) => void;
   onToggleLike: (id: string, e: React.MouseEvent) => void;
   onToggleSave: (id: string, e: React.MouseEvent) => void;
@@ -86,12 +91,14 @@ const getColumnCountAndGap = (
 const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
   artwork,
   index,
+  isMasterpiece = false,
   onSelectArtwork,
   onToggleLike,
   onToggleSave,
   onShareArtwork,
   onAddToMoodBoard
 }) => {
+  const { play: playSound } = useSoundEngine();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [parallaxOffset, setParallaxOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
@@ -157,6 +164,7 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
   };
 
   const handleLike = (id: string, isLiked: boolean | undefined, e: React.MouseEvent) => {
+    playSound('like-action');
     if (!isLiked) {
       confetti({
         particleCount: 20,
@@ -172,23 +180,22 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
   const isWide = artwork.aspectRatio === 'wide' || artwork.aspectRatio === 'ultrawide';
 
   return (
-    <motion.div
+    <div
       ref={cardRef}
-      initial={{ opacity: 0, y: 35 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{
-        duration: 0.75,
-        ease: [0.16, 1, 0.3, 1],
-        delay: Math.min((index % 4) * 0.08, 0.28)
-      }}
       onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        playSound('button-hover');
+      }}
       onMouseLeave={handleMouseLeave}
       id={`artwork-card-${artwork.id}`}
       data-artwork-title={artwork.title}
-      onClick={() => onSelectArtwork(artwork)}
-      className="relative group overflow-hidden museum-shadowbox rounded-xl border border-white/10 hover:border-[#c9a875]/60 shadow-2xl cursor-pointer w-full transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_25px_rgba(201,168,117,0.2)] hover:z-10 bg-[#06080d]"
+      data-card-category={artwork.category}
+      onClick={() => {
+        playSound('view-masterpiece');
+        onSelectArtwork(artwork);
+      }}
+      className="card-chromatic relative group overflow-hidden museum-shadowbox rounded-xl border border-white/10 hover:border-[#c9a875]/60 shadow-2xl cursor-pointer w-full transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_25px_rgba(201,168,117,0.2)] hover:z-10 bg-[#06080d]"
       style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}
     >
       {/* 1. Museum Passe-Partout Inset Frame */}
@@ -386,7 +393,7 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
         </div>
 
         {/* Masterpiece Badge */}
-        {(artwork.id === 'spotlight-masterpiece-1' || artwork.tags?.includes('Masterpiece of the Day')) && (
+        {(isMasterpiece || artwork.id === 'spotlight-masterpiece-1' || artwork.tags?.includes('Masterpiece of the Day')) && (
           <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2.5 py-1 bg-[#c9a875] text-black text-[9px] font-extrabold tracking-widest uppercase shadow-[0_0_12px_rgba(201,168,117,0.5)] rounded-md">
             <Sparkles className="w-3 h-3 text-black" />
             <span>#1 Masterpiece</span>
@@ -417,7 +424,12 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
             </button>
 
             <button
-              onClick={(e) => { e.stopPropagation(); onToggleSave(artwork.id, e); }}
+              onMouseEnter={() => playSound('button-hover')}
+              onClick={(e) => {
+                e.stopPropagation();
+                playSound('save-action');
+                onToggleSave(artwork.id, e);
+              }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer ${
                 artwork.isSaved
                   ? 'bg-[#c9a875]/25 border border-[#c9a875]/60 text-[#dfbd87]'
@@ -429,8 +441,10 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
             </button>
 
             <button
+              onMouseEnter={() => playSound('button-hover')}
               onClick={(e) => {
                 e.stopPropagation();
+                playSound('share-action');
                 if (onShareArtwork) {
                   onShareArtwork(artwork);
                 } else {
@@ -505,7 +519,7 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -522,7 +536,10 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
   onOpenUpload,
   onAddToMoodBoard,
   onOpenBardModal,
-  density = 'curatorial'
+  density = 'curatorial',
+  feedFilter = 'curated',
+  isModalOpen = false,
+  masterpieceId
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState<number>(() => {
@@ -531,6 +548,144 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
     }
     return 1280;
   });
+
+  // ─── Module 1: Living Curated Sanctuary Stream States ──────────────────────
+  const [displayArtworks, setDisplayArtworks] = useState<Artwork[]>(artworks);
+  const [isHoveringGrid, setIsHoveringGrid] = useState<boolean>(false);
+  const [isTabVisible, setIsTabVisible] = useState<boolean>(true);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
+  const rotationTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const previousArrangementsRef = useRef<string[]>([]);
+
+  // Track window visibility & reduced motion
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleVisibility = () => {
+      setIsTabVisible(document.visibilityState === 'visible');
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+    const handleMotionChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+    };
+    mediaQuery.addEventListener('change', handleMotionChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      mediaQuery.removeEventListener('change', handleMotionChange);
+    };
+  }, []);
+
+  // Sync displayArtworks when artworks prop or feedFilter changes
+  useEffect(() => {
+    // For Most Liked and Latest, strictly preserve the exact sorted order!
+    if (feedFilter === 'popular' || feedFilter === 'latest') {
+      setDisplayArtworks(artworks);
+      return;
+    }
+
+    // For Curated:
+    setDisplayArtworks((prev) => {
+      if (prev.length === 0) return artworks;
+
+      const prevIds = new Set(prev.map((a) => a.id));
+      const incomingIds = new Set(artworks.map((a) => a.id));
+      const newItems = artworks.filter((a) => !prevIds.has(a.id));
+
+      // If category or search drastically changed:
+      if (Math.abs(artworks.length - prev.length) > 3) {
+        return artworks;
+      }
+
+      // If a newly uploaded artwork appears, prepend it immediately to the front of the stream
+      if (newItems.length > 0) {
+        const remaining = prev.filter((a) => incomingIds.has(a.id));
+        return [...newItems, ...remaining];
+      }
+
+      // In-place update of likes/saves without scrambling current arrangement
+      const artMap = new Map(artworks.map((a) => [a.id, a]));
+      const updated = prev
+        .filter((a) => incomingIds.has(a.id))
+        .map((a) => artMap.get(a.id) || a);
+
+      return updated.length > 0 ? updated : artworks;
+    });
+  }, [artworks, feedFilter]);
+
+  // Continuously running Living Sanctuary Stream Rotation Engine (10-14s interval)
+  useEffect(() => {
+    // 1. Only run rotation for the 'curated' stream
+    if (feedFilter !== 'curated') {
+      if (rotationTimerRef.current) clearInterval(rotationTimerRef.current);
+      return;
+    }
+
+    // 2. Pause on: document hidden, any modal open, user hovering grid, or prefers reduced motion
+    if (!isTabVisible || isModalOpen || isHoveringGrid || prefersReducedMotion) {
+      if (rotationTimerRef.current) clearInterval(rotationTimerRef.current);
+      return;
+    }
+
+    if (displayArtworks.length < 2) return;
+
+    // Rearrange artwork positions every 12 seconds
+    rotationTimerRef.current = setInterval(() => {
+      setDisplayArtworks((current) => {
+        if (current.length < 2) return current;
+
+        let candidate = [...current];
+        let attempts = 0;
+        let isGoodRearrangement = false;
+
+        while (attempts < 6 && !isGoodRearrangement) {
+          attempts++;
+
+          // Intelligent Fisher-Yates coordinated shuffle
+          for (let i = candidate.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [candidate[i], candidate[j]] = [candidate[j], candidate[i]];
+          }
+
+          const signature = candidate.map((a) => a.id).join(',');
+          const isRepeated = previousArrangementsRef.current.includes(signature);
+
+          // Calculate Hamming distance (number of moved positions)
+          let changedCount = 0;
+          for (let i = 0; i < current.length; i++) {
+            if (current[i].id !== candidate[i].id) changedCount++;
+          }
+
+          // Ensure at least 40% of positions change and avoid repeating recent arrangements
+          if (!isRepeated && changedCount >= Math.floor(current.length * 0.4)) {
+            isGoodRearrangement = true;
+            previousArrangementsRef.current = [
+              signature,
+              ...previousArrangementsRef.current.slice(0, 3)
+            ];
+          }
+        }
+
+        return candidate;
+      });
+    }, 12000);
+
+    return () => {
+      if (rotationTimerRef.current) {
+        clearInterval(rotationTimerRef.current);
+      }
+    };
+  }, [
+    feedFilter,
+    isTabVisible,
+    isModalOpen,
+    isHoveringGrid,
+    prefersReducedMotion,
+    displayArtworks.length
+  ]);
 
   useEffect(() => {
     const updateWidth = () => {
@@ -562,51 +717,7 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
     [containerWidth, density]
   );
 
-  // Distribute artworks across columns using balanced height estimation
-  // This guarantees natural document flow (0% overlap, 100% equal horizontal and vertical gap)
-  const columns = useMemo(() => {
-    if (cols <= 1) {
-      return [artworks.map((artwork, originalIndex) => ({ artwork, originalIndex }))];
-    }
-
-    const colsArr: { artwork: Artwork; originalIndex: number }[][] = Array.from(
-      { length: cols },
-      () => []
-    );
-    const colHeights = new Array<number>(cols).fill(0);
-
-    artworks.forEach((artwork, originalIndex) => {
-      // Find column with smallest current accumulated height
-      let shortestColIdx = 0;
-      for (let c = 1; c < cols; c++) {
-        if (colHeights[c] < colHeights[shortestColIdx]) {
-          shortestColIdx = c;
-        }
-      }
-
-      colsArr[shortestColIdx].push({ artwork, originalIndex });
-
-      // Approximate visual weight to keep bottoms balanced
-      let weight = 1.0;
-      if (artwork.category === 'poetry') {
-        const stanzaCount = artwork.poetryContent?.stanzas?.length || 2;
-        weight = Math.min(1.4, 0.95 + stanzaCount * 0.1);
-      } else {
-        switch (artwork.aspectRatio) {
-          case 'tall': weight = 1.35; break;
-          case 'portrait': weight = 1.25; break;
-          case 'wide': weight = 0.75; break;
-          case 'ultrawide': weight = 0.6; break;
-          case 'square': default: weight = 1.0; break;
-        }
-      }
-      colHeights[shortestColIdx] += weight;
-    });
-
-    return colsArr;
-  }, [artworks, cols]);
-
-  if (artworks.length === 0) {
+  if (displayArtworks.length === 0) {
     return (
       <div className="py-24 text-center bg-neutral-900/50 rounded-sm p-12 max-w-2xl mx-auto border border-white/5 my-8">
         <Palette className="w-12 h-12 text-neutral-600 mx-auto mb-6" />
@@ -625,83 +736,79 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
   }
 
   return (
-    <div
-      id="gallery-masonry-container"
-      ref={containerRef}
-      className="w-full pb-16 grid items-start"
-      style={{
-        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-        gap: `${gap}px`,
-      }}
-    >
-      {columns.map((columnArtworks, colIdx) => (
-        <div
-          key={`gallery-col-${colIdx}`}
-          className="flex flex-col w-full min-w-0"
-          style={{ gap: `${gap}px` }}
-        >
-          {columnArtworks.map(({ artwork, originalIndex }) => {
-            if (artwork.category === 'poetry' && artwork.poetryContent) {
-              return (
-                <motion.div
-                  key={artwork.id}
-                  initial={{ opacity: 0, y: 35 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-50px' }}
-                  transition={{
-                    duration: 0.75,
-                    ease: [0.16, 1, 0.3, 1],
-                    delay: Math.min((originalIndex % 4) * 0.08, 0.28)
-                  }}
-                  className="w-full"
-                >
-                  <PoetryCard
-                    artwork={artwork}
-                    onSelect={onSelectArtwork}
-                    onToggleLike={onToggleLike}
-                    onToggleSave={onToggleSave}
-                    onSelectArtist={onSelectArtist}
-                    onShare={onShareArtwork}
-                    onAddToMoodBoard={onAddToMoodBoard}
-                    onOpenBardModal={onOpenBardModal}
-                  />
-                </motion.div>
-              );
-            }
+    <LayoutGroup id="curated-sanctuary-stream">
+      <div
+        id="gallery-masonry-container"
+        ref={containerRef}
+        onMouseEnter={() => setIsHoveringGrid(true)}
+        onMouseLeave={() => setIsHoveringGrid(false)}
+        className="w-full pb-16 grid items-start"
+        style={{
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          gap: `${gap}px`,
+        }}
+      >
+        {displayArtworks.map((artwork, originalIndex) => {
+          const isMasterpiece = Boolean(masterpieceId && artwork.id === masterpieceId);
+          const staggerDelay = (originalIndex % Math.max(1, cols)) * 0.04;
 
-            if (artwork.category === 'music' || artwork.musicData) {
-              return (
-                <div key={artwork.id} className="w-full">
-                  <MusicArtworkCard
-                    artwork={artwork}
-                    index={originalIndex}
-                    onSelectArtwork={onSelectArtwork}
-                    onToggleLike={onToggleLike}
-                    onToggleSave={onToggleSave}
-                    onSelectArtist={onSelectArtist}
-                    onShareArtwork={onShareArtwork}
-                    onAddToMoodBoard={onAddToMoodBoard}
-                  />
-                </div>
-              );
-            }
-
-            return (
-              <div key={artwork.id} className="w-full">
+          return (
+            <motion.div
+              key={artwork.id}
+              layout="position"
+              layoutId={`stream-node-${artwork.id}`}
+              transition={{
+                layout: {
+                  duration: 0.85,
+                  ease: [0.22, 1, 0.36, 1], // Editorial smooth cubic-bezier
+                  delay: staggerDelay,
+                },
+              }}
+              className="w-full relative min-w-0"
+              style={{
+                zIndex: isHoveringGrid ? 10 : 1,
+              }}
+            >
+              {artwork.category === 'poetry' && artwork.poetryContent ? (
+                <PoetryCard
+                  artwork={artwork}
+                  isMasterpiece={isMasterpiece}
+                  onSelect={onSelectArtwork}
+                  onToggleLike={onToggleLike}
+                  onToggleSave={onToggleSave}
+                  onSelectArtist={onSelectArtist}
+                  onShare={onShareArtwork}
+                  onAddToMoodBoard={onAddToMoodBoard}
+                  onOpenBardModal={onOpenBardModal}
+                />
+              ) : artwork.category === 'music' || artwork.musicData ? (
+                <MusicArtworkCard
+                  artwork={artwork}
+                  index={originalIndex}
+                  isMasterpiece={isMasterpiece}
+                  onSelectArtwork={onSelectArtwork}
+                  onToggleLike={onToggleLike}
+                  onToggleSave={onToggleSave}
+                  onSelectArtist={onSelectArtist}
+                  onShareArtwork={onShareArtwork}
+                  onAddToMoodBoard={onAddToMoodBoard}
+                />
+              ) : (
                 <ArtworkParallaxCard
                   artwork={artwork}
                   index={originalIndex}
+                  isMasterpiece={isMasterpiece}
                   onSelectArtwork={onSelectArtwork}
                   onToggleLike={onToggleLike}
                   onToggleSave={onToggleSave}
                   onShareArtwork={onShareArtwork}
                   onAddToMoodBoard={onAddToMoodBoard}
                 />
-              </div>
-            );
-          })}
-        </div>
-      ))}
-    </div>
+              )}
+            </motion.div>
+          );
+        })}
+      </div>
+    </LayoutGroup>
   );
 };

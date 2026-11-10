@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Sparkles,
   Search,
@@ -44,6 +44,7 @@ import { ExhibitionUploadModal } from './components/ExhibitionUploadModal';
 import { FloatingGuestbook } from './components/FloatingGuestbook';
 import { EditArtworkModal } from './components/EditArtworkModal';
 import { CuratorialSpotlight } from './components/CuratorialSpotlight';
+import { selectMasterpieceOfTheDay } from './services/masterpieceEngine';
 import { ArtisticCursor } from './components/ArtisticCursor';
 import { ShareArtworkModal } from './components/ShareArtworkModal';
 import { AboutUsView } from './components/AboutUsView';
@@ -431,6 +432,30 @@ export default function App() {
     
     return list;
   }, [realtimeArtworks, selectedCategory, searchQuery, activeView, feedFilter, dateRangeFilter, currentUser]);
+
+  // Module 2: Community-driven deterministic Masterpiece of the Day
+  const dailyMasterpiece = useMemo(() => {
+    return selectMasterpieceOfTheDay(realtimeArtworks);
+  }, [realtimeArtworks]);
+
+  // Check if any modal is currently open to pause stream rotation
+  const isAnyModalOpen = Boolean(
+    selectedArtwork ||
+    isUploadModalOpen ||
+    isExhibitionModalOpen ||
+    isEditModalOpen ||
+    isProfilePictureModalOpen ||
+    isAddProfileModalOpen ||
+    isAuthModalOpen ||
+    isBardModalOpen ||
+    isConstellationOpen ||
+    isCollectorVaultOpen ||
+    isCinemaModeOpen ||
+    isPoemModalOpen ||
+    isScrollModalOpen ||
+    isColorStudioOpen ||
+    isInkStudioOpen
+  );
 
   // Open artwork and sync URL parameter for direct permalinks
   const handleOpenArtwork = (art: Artwork | null) => {
@@ -1199,6 +1224,7 @@ export default function App() {
             {/* Curatorial Spotlight Hero Section */}
             <CuratorialSpotlight
               artworks={artworks.length > 0 ? artworks : realtimeArtworks}
+              dailyMasterpiece={dailyMasterpiece}
               onSelectArtwork={handleOpenArtwork}
               onToggleLike={handleToggleLike}
               onToggleSave={handleToggleSave}
@@ -1395,6 +1421,9 @@ export default function App() {
               <MasonryGrid
                 artworks={artworks}
                 density={gridDensity}
+                feedFilter={feedFilter}
+                isModalOpen={isAnyModalOpen}
+                masterpieceId={dailyMasterpiece?.artwork.id}
                 onSelectArtwork={handleOpenArtwork}
                 onToggleLike={handleToggleLike}
                 onToggleSave={handleToggleSave}

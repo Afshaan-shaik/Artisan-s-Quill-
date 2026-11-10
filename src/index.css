@@ -667,3 +667,178 @@ body.theme-candlelight {
   color: #c9a875;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   PREMIUM CHROMATIC INTERACTION SYSTEM (PHASE 2 & PHASE 6)
+   Tokens, Category Gradients, Illuminated Borders & Tactile Transitions
+   ───────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Category Chromatic Tokens */
+  --chroma-all-from: #ffcf6b;
+  --chroma-all-to: #fdfbf7;
+  --chroma-all-border: rgba(255, 207, 107, 0.7);
+  --chroma-all-glow: rgba(255, 207, 107, 0.28);
+
+  --chroma-poetry-from: #f472b6;
+  --chroma-poetry-to: #e08da0;
+  --chroma-poetry-border: rgba(244, 114, 182, 0.7);
+  --chroma-poetry-glow: rgba(244, 114, 182, 0.28);
+
+  --chroma-video-from: #c084fc;
+  --chroma-video-to: #a855f7;
+  --chroma-video-border: rgba(192, 132, 252, 0.7);
+  --chroma-video-glow: rgba(192, 132, 252, 0.28);
+
+  --chroma-digital-from: #6ee7b7;
+  --chroma-digital-to: #2dd4bf;
+  --chroma-digital-border: rgba(52, 211, 153, 0.7);
+  --chroma-digital-glow: rgba(52, 211, 153, 0.28);
+
+  --chroma-painting-from: #fbbf24;
+  --chroma-painting-to: #f59e0b;
+  --chroma-painting-border: rgba(245, 158, 11, 0.7);
+  --chroma-painting-glow: rgba(245, 158, 11, 0.28);
+
+  --chroma-drawing-from: #cbd5e1;
+  --chroma-drawing-to: #c4b5fd;
+  --chroma-drawing-border: rgba(148, 163, 184, 0.7);
+  --chroma-drawing-glow: rgba(196, 181, 253, 0.28);
+
+  --chroma-music-from: #fcd34d;
+  --chroma-music-to: #fb7185;
+  --chroma-music-border: rgba(251, 146, 60, 0.7);
+  --chroma-music-glow: rgba(251, 113, 133, 0.28);
+
+  /* Interaction Timing */
+  --tr-tactile-hover: 210ms cubic-bezier(0.16, 1, 0.3, 1);
+  --tr-tactile-active: 140ms ease-out;
+  --tr-tactile-menu: 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Category Navigation Pill Chromatic Interactive Styles */
+.cat-pill-chromatic {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  color: #9da0b5;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all var(--tr-tactile-hover);
+  user-select: none;
+  outline: none;
+}
+
+.cat-pill-chromatic:focus-visible {
+  ring: 2px solid #ffcf6b;
+  outline: 2px solid #ffcf6b;
+  outline-offset: 2px;
+}
+
+.cat-pill-chromatic:active {
+  transform: scale(0.97);
+  transition-duration: var(--tr-tactile-active);
+}
+
+/* Category-Specific Chromatic Hover & Active States */
+
+/* 1. All Works: Champagne gold -> pearl ivory */
+.cat-pill-chromatic[data-category="all"]:hover,
+.cat-pill-chromatic[data-category="all"].is-active {
+  background: linear-gradient(135deg, rgba(255, 207, 107, 0.24), rgba(253, 251, 247, 0.12)) !important;
+  border-color: var(--chroma-all-border) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px var(--chroma-all-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1.5px);
+}
+
+/* 2. Poetry Cards: Blush pink -> rose gold */
+.cat-pill-chromatic[data-category="poetry"]:hover,
+.cat-pill-chromatic[data-category="poetry"].is-active {
+  background: linear-gradient(135deg, rgba(244, 114, 182, 0.24), rgba(224, 141, 160, 0.12)) !important;
+  border-color: var(--chroma-poetry-border) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px var(--chroma-poetry-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1.5px);
+}
+
+/* 3. Motion Loops: Soft violet -> silver lilac */
+.cat-pill-chromatic[data-category="video"]:hover,
+.cat-pill-chromatic[data-category="video"].is-active {
+  background: linear-gradient(135deg, rgba(192, 132, 252, 0.24), rgba(168, 85, 247, 0.12)) !important;
+  border-color: var(--chroma-video-border) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px var(--chroma-video-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1.5px);
+}
+
+/* 4. Digital Media: Pale mint -> aqua pearl */
+.cat-pill-chromatic[data-category="digital"]:hover,
+.cat-pill-chromatic[data-category="digital"].is-active {
+  background: linear-gradient(135deg, rgba(110, 231, 183, 0.24), rgba(45, 212, 191, 0.12)) !important;
+  border-color: var(--chroma-digital-border) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px var(--chroma-digital-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1.5px);
+}
+
+/* 5. Paintings: Warm amber -> copper gold */
+.cat-pill-chromatic[data-category="painting"]:hover,
+.cat-pill-chromatic[data-category="painting"].is-active {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.24), rgba(245, 158, 11, 0.12)) !important;
+  border-color: var(--chroma-painting-border) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px var(--chroma-painting-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1.5px);
+}
+
+/* 6. Drawings & Ink: Icy silver -> lavender */
+.cat-pill-chromatic[data-category="drawing"]:hover,
+.cat-pill-chromatic[data-category="drawing"].is-active {
+  background: linear-gradient(135deg, rgba(203, 213, 225, 0.24), rgba(196, 181, 253, 0.12)) !important;
+  border-color: var(--chroma-drawing-border) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px var(--chroma-drawing-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1.5px);
+}
+
+/* 7. Original Music: Honey gold -> soft coral */
+.cat-pill-chromatic[data-category="music"]:hover,
+.cat-pill-chromatic[data-category="music"].is-active {
+  background: linear-gradient(135deg, rgba(252, 211, 77, 0.24), rgba(251, 113, 133, 0.12)) !important;
+  border-color: var(--chroma-music-border) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px var(--chroma-music-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1.5px);
+}
+
+/* Artwork Card Hover & Touch State: Pure Warm Champagne Golden Sanctuary Illumination */
+.card-chromatic {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.4s ease;
+}
+
+.card-chromatic:hover,
+.card-chromatic:active {
+  transform: translateY(-4px);
+  border-color: rgba(201, 168, 117, 0.65) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 28px rgba(201, 168, 117, 0.25) !important;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+

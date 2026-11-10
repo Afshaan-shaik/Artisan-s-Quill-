@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Feather, X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useSoundEngine } from '../hooks/useSoundEngine';
 
 interface FloatingNote {
   id: string;
@@ -11,6 +12,7 @@ interface FloatingNote {
 const STORAGE_KEY = 'atelier_poetic_notes_v1';
 
 export const FloatingGuestbook: React.FC = () => {
+  const { play: playSound } = useSoundEngine();
   const [isOpen, setIsOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [activeNotes, setActiveNotes] = useState<FloatingNote[]>([]);
@@ -52,6 +54,7 @@ export const FloatingGuestbook: React.FC = () => {
     }
 
     // Reset input and close modal smoothly
+    playSound('quill-chime');
     setNoteText('');
     setIsOpen(false);
 
@@ -130,7 +133,13 @@ export const FloatingGuestbook: React.FC = () => {
                 <Sparkles className="w-4 h-4 text-[#c9a875]" />
                 <span className="text-[10px] uppercase tracking-widest text-[#c9a875]">Guestbook Note</span>
               </div>
-              <button onClick={() => setIsOpen(false)} className="text-neutral-500 hover:text-white transition-colors cursor-pointer">
+              <button
+                onClick={() => {
+                  playSound('menu-close');
+                  setIsOpen(false);
+                }}
+                className="text-neutral-500 hover:text-white transition-colors cursor-pointer"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -150,6 +159,7 @@ export const FloatingGuestbook: React.FC = () => {
               />
               <button
                 type="submit"
+                onMouseEnter={() => playSound('button-hover')}
                 className="w-full py-3 bg-white text-black text-[10px] uppercase tracking-widest hover:bg-[#c9a875] hover:text-black transition-colors rounded-sm font-medium cursor-pointer"
               >
                 Release Note
@@ -161,7 +171,12 @@ export const FloatingGuestbook: React.FC = () => {
 
       {/* Floating Action Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        id="floating-guestbook-btn"
+        onMouseEnter={() => playSound('button-hover')}
+        onClick={() => {
+          playSound('quill-chime');
+          setIsOpen(!isOpen);
+        }}
         className="fixed bottom-20 right-4 sm:bottom-12 sm:right-12 z-40 p-3 sm:p-4 bg-[#0a0c10]/85 backdrop-blur-xl border border-white/15 hover:border-[#c9a875]/50 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.5)] hover:shadow-[0_0_40px_rgba(201,168,117,0.2)] transition-all duration-[600ms] ease-out hover:scale-110 group cursor-pointer"
         title="Leave a Poetic Note"
       >
