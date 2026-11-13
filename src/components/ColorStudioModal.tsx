@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Artwork } from '../types';
 import confetti from 'canvas-confetti';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface ColorStudioModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const ColorStudioModal: React.FC<ColorStudioModalProps> = ({
   artwork,
   onClose
 }) => {
+  useBodyScrollLock(isOpen);
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
   const [selectedHex, setSelectedHex] = useState<string | null>(null);
 
@@ -69,8 +71,8 @@ export const ColorStudioModal: React.FC<ColorStudioModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/95 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-300">
-      <div className="relative w-full max-w-4xl bg-[#090b10] border border-[#c9a875]/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/95 backdrop-blur-2xl overflow-hidden animate-in fade-in duration-300">
+      <div className="relative w-full max-w-4xl h-[92vh] max-h-[92vh] bg-[#090b10] border border-[#c9a875]/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         
         {/* Top Bar */}
         <div className="px-6 py-4 border-b border-white/10 bg-[#07080c]/95 flex items-center justify-between gap-4 shrink-0">

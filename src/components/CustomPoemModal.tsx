@@ -3,6 +3,7 @@ import { Mic, Volume2, Sparkles, Check } from 'lucide-react';
 import { VoiceAccentOption } from '../types';
 import { VOICE_ACCENT_PROFILES } from '../utils/afshaanVoiceEngine';
 import { VoiceRecitalStudioModal } from './VoiceRecitalStudioModal';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface CustomPoemModalProps {
   isOpen: boolean;
@@ -178,6 +179,7 @@ export default function CustomPoemModal({
   initialData,
   isEditing,
 }: CustomPoemModalProps) {
+  useBodyScrollLock(isOpen);
   const [form, setForm] = useState<PoemFormData>({ ...DEFAULT_FORM, ...initialData });
   const [errors, setErrors] = useState<Partial<Record<keyof PoemFormData, string>>>({});
   const [showPreview, setShowPreview] = useState(false);

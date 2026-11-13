@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Artwork, Comment } from '../../types';
 import { Avatar } from '../Avatar';
+import { UniversalFullscreenViewer } from './UniversalFullscreenViewer';
 
 interface MotionLoopStageViewProps {
   artwork: Artwork;
@@ -84,9 +85,11 @@ export const MotionLoopStageView: React.FC<MotionLoopStageViewProps> = ({
   const scrollToContemplations = () => {
     setActiveTab('contemplations');
     setTimeout(() => {
-      commentInputRef.current?.focus();
-      commentInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 150);
+      commentInputRef.current?.focus({ preventScroll: true });
+      if (rightColRef.current) {
+        rightColRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 60);
   };
 
   const toggleFullscreen = useCallback(() => {
@@ -588,113 +591,28 @@ export const MotionLoopStageView: React.FC<MotionLoopStageViewProps> = ({
         </div>
       </div>
 
-      {/* ── True Fullscreen Theater Overlay for Motion Loops (All Devices) ── */}
-      {isFullscreen && (
-        <div
-          onClick={toggleFullscreen}
-          className="fixed inset-0 z-[100] bg-black/98 backdrop-blur-3xl flex items-center justify-center p-2 sm:p-6 select-none animate-in fade-in duration-200"
-        >
-          {/* Ambient Blurred Background Glow */}
-          <video
-            src={artwork.mediaUrl}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover scale-125 filter blur-[60px] opacity-40 pointer-events-none"
-          />
-
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative z-10 w-full h-full max-w-[98vw] max-h-[96vh] flex items-center justify-center"
-          >
-            <video
-              src={artwork.mediaUrl}
-              autoPlay
-              muted={isMuted}
-              loop={isLooping}
-              playsInline
-              onClick={togglePlay}
-              className="w-full h-full max-w-[98vw] max-h-[96vh] object-contain rounded-2xl cursor-pointer shadow-[0_25px_100px_rgba(0,0,0,0.98)] border border-white/10"
-            />
-
-            {/* Top Bar with title, artist, and close button */}
-            <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-auto">
-              <div className="px-4 py-2 rounded-full bg-[#0d0f14]/85 backdrop-blur-md border border-white/10 text-xs font-mono-code text-[#ded7c8] shadow-2xl">
-                <span className="text-[#d9b878] font-bold">{artwork.title}</span>
-                <span className="text-neutral-500 mx-2">•</span>
-                <span>{artistName}</span>
-                <span className="text-neutral-500 mx-2">•</span>
-                <span className="text-[#d9b878]">MOTION LOOP</span>
-              </div>
-
-              <button
-                onClick={toggleFullscreen}
-                className="p-3 rounded-full bg-[#0d0f14]/90 hover:bg-[#d9b878] text-white hover:text-black border border-white/10 backdrop-blur-md shadow-2xl transition-all cursor-pointer"
-                title="Exit Full Screen (Esc / F)"
-              >
-                <Minimize2 className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Fullscreen Floating Controls */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-2xl bg-[#0d0f14]/90 backdrop-blur-xl border border-white/[0.12] shadow-2xl flex items-center gap-4">
-              <button
-                onClick={togglePlay}
-                className="p-2 rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer"
-                title={isPlaying ? 'Pause' : 'Play'}
-              >
-                {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
-              </button>
-
-              <button
-                onClick={toggleLoop}
-                className={`p-2 rounded-full transition-colors cursor-pointer ${
-                  isLooping ? 'text-[#d9b878] bg-[#d9b878]/15' : 'text-neutral-400 hover:text-white'
-                }`}
-                title="Loop Video"
-              >
-                <Repeat className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={toggleMute}
-                className="p-2 rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer"
-                title={isMuted ? 'Unmute' : 'Mute'}
-              >
-                {isMuted ? <VolumeX className="w-4 h-4 text-neutral-400" /> : <Volume2 className="w-4 h-4 text-[#d9b878]" />}
-              </button>
-            </div>
-
-            {/* Hover Prev / Next in Fullscreen */}
-            {hasPrev && onPrev && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPrev();
-                }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[#0d0f14]/80 hover:bg-[#d9b878] text-white hover:text-black border border-white/10 backdrop-blur-md shadow-2xl flex items-center justify-center transition-all cursor-pointer z-20"
-                title="Previous Artwork"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-            )}
-
-            {hasNext && onNext && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNext();
-                }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[#0d0f14]/80 hover:bg-[#d9b878] text-white hover:text-black border border-white/10 backdrop-blur-md shadow-2xl flex items-center justify-center transition-all cursor-pointer z-20"
-                title="Next Artwork"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      {/* ── Universal Full-Viewport Fullscreen Theater (React Portal to document.body) ── */}
+      <UniversalFullscreenViewer
+        isOpen={isFullscreen}
+        artwork={artwork}
+        mediaType="video"
+        mediaUrl={artwork.mediaUrl}
+        posterUrl={artwork.thumbnailUrl}
+        initialTime={currentTime}
+        initialPlaying={isPlaying}
+        initialMuted={isMuted}
+        onClose={(finalTime) => {
+          setIsFullscreen(false);
+          if (typeof finalTime === 'number' && videoRef.current) {
+            videoRef.current.currentTime = finalTime;
+            setCurrentTime(finalTime);
+          }
+        }}
+        onPrev={onPrev}
+        onNext={onNext}
+        hasPrev={hasPrev}
+        hasNext={hasNext}
+      />
     </div>
   );
 };

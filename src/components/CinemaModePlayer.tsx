@@ -46,7 +46,10 @@ const getArtworkImage = (artwork: Artwork | null | undefined): string => {
       artwork.id === 'music-anil-emre-daldal-m' ||
       artwork.id === 'music-m-remix' ||
       artwork.title === 'M.' ||
-      (artwork.mediaUrl && artwork.mediaUrl.includes('wsKhe5rTKw8'))
+      (artwork.title && artwork.title.trim().toLowerCase() === 'm.') ||
+      (artwork.artist && (typeof artwork.artist === 'string' ? artwork.artist : artwork.artist.name).toLowerCase().includes('anıl')) ||
+      (artwork.mediaUrl && artwork.mediaUrl.includes('wsKhe5rTKw8')) ||
+      (artwork.musicTrack?.audioUrl && artwork.musicTrack.audioUrl.includes('wsKhe5rTKw8'))
     ) {
       return '/audio/M-Remix.jpg';
     }
@@ -269,8 +272,6 @@ export const CinemaModePlayer: React.FC<CinemaModePlayerProps> = ({
                   key={current.id}
                   src={displayImage}
                   alt={current.title}
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
                   onError={(e) => {
                     const target = e.currentTarget as HTMLImageElement;
                     target.onerror = null;
@@ -309,8 +310,6 @@ export const CinemaModePlayer: React.FC<CinemaModePlayerProps> = ({
                 key={current.id}
                 src={displayImage}
                 alt={current.title}
-                referrerPolicy="no-referrer"
-                crossOrigin="anonymous"
                 onError={(e) => {
                   const target = e.currentTarget as HTMLImageElement;
                   target.onerror = null;

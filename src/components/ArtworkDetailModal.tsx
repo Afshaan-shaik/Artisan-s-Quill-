@@ -58,6 +58,7 @@ import { fetchCommentsFromSupabase } from '../services/supabaseClient';
 import { PhotographEditorialView } from './modals/PhotographEditorialView';
 import { MotionLoopStageView } from './modals/MotionLoopStageView';
 import { MusicLinerNotesView } from './modals/MusicLinerNotesView';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface ArtworkDetailModalProps {
   artwork: Artwork | null;
@@ -108,6 +109,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   onOpenBardModal,
   onOpenScrollModal
 }) => {
+  useBodyScrollLock(Boolean(artwork));
   const [comments, setComments] = useState<Comment[]>([]);
   const [newCommentText, setNewCommentText] = useState('');
   const [isReciting, setIsReciting] = useState(false);
@@ -729,10 +731,10 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto bg-black/85 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-hidden bg-black/85 backdrop-blur-xl">
       <div
         id="artwork-detail-modal"
-        className="relative w-full max-w-[90rem] h-full sm:h-auto max-h-[100dvh] sm:max-h-[95vh] bg-[#0d0f14] border border-white/[0.08] shadow-[0_30px_90px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col font-sans rounded-[18px] text-neutral-200"
+        className="relative w-full max-w-[90rem] h-full sm:h-[92vh] max-h-[100dvh] sm:max-h-[95vh] bg-[#0d0f14] border border-white/[0.08] shadow-[0_30px_90px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col font-sans rounded-none sm:rounded-[18px] text-neutral-200"
       >
         <div className="fixed inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay bg-noise z-0"></div>
         

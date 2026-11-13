@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Artwork, Comment } from '../../types';
 import { Avatar } from '../Avatar';
+import { UniversalFullscreenViewer } from './UniversalFullscreenViewer';
 
 interface PhotographEditorialViewProps {
   artwork: Artwork;
@@ -77,9 +78,11 @@ export const PhotographEditorialView: React.FC<PhotographEditorialViewProps> = (
   const scrollToContemplations = () => {
     setActiveTab('contemplations');
     setTimeout(() => {
-      commentInputRef.current?.focus();
-      commentInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 150);
+      commentInputRef.current?.focus({ preventScroll: true });
+      if (rightColRef.current) {
+        rightColRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 60);
   };
 
   const displayImage = imageError
@@ -438,69 +441,19 @@ export const PhotographEditorialView: React.FC<PhotographEditorialViewProps> = (
         </div>
       </div>
 
-      {/* ── True Fullscreen Lightbox Theater Overlay (Full Screen for all devices) ── */}
-      {isZoomed && (
-        <div
-          onClick={onToggleZoom}
-          className="fixed inset-0 z-[100] bg-black/98 backdrop-blur-3xl flex items-center justify-center p-2 sm:p-6 select-none animate-in fade-in duration-200 cursor-zoom-out"
-        >
-          <div className="relative max-w-[98vw] max-h-[96vh] flex items-center justify-center">
-            <img
-              src={displayImage}
-              alt={artwork.title}
-              className="max-h-[96vh] max-w-[98vw] object-contain rounded-2xl shadow-[0_25px_100px_rgba(0,0,0,0.98)] border border-white/10"
-              draggable={false}
-            />
-            
-            {/* Top Bar with title, artist, and close button */}
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-auto"
-            >
-              <div className="px-4 py-2 rounded-full bg-[#0d0f14]/85 backdrop-blur-md border border-white/10 text-xs font-mono-code text-[#ded7c8] shadow-2xl">
-                <span className="text-[#d9b878] font-bold">{artwork.title}</span>
-                <span className="text-neutral-500 mx-2">•</span>
-                <span>{artistName}</span>
-              </div>
-
-              <button
-                onClick={onToggleZoom}
-                className="p-3 rounded-full bg-[#0d0f14]/90 hover:bg-[#d9b878] text-white hover:text-black border border-white/10 backdrop-blur-md shadow-2xl transition-all cursor-pointer"
-                title="Exit Full Screen (Esc / Z)"
-              >
-                <Minimize2 className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Hover Prev / Next in Fullscreen */}
-            {hasPrev && onPrev && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPrev();
-                }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[#0d0f14]/80 hover:bg-[#d9b878] text-white hover:text-black border border-white/10 backdrop-blur-md shadow-2xl flex items-center justify-center transition-all cursor-pointer z-20"
-                title="Previous Artwork (Left Arrow)"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-            )}
-
-            {hasNext && onNext && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNext();
-                }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[#0d0f14]/80 hover:bg-[#d9b878] text-white hover:text-black border border-white/10 backdrop-blur-md shadow-2xl flex items-center justify-center transition-all cursor-pointer z-20"
-                title="Next Artwork (Right Arrow)"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      {/* ── Universal Full-Viewport Fullscreen Theater (React Portal to document.body) ── */}
+      <UniversalFullscreenViewer
+        isOpen={isZoomed}
+        artwork={artwork}
+        mediaType="photo"
+        mediaUrl={displayImage}
+        posterUrl={displayImage}
+        onClose={() => onToggleZoom()}
+        onPrev={onPrev}
+        onNext={onNext}
+        hasPrev={hasPrev}
+        hasNext={hasNext}
+      />
     </div>
   );
 };

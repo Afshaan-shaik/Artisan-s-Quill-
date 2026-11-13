@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Artwork, WallFrameStyle, WallColorPreset } from '../types';
 import confetti from 'canvas-confetti';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface GalleryWallModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const GalleryWallModal: React.FC<GalleryWallModalProps> = ({
   artwork,
   onClose
 }) => {
+  useBodyScrollLock(isOpen);
   const [frameStyle, setFrameStyle] = useState<WallFrameStyle>('gilded');
   const [wallColor, setWallColor] = useState<WallColorPreset>('obsidian');
   const [shadowDepth, setShadowDepth] = useState<number>(65); // 0 to 100
@@ -130,8 +132,8 @@ export const GalleryWallModal: React.FC<GalleryWallModalProps> = ({
   const displayImage = artwork.mediaUrl || artwork.thumbnailUrl || (artwork.id === 'spotlight-masterpiece-1' || artwork.category === 'digital' ? '/curatorial-masterpiece.svg' : 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1600&q=80');
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/95 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-300">
-      <div className="relative w-full max-w-7xl h-full max-h-[94vh] bg-[#050608] border border-[#c9a875]/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/95 backdrop-blur-2xl overflow-hidden animate-in fade-in duration-300">
+      <div className="relative w-full max-w-7xl h-[94vh] max-h-[94vh] bg-[#050608] border border-[#c9a875]/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         
         {/* Top Header Controls */}
         <div className="px-6 py-4 border-b border-white/10 bg-[#07080c]/95 flex items-center justify-between gap-4 z-30 shrink-0">
@@ -180,7 +182,7 @@ export const GalleryWallModal: React.FC<GalleryWallModalProps> = ({
         </div>
 
         {/* Studio Content Grid */}
-        <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 min-h-0">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 overflow-y-auto lg:overflow-hidden">
           
           {/* Main 3D Salon Wall Viewport */}
           <div
@@ -279,7 +281,7 @@ export const GalleryWallModal: React.FC<GalleryWallModalProps> = ({
           </div>
 
           {/* Right Configuration Panel */}
-          <div className="lg:col-span-4 xl:col-span-3 border-l border-white/10 bg-[#0c0f16] flex flex-col overflow-y-auto p-6 space-y-6">
+          <div className="lg:col-span-4 xl:col-span-3 border-l border-white/10 bg-[#0c0f16] flex flex-col overflow-y-auto custom-scrollbar p-6 space-y-6 h-full">
             
             {/* 1. Frame Material Switcher */}
             <div className="space-y-2.5">

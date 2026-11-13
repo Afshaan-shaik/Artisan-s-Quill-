@@ -514,12 +514,12 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       id: 'artist-anil-emre',
       name: 'Anıl Emre Daldal',
       handle: '@anilemredaldal',
-      avatar: 'https://img.youtube.com/vi/wsKhe5rTKw8/hqdefault.jpg',
+      avatar: '/audio/M-Remix.jpg',
       verified: true
     },
     category: 'music',
     mediaUrl: '/audio/wsKhe5rTKw8.mp4',
-    thumbnailUrl: 'https://img.youtube.com/vi/wsKhe5rTKw8/hqdefault.jpg',
+    thumbnailUrl: '/audio/M-Remix.jpg',
     medium: 'Original Master • Indie Alternative / Turkish Melancholy',
     dimensions: 'Studio Single Master',
     year: 2021,
@@ -540,7 +540,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       genre: 'Indie Alternative / Turkish Melancholy',
       audioUrl: '/audio/wsKhe5rTKw8.mp4',
       composer: 'Anıl Emre Daldal',
-      coverArtUrl: 'https://img.youtube.com/vi/wsKhe5rTKw8/hqdefault.jpg',
+      coverArtUrl: '/audio/M-Remix.jpg',
       durationSeconds: 224,
       duration: '3:44',
       isOriginalComposition: true

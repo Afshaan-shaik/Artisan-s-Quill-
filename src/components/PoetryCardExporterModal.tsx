@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Artwork, CanvasTexturePreset, StoryExportFormat } from '../types';
 import confetti from 'canvas-confetti';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface PoetryCardExporterModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const PoetryCardExporterModal: React.FC<PoetryCardExporterModalProps> = (
   initialStanzaIndex,
   onClose
 }) => {
+  useBodyScrollLock(isOpen);
   const [texture, setTexture] = useState<CanvasTexturePreset>('parchment');
   const [format, setFormat] = useState<StoryExportFormat>('story'); // 'story' (9:16) or 'square' (1:1)
   const [selectedFont, setSelectedFont] = useState<'cormorant' | 'cinzel' | 'playfair' | 'newsreader'>('cormorant');
@@ -307,10 +309,10 @@ export const PoetryCardExporterModal: React.FC<PoetryCardExporterModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/95 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/95 backdrop-blur-2xl overflow-hidden animate-in fade-in duration-300">
       <canvas ref={canvasRef} className="hidden" />
 
-      <div className="relative w-full max-w-5xl max-h-[92vh] bg-[#07090e] border border-[#c9a875]/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-5xl h-[92vh] max-h-[92vh] bg-[#07090e] border border-[#c9a875]/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         {/* Top Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/80 backdrop-blur-xl shrink-0">
           <div className="flex items-center gap-3">
@@ -352,10 +354,10 @@ export const PoetryCardExporterModal: React.FC<PoetryCardExporterModalProps> = (
         </div>
 
         {/* Studio Content Grid */}
-        <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 min-h-0">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 overflow-y-auto lg:overflow-hidden">
           
           {/* Left Canvas Preview Chamber */}
-          <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col items-center justify-center bg-[#030407] border-b lg:border-b-0 lg:border-r border-white/10 relative overflow-hidden">
+          <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col items-center justify-center bg-[#030407] border-b lg:border-b-0 lg:border-r border-white/10 relative overflow-hidden h-full">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(201,168,117,0.06),transparent_70%)] pointer-events-none" />
 
             <div className="relative max-h-[68vh] flex items-center justify-center shadow-2xl rounded-xl overflow-hidden border border-[#c9a875]/30">
@@ -381,7 +383,7 @@ export const PoetryCardExporterModal: React.FC<PoetryCardExporterModalProps> = (
           </div>
 
           {/* Right Customization Suite */}
-          <div className="lg:col-span-5 p-6 sm:p-8 space-y-6 bg-[#07090e] overflow-y-auto">
+          <div className="lg:col-span-5 p-6 sm:p-8 space-y-6 bg-[#07090e] overflow-y-auto custom-scrollbar h-full">
             
             {/* Format Selector */}
             <div className="space-y-2">

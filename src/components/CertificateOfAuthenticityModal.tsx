@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Artwork } from '../types';
 import confetti from 'canvas-confetti';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface CertificateOfAuthenticityModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const CertificateOfAuthenticityModal: React.FC<CertificateOfAuthenticityM
   artwork,
   onClose
 }) => {
+  useBodyScrollLock(isOpen);
   const [copiedHash, setCopiedHash] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
@@ -321,8 +323,8 @@ export const CertificateOfAuthenticityModal: React.FC<CertificateOfAuthenticityM
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/95 backdrop-blur-2xl overflow-y-auto animate-in fade-in duration-300">
-      <div className="relative w-full max-w-4xl bg-[#090b10] border border-[#c9a875]/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/95 backdrop-blur-2xl overflow-hidden animate-in fade-in duration-300">
+      <div className="relative w-full max-w-4xl h-[94vh] max-h-[96vh] bg-[#090b10] border border-[#c9a875]/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         
         {/* Top Control Bar */}
         <div className="px-4 sm:px-8 py-3.5 border-b border-white/10 bg-[#07080c]/95 flex flex-wrap items-center justify-between gap-3 shrink-0 z-20">

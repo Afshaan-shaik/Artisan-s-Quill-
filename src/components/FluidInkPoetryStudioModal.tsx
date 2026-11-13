@@ -23,6 +23,7 @@ import {
 import { Artwork, ArtCategory, UserProfile } from '../types';
 import { GalleryService } from '../services/api';
 import confetti from 'canvas-confetti';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface FluidInkPoetryStudioModalProps {
   isOpen: boolean;
@@ -98,6 +99,7 @@ export const FluidInkPoetryStudioModal: React.FC<FluidInkPoetryStudioModalProps>
   onPublishSuccess,
   onOpenBardModal
 }) => {
+  useBodyScrollLock(isOpen);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [selectedNib, setSelectedNib] = useState<NibType>('quill');
   const [selectedParchment, setSelectedParchment] = useState<ParchmentTheme>('obsidian');
@@ -607,8 +609,8 @@ export const FluidInkPoetryStudioModal: React.FC<FluidInkPoetryStudioModalProps>
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-xl overflow-y-auto animate-in fade-in duration-300">
-      <div className="relative w-full max-w-7xl ultra-glass-elevated rounded-2xl sm:rounded-3xl border border-[#c9a875]/40 shadow-2xl flex flex-col max-h-[94vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-xl overflow-hidden animate-in fade-in duration-300">
+      <div className="relative w-full max-w-7xl h-[94vh] max-h-[94vh] ultra-glass-elevated rounded-2xl sm:rounded-3xl border border-[#c9a875]/40 shadow-2xl flex flex-col overflow-hidden">
         
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#07090e]/90">
