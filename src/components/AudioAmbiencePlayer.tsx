@@ -207,6 +207,8 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
     };
 
     audio.onerror = () => {
+      // Strictly prevent unwanted autoplay on mount or initialization errors
+      if (!isPlayingRef.current || !audio.src) return;
       console.warn('Audio stream error, falling back to YouTube audio...');
       handlePlaybackFallback();
     };
@@ -284,6 +286,7 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
                 }
               },
               onError: (event) => {
+                if (!isPlayingRef.current) return;
                 console.warn('YouTube player error code:', event.data);
                 handlePlaybackFallback();
               }
@@ -576,6 +579,7 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
   };
 
   const handlePlaybackFallback = () => {
+    if (!isPlayingRef.current) return;
     const available = getDisplayTracks().filter((t) => t.id !== currentTrack?.id);
     if (available.length > 0) {
       handlePlayTrack(available[0]);
@@ -632,20 +636,28 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
 
   // Get active tracks filtered by tab
   const getDisplayTracks = (): UniversalTrack[] => {
+    let tracks: UniversalTrack[] = [];
     switch (activePlatformTab) {
       case 'vault':
-        return searchResults.vault.length > 0 ? searchResults.vault : VAULT_MUSIC_COLLECTION;
+        tracks = searchResults.vault.length > 0 ? searchResults.vault : VAULT_MUSIC_COLLECTION;
+        break;
       case 'youtube':
-        return searchResults.youtube.length > 0 ? searchResults.youtube : searchResults.all;
+        tracks = searchResults.youtube.length > 0 ? searchResults.youtube : searchResults.all;
+        break;
       case 'spotify':
-        return searchResults.spotify.length > 0 ? searchResults.spotify : searchResults.all;
+        tracks = searchResults.spotify.length > 0 ? searchResults.spotify : searchResults.all;
+        break;
       case 'jiosaavn':
-        return searchResults.jiosaavn.length > 0 ? searchResults.jiosaavn : searchResults.all;
+        tracks = searchResults.jiosaavn.length > 0 ? searchResults.jiosaavn : searchResults.all;
+        break;
       case 'sanctuary':
-        return searchResults.sanctuary;
+        tracks = searchResults.sanctuary;
+        break;
       default:
-        return searchResults.all;
+        tracks = searchResults.all;
+        break;
     }
+    return tracks.filter((t) => !/derry/i.test(t.title) && !/qwTop2qs1tE/i.test(t.streamUrl || '') && !/qwTop2qs1tE/i.test(t.youtubeId || '') && !/derry/i.test(t.id));
   };
 
   // Platform Badge Helper
@@ -883,7 +895,7 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
 
               {/* Quick Suggestion Chips */}
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-                {['Blinding Lights', 'Starboy', 'IT Theme', 'M. Anıl Emre', 'Hum Murtaza', 'Kesariya', 'Interstellar'].map((sug) => (
+                {['Blinding Lights', 'Starboy', 'M. Anıl Emre', 'Hum Murtaza', 'Kesariya', 'Interstellar'].map((sug) => (
                   <button
                     key={sug}
                     onClick={() => {
@@ -1037,7 +1049,7 @@ export const AudioAmbiencePlayer: React.FC<AudioAmbiencePlayerProps> = ({ varian
                 <span className="text-[9px] uppercase font-mono-code text-[#c9a875] font-bold shrink-0">
                   Trending Vault:
                 </span>
-                {['Blinding Lights', 'Starboy', 'IT Theme', 'M. Anıl Emre', 'Hum Murtaza', 'Kesariya', 'Interstellar', 'Humsafar', 'Belki', 'Experience', 'Pasoori'].map((sug) => (
+                {['Blinding Lights', 'Starboy', 'M. Anıl Emre', 'Hum Murtaza', 'Kesariya', 'Interstellar', 'Humsafar', 'Belki', 'Experience', 'Pasoori'].map((sug) => (
                   <button
                     key={sug}
                     onClick={() => {

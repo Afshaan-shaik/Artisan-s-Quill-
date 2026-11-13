@@ -430,45 +430,6 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     }
   },
   {
-    id: 'music-it-welcome-to-derry',
-    title: 'IT: Welcome to Derry - Opening Theme',
-    artist: {
-      id: 'artist-hbo-max',
-      name: 'Bear McCreary / HBO Max',
-      handle: '@bear_mccreary',
-      avatar: 'https://img.youtube.com/vi/qwTop2qs1tE/hqdefault.jpg',
-      verified: true
-    },
-    category: 'music',
-    mediaUrl: '/audio/qwTop2qs1tE.mp4',
-    thumbnailUrl: 'https://img.youtube.com/vi/qwTop2qs1tE/hqdefault.jpg',
-    medium: 'Original Master • Cinematic Orchestral / Dark Ambient',
-    dimensions: 'Master Vinyl Studio Recording',
-    year: 2025,
-    description: 'HBO Max Original Soundtrack Opening Theme composed by Bear McCreary. Extracted Master High-Fidelity Audio.',
-    curatorNote: 'Sanctuary Vault Audio Masterpiece.',
-    tags: ['Music', 'Original Soundtrack', 'Orchestral', 'Sanctuary Audio'],
-    likesCount: 0,
-    viewsCount: 0,
-    savesCount: 0,
-    createdAt: '2026-09-10T12:00:00Z',
-    aspectRatio: 'square',
-    colorPalette: ['#0d0f14', '#c9a875', '#331a15', '#dfbd87'],
-    isLiked: false,
-    isSaved: false,
-    featured: true,
-    musicData: {
-      album: 'IT: Welcome to Derry (Original Series Soundtrack)',
-      genre: 'Cinematic Orchestral / Dark Ambient',
-      audioUrl: '/audio/qwTop2qs1tE.mp4',
-      composer: 'Bear McCreary',
-      coverArtUrl: 'https://img.youtube.com/vi/qwTop2qs1tE/hqdefault.jpg',
-      durationSeconds: 115,
-      duration: '1:55',
-      isOriginalComposition: true
-    }
-  },
-  {
     id: 'music-blinding-lights',
     title: 'Blinding Lights',
     artist: {
@@ -713,7 +674,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
       verified: true
     },
     category: 'music',
-    mediaUrl: '/audio/qwTop2qs1tE.mp4',
+    mediaUrl: '/audio/BddP6PYo2gs.mp4',
     thumbnailUrl: 'https://images.unsplash.com/photo-1520523839898-5071270d497c?w=800&auto=format&fit=crop&q=80',
     medium: 'Original Master • Classical Piano Solo',
     dimensions: 'Concert Hall Performance',
@@ -733,7 +694,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     musicData: {
       album: 'Atelier Classical Virtuoso',
       genre: 'Classical Piano Solo',
-      audioUrl: '/audio/qwTop2qs1tE.mp4',
+      audioUrl: '/audio/BddP6PYo2gs.mp4',
       composer: 'Elena Rostova (after Chopin)',
       coverArtUrl: 'https://images.unsplash.com/photo-1520523839898-5071270d497c?w=800&auto=format&fit=crop&q=80',
       durationSeconds: 245,

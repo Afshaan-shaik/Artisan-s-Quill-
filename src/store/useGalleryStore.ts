@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Artwork, ArtCategory, Comment } from '../types';
 import { INITIAL_ARTWORKS, INITIAL_COMMENTS } from '../data/initialData';
+import { isDerryArtwork } from '../utils/audioResolver';
 import {
   fetchArtworksFromSupabase,
   updateArtworkInSupabase,
@@ -80,7 +81,7 @@ export function saveStoredSavedIds(setIds: Set<string>): void {
 function initializeArtworks(): Artwork[] {
   const liked = getStoredLikedIds();
   const saved = getStoredSavedIds();
-  return INITIAL_ARTWORKS.map((a) => ({
+  return INITIAL_ARTWORKS.filter((a) => !isDerryArtwork(a)).map((a) => ({
     ...a,
     isLiked: liked.has(a.id),
     isSaved: saved.has(a.id)
@@ -152,7 +153,7 @@ export const useGalleryStore = create<GalleryStoreState>((set, get) => ({
 
     // 1. Put fresh/remote artworks from Supabase Postgres first
     for (const a of newArtworks) {
-      if (!a?.id) continue;
+      if (!a?.id || isDerryArtwork(a)) continue;
       const sig = getSignature(a);
       if (a.title && a.mediaUrl && seenSignatures.has(sig)) {
         continue; // Skip duplicate upload in gallery
@@ -168,7 +169,7 @@ export const useGalleryStore = create<GalleryStoreState>((set, get) => ({
 
     // 2. Append foundational artworks that are not yet in Supabase
     for (const a of existing) {
-      if (!a?.id) continue;
+      if (!a?.id || isDerryArtwork(a)) continue;
       const sig = getSignature(a);
       if (a.title && a.mediaUrl && seenSignatures.has(sig)) {
         continue;
@@ -187,6 +188,7 @@ export const useGalleryStore = create<GalleryStoreState>((set, get) => ({
   },
 
   prependArtwork: (artwork) => {
+    if (isDerryArtwork(artwork)) return;
     set((state) => {
       const likedIds = getStoredLikedIds();
       const storeSavedIds = state.savedArtworkIds;

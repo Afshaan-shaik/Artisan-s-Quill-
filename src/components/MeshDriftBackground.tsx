@@ -5,7 +5,7 @@ import React, { useEffect, useRef } from 'react';
  * Plain WebGL1 Fullscreen Triangle Shader Background — "Mesh drift" (blobs shader)
  * Generated with 21st.dev Shader Builder specifications.
  * 
- * Colours (low -> high): #101010, #F5F5F5, #B0B0B0, #3A3A3A
+ * Colours (low -> high): #020a05, #063319, #0d4a25, #041c0e (Premium Emerald Sanctuary)
  * Feel: speed 33/100, zoom 33/100, intensity 34/100, warp 0/100, contrast 62/100,
  *       brightness 50/100, saturation 50/100, hue 0°, vignette 0/100, grain 26/100
  * Cursor: off
@@ -400,12 +400,12 @@ export const MeshDriftBackground: React.FC<MeshDriftBackgroundProps> = ({ classN
     const uSpaceLocation = gl.getUniformLocation(program, 'u_space');
     const uCursorLocation = gl.getUniformLocation(program, 'u_cursor');
 
-    // Packed 8-color array (first 4 used for #101010, #F5F5F5, #B0B0B0, #3A3A3A)
+    // Packed 8-color array: Premium Emerald Sanctuary Greens (#020a05, #063319, #0d4a25, #041c0e)
     const colorsData = new Float32Array([
-      0.063, 0.063, 0.063, // #101010
-      0.961, 0.961, 0.961, // #F5F5F5
-      0.690, 0.690, 0.690, // #B0B0B0
-      0.227, 0.227, 0.227, // #3A3A3A
+      0.008, 0.039, 0.020, // #020a05 - Deep obsidian emerald
+      0.024, 0.200, 0.098, // #063319 - Rich velvet emerald
+      0.051, 0.290, 0.145, // #0d4a25 - Luminous malachite jade
+      0.016, 0.110, 0.055, // #041c0e - Nocturnal pine shadow
       0.0,   0.0,   0.0,
       0.0,   0.0,   0.0,
       0.0,   0.0,   0.0,

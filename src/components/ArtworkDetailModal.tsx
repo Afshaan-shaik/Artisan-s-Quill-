@@ -32,7 +32,8 @@ import {
   Smartphone,
   Feather,
   Mic,
-  ChevronDown
+  ChevronDown,
+  MoreHorizontal
 } from 'lucide-react';
 import { Artwork, Comment, UserProfile, VoiceAccentOption } from '../types';
 import { GalleryService } from '../services/api';
@@ -54,6 +55,9 @@ import { isVideoMedia, isAudioMedia, getMediaPoster } from '../utils/mediaUtils'
 import { ModalMediumBackdrop } from './backdrops';
 import { getCanonicalArtworkUrl } from '../utils/permalinkUtils';
 import { fetchCommentsFromSupabase } from '../services/supabaseClient';
+import { PhotographEditorialView } from './modals/PhotographEditorialView';
+import { MotionLoopStageView } from './modals/MotionLoopStageView';
+import { MusicLinerNotesView } from './modals/MusicLinerNotesView';
 
 interface ArtworkDetailModalProps {
   artwork: Artwork | null;
@@ -119,6 +123,8 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
   const [isSharedCopied, setIsSharedCopied] = useState(false);
   const [isStoryExporterOpen, setIsStoryExporterOpen] = useState(false);
   const [isMarginDrawerOpen, setIsMarginDrawerOpen] = useState(false);
+  const [isOverflowOpen, setIsOverflowOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [marginStanzaIdx, setMarginStanzaIdx] = useState<number>(0);
   const [marginVerseSnippet, setMarginVerseSnippet] = useState<string>('');
   const isAuthorAfshaan = artwork
@@ -640,6 +646,10 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
       if (activeTag === 'input' || activeTag === 'textarea') return;
 
       if (e.key === 'Escape') {
+        if (isZoomed) {
+          setIsZoomed(false);
+          return;
+        }
         onClose();
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
@@ -664,7 +674,7 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
       } else if (e.key === 'v' || e.key === 'V') {
         e.preventDefault();
         if (artwork && onAddToMoodBoard) onAddToMoodBoard(artwork);
-      } else if (e.key === 'z' || e.key === 'Z') {
+      } else if (e.key === 'z' || e.key === 'Z' || e.key === 'f' || e.key === 'F') {
         e.preventDefault();
         setIsZoomed((prev) => !prev);
       } else if ((e.key === 'r' || e.key === 'R') && artwork?.category === 'poetry') {
@@ -711,208 +721,242 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
     }
   };
 
+  const getMediumTag = () => {
+    if (artwork.category === 'poetry') return 'POETRY';
+    if (artwork.category === 'video' || isVideoMedia(artwork)) return 'VIDEO';
+    if (artwork.category === 'music' || isAudioMedia(artwork)) return 'MUSIC';
+    return 'PHOTO';
+  };
+
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto bg-[#050608]/95 backdrop-blur-2xl">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto bg-black/85 backdrop-blur-xl">
       <div
         id="artwork-detail-modal"
-        className="relative w-full max-w-[90rem] h-full sm:h-auto max-h-[100dvh] sm:max-h-[95vh] bg-[#050608] border-0 sm:border sm:border-white/5 shadow-2xl overflow-hidden flex flex-col font-sans rounded-none sm:rounded-sm text-neutral-200"
+        className="relative w-full max-w-[90rem] h-full sm:h-auto max-h-[100dvh] sm:max-h-[95vh] bg-[#0d0f14] border border-white/[0.08] shadow-[0_30px_90px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col font-sans rounded-[18px] text-neutral-200"
       >
         <div className="fixed inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay bg-noise z-0"></div>
         
-        {/* Top Control Bar */}
-        <div className="flex items-center justify-between px-3 sm:px-8 py-2.5 sm:py-3.5 border-b border-white/10 bg-[#050608]/95 backdrop-blur-2xl z-30 shrink-0 min-h-[3.75rem] sm:min-h-[4.25rem]">
-          <div className="flex items-center gap-3 sm:gap-5 min-w-0 pr-2">
-            <span className="px-2.5 py-1 rounded bg-[#c9a875]/20 backdrop-blur-md border border-[#c9a875]/50 text-[10px] uppercase font-bold tracking-widest text-[#dfbd87] shrink-0">
-              {artwork.category}
+        {/* Top Control Bar (Shared) */}
+        <div className="flex items-center justify-between px-4 sm:px-8 py-3.5 sm:py-4 border-b border-white/[0.08] bg-[#0d0f14] z-30 shrink-0 min-h-[3.75rem] sm:min-h-[4.25rem]">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 pr-2">
+            <span className="px-3 py-1 rounded-full border border-[#d9b878]/60 text-[10px] uppercase font-mono-code font-bold tracking-[0.22em] text-[#d9b878] shrink-0">
+              {getMediumTag()}
             </span>
-            <h2 className="font-serif-display text-lg sm:text-2xl font-medium tracking-wide text-white truncate uppercase">
+            <h2 className="font-serif text-lg sm:text-2xl font-light tracking-wide text-white leading-tight break-words">
               {artwork.title}
             </h2>
             {allArtworks.length > 1 && currentIndex >= 0 && (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 bg-black/60 border border-[#c9a875]/30 text-[10px] uppercase font-mono-code text-neutral-400 rounded-lg shrink-0">
-                <span className="text-[#dfbd87] font-bold">{currentIndex + 1}</span> of {allArtworks.length}
+              <span className="text-xs font-mono-code text-neutral-400 shrink-0 ml-1">
+                {currentIndex + 1} / {allArtworks.length}
               </span>
             )}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Gallery Atmosphere Switcher */}
-            <div className="hidden md:flex items-center gap-1.5 bg-black/90 border border-[#c9a875]/50 px-3 py-1.5 rounded-xl shadow-[0_0_20px_rgba(201,168,117,0.25)] backdrop-blur-md">
-              <span className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#e8c690] mr-1">
-                <Sun className="w-3.5 h-3.5 text-[#c9a875] animate-pulse" />
-                LIGHT:
-              </span>
-              <button
-                onClick={() => setLightingMode('obsidian')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                  lightingMode === 'obsidian'
-                    ? 'bg-gradient-to-r from-[#c9a875] via-[#dfbd87] to-[#c9a875] text-black font-extrabold shadow-[0_0_14px_rgba(201,168,117,0.7)] scale-[1.04]'
-                    : 'text-neutral-300 hover:text-white hover:bg-white/10'
-                }`}
-                title="Obsidian Pure Dark"
-              >
-                Dark
-              </button>
-              <button
-                onClick={() => setLightingMode('spotlight')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                  lightingMode === 'spotlight'
-                    ? 'bg-gradient-to-r from-[#c9a875] via-[#dfbd87] to-[#c9a875] text-black font-extrabold shadow-[0_0_14px_rgba(201,168,117,0.7)] scale-[1.04]'
-                    : 'text-neutral-300 hover:text-white hover:bg-white/10'
-                }`}
-                title="Warm Amber Spotlight"
-              >
-                Spot
-              </button>
-              <button
-                onClick={() => setLightingMode('twilight')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                  lightingMode === 'twilight'
-                    ? 'bg-gradient-to-r from-[#c9a875] via-[#dfbd87] to-[#c9a875] text-black font-extrabold shadow-[0_0_14px_rgba(201,168,117,0.7)] scale-[1.04]'
-                    : 'text-neutral-300 hover:text-white hover:bg-white/10'
-                }`}
-                title="Twilight Indigo"
-              >
-                Twilight
-              </button>
-            </div>
+            {/* Single Light-Mode Cycling Button (Dark -> Spot -> Twilight -> Dark) */}
+            <button
+              onClick={() => {
+                setLightingMode((prev) => {
+                  if (prev === 'obsidian') return 'spotlight';
+                  if (prev === 'spotlight') return 'twilight';
+                  return 'obsidian';
+                });
+              }}
+              className="p-2 sm:p-2.5 rounded-full bg-white/[0.04] hover:bg-[#d9b878]/15 border border-white/[0.08] text-neutral-300 hover:text-[#d9b878] transition-all cursor-pointer shadow-md"
+              title={`Atmosphere: ${lightingMode === 'obsidian' ? 'Dark' : lightingMode === 'spotlight' ? 'Spotlight' : 'Twilight'} (Click to cycle)`}
+            >
+              <Sun className="w-4 h-4 text-[#d9b878]" />
+            </button>
 
-            {/* Consolidated Curatorial Toolkit Ribbon */}
-            <CuratorialToolkit
-              artwork={artwork}
-              onOpenColorStudio={onOpenColorStudio}
-              onOpenWallView={onOpenGalleryWall}
-              onOpenFragmentInspector={onOpenFragmentInspector}
-              onOpenCertificate={onOpenCertificate}
-              onOpenStoryExporter={() => setIsStoryExporterOpen(true)}
-              onOpenMoodboard={onAddToMoodBoard}
-              onShare={handleShareClick}
-            />
-
-            {/* Quick Share Button */}
+            {/* Share Icon Button */}
             <button
               id="detail-top-share-btn"
               onClick={handleShareClick}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg bg-black/90 border border-[#c9a875] text-[#e8c690] hover:bg-gradient-to-r hover:from-[#c9a875] hover:to-[#dfbd87] hover:text-black shadow-[0_0_15px_rgba(201,168,117,0.35)] transition-all cursor-pointer"
-              title="Share and Curate Artwork"
+              className="p-2 sm:p-2.5 rounded-full bg-white/[0.04] hover:bg-[#d9b878]/15 border border-white/[0.08] text-neutral-300 hover:text-[#d9b878] transition-all cursor-pointer shadow-md"
+              title="Share artwork"
             >
-              {isSharedCopied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-              <span>{isSharedCopied ? 'COPIED' : 'SHARE'}</span>
+              {isSharedCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
             </button>
 
-            {/* STRICT AUTHOR ACCESS CONTROLS VS PROTECTED BADGE */}
-            {activeView === 'recycle-bin' ? (
-              <div className="flex items-center gap-2 border-l border-[#c9a875]/40 pl-3 sm:pl-4">
-                {isAuthor && onRestore && (
-                  <button
-                    onClick={() => onRestore(artwork.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg bg-black/90 border border-emerald-500/70 text-emerald-300 hover:bg-emerald-600 hover:text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all cursor-pointer"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>RESTORE</span>
-                  </button>
-                )}
-                {isAuthor && onPermanentDelete && (
-                  <button
-                    onClick={() => {
-                      if (window.confirm('Permanently purge this artwork? This cannot be undone.')) {
-                        onPermanentDelete(artwork.id);
-                      }
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg bg-rose-950/90 border border-rose-500 text-rose-200 hover:bg-rose-600 hover:text-white shadow-[0_0_15px_rgba(244,63,94,0.4)] transition-all cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>PURGE</span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 border-l border-[#c9a875]/40 pl-3 sm:pl-4">
-                {isAuthor ? (
-                  <>
-                    {onEdit && (
-                      <button
-                        onClick={() => onEdit(artwork)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg bg-black/90 border border-[#c9a875] text-[#e8c690] hover:bg-gradient-to-r hover:from-[#c9a875] hover:to-[#dfbd87] hover:text-black shadow-[0_0_15px_rgba(201,168,117,0.35)] transition-all cursor-pointer"
-                        title="Edit artwork details (Author privileges)"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>EDIT</span>
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Move "${artwork.title}" to your Recycle Bin?`)) {
-                            onDelete(artwork.id);
-                          }
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg bg-black/90 border border-rose-500/70 text-rose-300 hover:bg-rose-600 hover:text-white shadow-[0_0_15px_rgba(244,63,94,0.35)] transition-all cursor-pointer"
-                        title="Delete this creation (Author privileges)"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>DELETE</span>
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  <div
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0e1017] border border-[#c9a875]/40 text-[#dfbd87] text-[11px] font-mono-code shadow-xs"
-                    title={
-                      currentUser.id === 'guest'
-                        ? 'Guest mode: Sign in or create an artist profile to manage creations.'
-                        : `Created by ${artwork.artist.name}. Only the verified author has permission to edit or delete this artwork.`
-                    }
-                  >
-                    <Lock className="w-3.5 h-3.5 text-[#c9a875]" />
-                    <span className="hidden sm:inline">
-                      {currentUser.id === 'guest' ? 'Protected Sanctuary Work' : 'Protected Creator Work'}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* "⋯" Overflow Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setIsOverflowOpen((prev) => !prev)}
+                className="p-2 sm:p-2.5 rounded-full bg-white/[0.04] hover:bg-[#d9b878]/15 border border-white/[0.08] text-neutral-300 hover:text-[#d9b878] transition-all cursor-pointer shadow-md"
+                title="More actions"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
 
-            {/* Sequential Prev/Next Buttons in Top Bar */}
-            {allArtworks.length > 1 && (
-              <div className="flex items-center gap-1 mr-1">
-                <button
-                  id="nav-prev-artwork-btn"
-                  onClick={handlePrev}
-                  className="p-2 rounded-xl bg-black/90 border border-[#c9a875]/40 text-[#e8c690] hover:text-white hover:bg-[#c9a875]/30 hover:border-[#dfbd87] transition-all cursor-pointer shrink-0"
-                  title="Previous Artwork (Left Arrow ←)"
+              {isOverflowOpen && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute right-0 top-full mt-2 w-52 rounded-2xl bg-[#0d0f14]/95 border border-white/[0.12] backdrop-blur-2xl shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150"
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  id="nav-next-artwork-btn"
-                  onClick={handleNext}
-                  className="p-2 rounded-xl bg-black/90 border border-[#c9a875]/40 text-[#e8c690] hover:text-white hover:bg-[#c9a875]/30 hover:border-[#dfbd87] transition-all cursor-pointer shrink-0"
-                  title="Next Artwork (Right Arrow →)"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+                  {isAuthor && onEdit && (
+                    <button
+                      onClick={() => {
+                        setIsOverflowOpen(false);
+                        onEdit(artwork);
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl flex items-center gap-2.5 text-xs text-neutral-200 hover:bg-[#d9b878]/15 hover:text-[#d9b878] transition-colors text-left cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Edit Creation</span>
+                    </button>
+                  )}
+
+                  {isAuthor && onDelete && (
+                    <button
+                      onClick={() => {
+                        setIsOverflowOpen(false);
+                        if (window.confirm(`Move "${artwork.title}" to your Recycle Bin?`)) {
+                          onDelete(artwork.id);
+                          onClose();
+                        }
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl flex items-center gap-2.5 text-xs text-rose-400 hover:bg-rose-950/40 transition-colors text-left cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Move to Recycle Bin</span>
+                    </button>
+                  )}
+
+                  {activeView === 'recycle-bin' && isAuthor && onRestore && (
+                    <button
+                      onClick={() => {
+                        setIsOverflowOpen(false);
+                        onRestore(artwork.id);
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl flex items-center gap-2.5 text-xs text-emerald-400 hover:bg-emerald-950/40 transition-colors text-left cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Restore Artwork</span>
+                    </button>
+                  )}
+
+                  {onAddToMoodBoard && (
+                    <button
+                      onClick={() => {
+                        setIsOverflowOpen(false);
+                        onAddToMoodBoard(artwork);
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl flex items-center gap-2.5 text-xs text-neutral-300 hover:bg-white/[0.06] transition-colors text-left cursor-pointer"
+                    >
+                      <Sliders className="w-3.5 h-3.5" />
+                      <span>Add to Curated Board</span>
+                    </button>
+                  )}
+
+                  {onOpenFragmentInspector && artwork.category !== 'poetry' && (
+                    <button
+                      onClick={() => {
+                        setIsOverflowOpen(false);
+                        onOpenFragmentInspector(artwork);
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl flex items-center gap-2.5 text-xs text-neutral-300 hover:bg-white/[0.06] transition-colors text-left cursor-pointer"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                      <span>Deep Inspector</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Close Button */}
             <button
               id="close-detail-modal"
               onClick={onClose}
-              className="p-2 sm:p-2 rounded-xl bg-black/90 border border-[#c9a875]/40 text-[#e8c690] hover:text-white hover:bg-[#c9a875]/30 hover:border-[#dfbd87] shadow-[0_0_15px_rgba(201,168,117,0.25)] transition-all cursor-pointer shrink-0"
+              className="p-2 sm:p-2.5 rounded-full bg-white/[0.04] hover:bg-white/10 border border-white/[0.08] text-neutral-300 hover:text-white transition-all cursor-pointer shadow-md"
               title="Close modal (Esc)"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         {/* Modal Main Content */}
-        <div className="flex-1 overflow-y-auto lg:overflow-y-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0">
-          {/* Left Viewport: Artwork or Poetry Presentation */}
-          <div
-            className={`lg:col-span-7 xl:col-span-8 h-full relative overflow-hidden flex flex-col transition-all duration-700 ${getLightingBackground()}`}
-          >
+        {artwork.category !== 'poetry' || !poetry ? (
+          <div className="flex-1 overflow-hidden min-h-0 relative">
+            {isVideoMedia(artwork) ? (
+              <MotionLoopStageView
+                artwork={artwork}
+                isLiked={isLikedState}
+                likesCount={liveLikesCount}
+                isSaved={Boolean(artwork.isSaved)}
+                onToggleLike={(e) => onToggleLike(artwork.id, e)}
+                onToggleSave={(e) => onToggleSave(artwork.id, e)}
+                onShare={handleShareClick}
+                onSelectArtist={onSelectArtist}
+                onOpenGalleryWall={onOpenGalleryWall}
+                onOpenCertificate={onOpenCertificate}
+                onOpenColorStudio={onOpenColorStudio}
+                onPrev={handlePrev}
+                onNext={handleNext}
+                hasPrev={allArtworks.length > 1}
+                hasNext={allArtworks.length > 1}
+                comments={comments}
+                newCommentText={newCommentText}
+                onCommentChange={setNewCommentText}
+                onCommentSubmit={handleAddComment}
+              />
+            ) : artwork.category === 'music' || isAudioMedia(artwork) ? (
+              <MusicLinerNotesView
+                artwork={artwork}
+                isLiked={isLikedState}
+                likesCount={liveLikesCount}
+                isSaved={Boolean(artwork.isSaved)}
+                onToggleLike={(e) => onToggleLike(artwork.id, e)}
+                onToggleSave={(e) => onToggleSave(artwork.id, e)}
+                onShare={handleShareClick}
+                onSelectArtist={onSelectArtist}
+                onOpenGalleryWall={onOpenGalleryWall}
+                onOpenCertificate={onOpenCertificate}
+                onOpenColorStudio={onOpenColorStudio}
+                onPrev={handlePrev}
+                onNext={handleNext}
+                hasPrev={allArtworks.length > 1}
+                hasNext={allArtworks.length > 1}
+                comments={comments}
+                newCommentText={newCommentText}
+                onCommentChange={setNewCommentText}
+                onCommentSubmit={handleAddComment}
+              />
+            ) : (
+              <PhotographEditorialView
+                artwork={artwork}
+                isLiked={isLikedState}
+                likesCount={liveLikesCount}
+                isSaved={Boolean(artwork.isSaved)}
+                isZoomed={isZoomed}
+                onToggleZoom={() => setIsZoomed((prev) => !prev)}
+                onToggleLike={(e) => onToggleLike(artwork.id, e)}
+                onToggleSave={(e) => onToggleSave(artwork.id, e)}
+                onShare={handleShareClick}
+                onSelectArtist={onSelectArtist}
+                onOpenGalleryWall={onOpenGalleryWall}
+                onOpenCertificate={onOpenCertificate}
+                onOpenColorStudio={onOpenColorStudio}
+                onPrev={handlePrev}
+                onNext={handleNext}
+                hasPrev={allArtworks.length > 1}
+                hasNext={allArtworks.length > 1}
+                comments={comments}
+                newCommentText={newCommentText}
+                onCommentChange={setNewCommentText}
+                onCommentSubmit={handleAddComment}
+                copiedColor={copiedColor}
+                onCopyColor={handleCopyHex}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto lg:overflow-y-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0">
+            {/* Left Viewport: Artwork or Poetry Presentation */}
+            <div
+              className={`lg:col-span-7 xl:col-span-8 h-full relative overflow-hidden flex flex-col transition-all duration-700 ${getLightingBackground()}`}
+            >
             {/* Dynamic Curatorial Medium Backdrop (Aceternity UI & 21st.dev) */}
             <ModalMediumBackdrop
               category={artwork.category}
@@ -1527,27 +1571,30 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
             </div>
 
             {/* Critique & Community Discussion */}
-            <div className="space-y-6 pt-8 border-t border-white/5">
-              <h3 className="text-[10px] uppercase tracking-[0.3em] font-medium text-neutral-500">
-                Activity ({comments.length})
+            <div className="space-y-6 pt-8 pb-40 border-t border-white/5">
+              <h3 className="text-[10px] uppercase tracking-[0.3em] font-medium text-[#d9b878] flex items-center gap-2">
+                <span>✦ Contemplations &amp; Critiques</span>
+                <span className="px-2 py-0.5 rounded-full bg-white/[0.06] text-neutral-300 text-[10px]">
+                  {comments.length}
+                </span>
               </h3>
 
               {/* Add Comment */}
               <form onSubmit={handleAddComment} className="flex flex-col gap-3">
                 <textarea
                   id="comment-textarea"
-                  placeholder="Share a contemplation or critique..."
+                  placeholder="Share an artisan contemplation or poetic critique..."
                   value={newCommentText}
                   onChange={(e) => setNewCommentText(e.target.value)}
-                  className="w-full px-4 py-3 bg-neutral-900 border border-white/10 rounded-sm text-sm text-white placeholder-neutral-600 focus:border-white/30 focus:outline-none resize-none h-20"
+                  className="w-full min-h-[130px] px-4 py-3.5 bg-white/[0.035] hover:bg-white/[0.05] border border-white/[0.12] rounded-2xl text-sm text-white placeholder-neutral-500 focus:border-[#d9b878] focus:ring-1 focus:ring-[#d9b878]/50 focus:outline-none resize-y leading-relaxed shadow-inner"
                 />
                 <button
                   id="submit-comment-btn"
                   type="submit"
                   disabled={!newCommentText.trim()}
-                  className="self-end px-5 py-2 text-[10px] uppercase tracking-[0.2em] border border-white/20 hover:bg-white hover:text-black transition-colors cursor-pointer text-white bg-transparent disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-white rounded-sm"
+                  className="self-end min-h-[44px] px-6 py-2.5 text-xs font-mono-code uppercase font-bold tracking-wider bg-gradient-to-r from-[#d9b878] to-[#e4cb93] hover:from-[#e4cb93] hover:to-[#eedab0] text-black shadow-lg shadow-[#d9b878]/20 transition-all cursor-pointer disabled:opacity-30 rounded-xl"
                 >
-                  Post Critique
+                  Post Contemplation
                 </button>
               </form>
 
@@ -1579,36 +1626,50 @@ export const ArtworkDetailModal: React.FC<ArtworkDetailModalProps> = ({
             </div>
           </div>
         </div>
+      )}
 
-        {/* Museum Keyboard Shortcuts & Navigation Hint Bar */}
-        <div className="hidden md:flex items-center justify-between px-6 py-2.5 bg-[#07080c] border-t border-white/5 text-[10px] font-mono-code text-neutral-400 shrink-0">
-          <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
-            <span className="flex items-center gap-1.5 text-neutral-500 font-bold uppercase tracking-wider">
-              <Command className="w-3 h-3 text-[#c9a875]" /> Shortcuts:
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-neutral-900 border border-white/10 rounded text-[#e8c690]">← / →</kbd> Browse
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-neutral-900 border border-white/10 rounded text-[#e8c690]">L</kbd> Like
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-neutral-900 border border-white/10 rounded text-[#e8c690]">S</kbd> Save
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-neutral-900 border border-white/10 rounded text-[#e8c690]">V</kbd> Vault
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-neutral-900 border border-white/10 rounded text-[#e8c690]">Z</kbd> Zoom
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-neutral-900 border border-white/10 rounded text-[#e8c690]">Esc</kbd> Close
-            </span>
-          </div>
-          {allArtworks.length > 1 && currentIndex >= 0 && (
-            <span className="text-neutral-500 hidden md:inline text-[9px] uppercase tracking-widest font-bold">
-              Sequential Exhibition Mode
-            </span>
+        {/* Collapsed Shortcuts '?' Popover */}
+        <div className="absolute bottom-4 right-4 z-40">
+          <button
+            onClick={() => setIsShortcutsOpen((prev) => !prev)}
+            className="w-8 h-8 rounded-full bg-[#0d0f14]/90 border border-white/10 hover:border-[#d9b878]/60 text-neutral-400 hover:text-[#d9b878] flex items-center justify-center text-xs font-mono-code font-bold transition-all shadow-xl cursor-pointer"
+            title="Keyboard shortcuts"
+          >
+            ?
+          </button>
+
+          {isShortcutsOpen && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="absolute bottom-10 right-0 w-56 p-3.5 rounded-2xl bg-[#0d0f14]/95 border border-white/[0.12] backdrop-blur-2xl shadow-2xl space-y-2 text-xs"
+            >
+              <div className="font-mono-code text-[10px] uppercase tracking-wider text-[#d9b878] font-bold border-b border-white/10 pb-1.5 flex items-center justify-between">
+                <span>Shortcuts</span>
+                <span className="text-neutral-500 text-[9px]">Press key</span>
+              </div>
+              <div className="space-y-1.5 text-neutral-300 text-[11px] font-mono-code">
+                <div className="flex justify-between">
+                  <span className="text-neutral-400">Browse</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white">← / →</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-400">Like</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white">L</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-400">Save</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white">S</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-400">Zoom / Full</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white">Z / F</kbd>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-400">Close</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white">Esc</kbd>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

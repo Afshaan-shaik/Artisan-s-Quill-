@@ -13,7 +13,6 @@ export const KNOWN_AUDIO_PRESETS: Record<string, string> = {
   'vee-ARvduA4': '/audio/vee-ARvduA4.mp4', // HUMSAFAR alternate
   'TxuYuvWt19E': '/audio/TxuYuvWt19E.mp4', // Hum Slowed Reverb
   '4NRXx6U8ABQ': '/audio/4NRXx6U8ABQ.mp4', // Blinding Lights
-  'qwTop2qs1tE': '/audio/qwTop2qs1tE.mp4', // IT: Welcome to Derry / Nocturne
   'Rif-RTvmmss': '/audio/Rif-RTvmmss.mp4', // Starboy
   'wsKhe5rTKw8': '/audio/wsKhe5rTKw8.mp4', // M. - Anıl Emre Daldal / Cosmic Strings
   'UDVtMYqUAyw': '/audio/UDVtMYqUAyw.mp4', // S.T.A.Y. - Interstellar
@@ -25,6 +24,21 @@ export const KNOWN_AUDIO_PRESETS: Record<string, string> = {
   'fEOJQawykEQ': '/audio/fEOJQawykEQ.mp4', // Kahani Suno 2.0 - Kaifi Khalil
   'M-Remix': '/audio/M-Remix.mp4'         // M-Remix
 };
+
+/**
+ * Filter out any Derry or obsolete reference across all systems
+ */
+export function isDerryArtwork(art?: any): boolean {
+  if (!art) return false;
+  const id = String(art.id || '');
+  const title = String(art.title || '');
+  const mediaUrl = String(art.mediaUrl || '');
+  const audioUrl = String(art.musicData?.audioUrl || art.audioUrl || '');
+  if (/derry/i.test(id) || /qwTop2qs1tE/i.test(id)) return true;
+  if (/Welcome to Derry/i.test(title)) return true;
+  if (/qwTop2qs1tE/i.test(mediaUrl) || /qwTop2qs1tE/i.test(audioUrl)) return true;
+  return false;
+}
 
 const SUPABASE_AUDIO_BASE = 'https://uskuzbtvbhfqlxvbbrvw.supabase.co/storage/v1/object/public/artworks/uploads/';
 

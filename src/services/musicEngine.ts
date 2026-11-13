@@ -86,24 +86,6 @@ export function registerCommunityTrack(trackData: {
 // ─────────────────────────────────────────────────────────────────────────────
 export const VAULT_MUSIC_COLLECTION: UniversalTrack[] = [
   {
-    id: 'vault-it-welcome-to-derry',
-    title: 'IT: Welcome to Derry - Opening Theme',
-    artist: 'Bear McCreary / HBO Max',
-    album: 'IT: Welcome to Derry (Original Series Soundtrack)',
-    platform: 'vault',
-    sourceType: 'audio-stream',
-    streamUrl: '/audio/qwTop2qs1tE.mp4',
-    youtubeId: 'qwTop2qs1tE',
-    artworkUrl: 'https://img.youtube.com/vi/qwTop2qs1tE/hqdefault.jpg',
-    durationSeconds: 115,
-    isOriginal: true,
-    versionType: 'original',
-    genre: 'Cinematic Orchestral / Dark Ambient',
-    subtitle: 'HBO Max Original Soundtrack • Extracted Master Audio',
-    collection: 'Vault Music',
-    isVaultExclusive: true
-  },
-  {
     id: 'vault-blinding-lights',
     title: 'Blinding Lights',
     artist: 'The Weeknd',

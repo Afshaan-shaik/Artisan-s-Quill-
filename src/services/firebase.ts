@@ -1,4 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp, deleteApp } from 'firebase/app';
+import { isDerryArtwork } from '../utils/audioResolver';
 import {
   getAuth,
   GoogleAuthProvider,
@@ -473,7 +474,10 @@ export function subscribeToCloudArtworks(onUpdate: (artworks: Artwork[]) => void
       (snapshot) => {
         const cloudArtworks: Artwork[] = [];
         snapshot.forEach((docSnap) => {
-          cloudArtworks.push(docSnap.data() as Artwork);
+          const item = docSnap.data() as Artwork;
+          if (!isDerryArtwork(item)) {
+            cloudArtworks.push(item);
+          }
         });
         if (cloudArtworks.length > 0) {
           onUpdate(cloudArtworks);

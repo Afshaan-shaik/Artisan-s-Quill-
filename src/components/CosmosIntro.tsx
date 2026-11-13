@@ -39,28 +39,36 @@ const NODES: ConstellationNode[] = [
   { id: "saved",       label: "Saved Vault",                  pos: [ 8, -1,  -6], hash: "#saved" },
 ];
 
-export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
+export default React.memo(function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const nodeLayerRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number>(0);
   const [isDismissed, setIsDismissed] = useState(false);
-  const [bottomDelaySec, setBottomDelaySec] = useState(5.4);
+  const [bottomDelaySec, setBottomDelaySec] = useState(5.2);
+
+  // Stable refs prevent any parent re-renders from re-triggering Three.js disposal
+  const onEnterRef = useRef(onEnter);
+  const onActionRef = useRef(onAction);
+  useEffect(() => {
+    onEnterRef.current = onEnter;
+    onActionRef.current = onAction;
+  });
 
   const dismiss = useCallback((targetHash?: string) => {
     setIsDismissed(true);
     setTimeout(() => {
-      onEnter();
+      onEnterRef.current();
       if (targetHash) {
         if (targetHash === "__bard__") {
-          onAction?.("__bard__");
+          onActionRef.current?.("__bard__");
         } else if (targetHash === "__ink__") {
-          onAction?.("__ink__");
+          onActionRef.current?.("__ink__");
         } else {
           window.location.hash = targetHash.replace(/^#/, "");
         }
       }
-    }, 900);
-  }, [onEnter, onAction]);
+    }, 600);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -78,275 +86,274 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
     if (!canvas || !nodeLayer) return;
 
     let isDisposed = false;
-    // Hoisted so cleanup return can dispose Three.js regardless of async RAF timing
     let _renderer: THREE.WebGLRenderer | null = null;
     let _scene: THREE.Scene | null = null;
     let _onMouseMove: ((e: MouseEvent) => void) | null = null;
     let _onResize: (() => void) | null = null;
 
-    // Double-RAF defer: let the browser paint the dark overlay first before GPU work
-    let initRafId: number = 0;
-    const initRaf1 = requestAnimationFrame(() => {
-      initRafId = requestAnimationFrame(() => {
-        if (isDisposed) return;
-        initScene();
-      });
-    });
-
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    // Direct synchronous scene initialization — instant load without double-RAF stutter
+    initScene();
+
     function initScene() {
+      if (isDisposed || !canvas || !nodeLayer) return;
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      60,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      200
-    );
-    const camStartZ = reduced ? 4 : 22;
-    const camEndZ = 4;
-    camera.position.set(0, 0, camStartZ);
-    camera.lookAt(0, 0, -6);
-
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      alpha: true,
-      antialias: false,
-      powerPreference: 'high-performance',
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    _renderer = renderer;
-    _scene = scene;
-
-    const world = new THREE.Group();
-    scene.add(world);
-
-    // Soft circular particle texture
-    function makeDot(color: string) {
-      const c = document.createElement("canvas");
-      c.width = c.height = 64;
-      const ctx = c.getContext("2d");
-      if (ctx) {
-        const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-        g.addColorStop(0, color);
-        g.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, 64, 64);
-      }
-      return new THREE.CanvasTexture(c);
-    }
-    const starTex = makeDot("rgba(242,237,224,1)");
-    const goldTex = makeDot("rgba(201,162,76,1)");
-
-    function starField(count: number, rMin: number, rMax: number, size: number, opacity: number) {
-      const positions = new Float32Array(count * 3);
-      const colors = new Float32Array(count * 3);
-      for (let i = 0; i < count; i++) {
-        const r = rMin + Math.random() * (rMax - rMin);
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.acos(Math.random() * 2 - 1);
-        positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-        positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-        positions[i * 3 + 2] = -Math.abs(r * Math.cos(phi)) - 4;
-        const tint = Math.random();
-        const c = tint > 0.88 ? [0.79, 0.64, 0.30] : [0.95, 0.93, 0.88];
-        colors[i * 3] = c[0];
-        colors[i * 3 + 1] = c[1];
-        colors[i * 3 + 2] = c[2];
-      }
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-      const mat = new THREE.PointsMaterial({
-        size,
-        map: starTex,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        sizeAttenuation: true,
-      });
-      const pts = new THREE.Points(geo, mat);
-      pts.userData.targetOpacity = opacity;
-      world.add(pts);
-      return pts;
-    }
-
-    const farStars = starField(1200, 20, 90, 0.55, 0.55);
-    const nearDust = starField(200, 6, 30, 1.3, 0.85);
-
-    const nodeMeshes: Array<{ sprite: THREE.Sprite; pos: THREE.Vector3; activeAt: number }> = [];
-    const lineMeshes: Array<{ line: THREE.Line; from: THREE.Vector3; to: THREE.Vector3; activeAt: number } | null> = [];
-    const labelEls: HTMLDivElement[] = [];
-
-    // Clear any previous child labels
-    nodeLayer.innerHTML = "";
-
-    NODES.forEach((n, i) => {
-      const mat = new THREE.SpriteMaterial({
-        map: goldTex,
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      });
-      const sprite = new THREE.Sprite(mat);
-      sprite.position.set(...n.pos);
-      sprite.scale.set(0.001, 0.001, 1);
-      world.add(sprite);
-      nodeMeshes.push({ sprite, pos: new THREE.Vector3(...n.pos), activeAt: 0 });
-
-      if (i > 0) {
-        const prev = NODES[i - 1].pos;
-        const geo = new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(...prev),
-          new THREE.Vector3(...prev),
-        ]);
-        const lmat = new THREE.LineBasicMaterial({
-          color: 0xc9a24c,
-          transparent: true,
-          opacity: 0,
-        });
-        const line = new THREE.Line(geo, lmat);
-        world.add(line);
-        lineMeshes.push({
-          line,
-          from: new THREE.Vector3(...prev),
-          to: new THREE.Vector3(...n.pos),
-          activeAt: 0,
-        });
-      } else {
-        lineMeshes.push(null);
-      }
-
-      const el = document.createElement("div");
-      el.className = "cosmos-node-label";
-      el.innerHTML = '<span class="cosmos-dot"></span>' + n.label;
-      el.onclick = () => dismiss(n.hash);
-      nodeLayer.appendChild(el);
-      labelEls.push(el);
-    });
-
-    const nodeStagger = reduced ? 40 : 380;
-    const nodeStart = reduced ? 200 : 1900;
-    NODES.forEach((_, i) => {
-      nodeMeshes[i].activeAt = nodeStart + i * nodeStagger;
-      const lm = lineMeshes[i];
-      if (lm) lm.activeAt = nodeStart + i * nodeStagger;
-    });
-
-    const bottomDelay = nodeStart + NODES.length * nodeStagger + (reduced ? 100 : 500);
-    setBottomDelaySec(bottomDelay / 1000);
-
-    function ease(t: number) {
-      return 1 - Math.pow(1 - t, 3);
-    }
-
-    const mouse = { x: 0, y: 0 };
-    const onMouseMove = (e: MouseEvent) => {
-      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = (e.clientY / window.innerHeight) * 2 - 1;
-    };
-    _onMouseMove = onMouseMove;
-    window.addEventListener("mousemove", onMouseMove);
-
-    const onResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-    _onResize = onResize;
-    window.addEventListener("resize", onResize);
-
-    const clock = new THREE.Clock();
-    const start = performance.now();
-    const camDuration = reduced ? 1 : 4200;
-
-    function animate() {
-      if (isDisposed) return;
-      animFrameRef.current = requestAnimationFrame(animate);
-
-      const now = performance.now();
-      const elapsed = now - start;
-      const dt = clock.getDelta();
-
-      // Starfield fade-in
-      [farStars, nearDust].forEach((p) => {
-        const target = p.userData.targetOpacity;
-        p.material.opacity = Math.min(target, p.material.opacity + dt * 0.6);
-      });
-
-      // Camera dolly
-      const camT = Math.min(1, elapsed / camDuration);
-      camera.position.z = camStartZ + (camEndZ - camStartZ) * ease(camT);
-
-      // Gentle mouse parallax + ambient rotation
-      if (!reduced) {
-        world.rotation.y += dt * 0.02;
-        camera.position.x += (mouse.x * 1.1 - camera.position.x) * dt * 1.2;
-        camera.position.y += (-mouse.y * 0.7 - camera.position.y) * dt * 1.2;
-      }
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        200
+      );
+      // Cinematic camera flight: starts at deep distance z=22 and dollies slowly into z=4
+      const camStartZ = reduced ? 4 : 22;
+      const camEndZ = 4;
+      camera.position.set(0, 0, camStartZ);
       camera.lookAt(0, 0, -6);
 
-      // Node + line reveals
-      nodeMeshes.forEach((n, i) => {
-        if (elapsed >= n.activeAt) {
-          const p = Math.min(1, (elapsed - n.activeAt) / 500);
-          const e = ease(p);
-          n.sprite.material.opacity = e * 0.95;
-          const s = 0.35 + e * 0.55;
-          n.sprite.scale.set(s, s, 1);
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        alpha: true,
+        antialias: false,
+        powerPreference: 'high-performance',
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      _renderer = renderer;
+      _scene = scene;
 
-          const lm = lineMeshes[i];
-          if (lm) {
-            const lp = Math.min(1, (elapsed - lm.activeAt) / 500);
-            const le = ease(lp);
-            (lm.line.material as THREE.LineBasicMaterial).opacity = le * 0.45;
-            const cur = lm.from.clone().lerp(lm.to, le);
-            const posAttr = lm.line.geometry.attributes.position;
-            posAttr.setXYZ(1, cur.x, cur.y, cur.z);
-            posAttr.needsUpdate = true;
-          }
+      const world = new THREE.Group();
+      scene.add(world);
 
-          // Project to screen for label
-          const wp = n.sprite.getWorldPosition(new THREE.Vector3());
-          const v = wp.clone().project(camera);
-          const sx = (v.x * 0.5 + 0.5) * window.innerWidth;
-          const sy = (-v.y * 0.5 + 0.5) * window.innerHeight;
-          const el = labelEls[i];
-          if (el) {
-            el.style.left = sx + "px";
-            el.style.top = sy + "px";
-
-            let labelOpacity = e;
-            if (sy < window.innerHeight * 0.26 || sy > window.innerHeight * 0.86) {
-              labelOpacity *= 0.12;
-            }
-            if (v.z > 1 || v.z < -1) labelOpacity = 0;
-            el.style.opacity = labelOpacity.toString();
-          }
+      // Soft circular particle texture generator — crisp, delicate pinpoint star with soft halo
+      function makeDot(color: string) {
+        const c = document.createElement("canvas");
+        c.width = c.height = 32;
+        const ctx = c.getContext("2d");
+        if (ctx) {
+          const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+          g.addColorStop(0, color);
+          g.addColorStop(0.25, color);
+          g.addColorStop(0.65, "rgba(242,237,224,0.35)");
+          g.addColorStop(1, "rgba(0,0,0,0)");
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, 32, 32);
         }
+        return new THREE.CanvasTexture(c);
+      }
+      const starTex = makeDot("rgba(242,237,224,1)");
+      const goldTex = makeDot("rgba(201,162,76,1)");
+
+      function starField(count: number, rMin: number, rMax: number, size: number, opacity: number) {
+        const positions = new Float32Array(count * 3);
+        const colors = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+          const r = rMin + Math.random() * (rMax - rMin);
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos(Math.random() * 2 - 1);
+          positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+          positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+          positions[i * 3 + 2] = -Math.abs(r * Math.cos(phi)) - 4;
+          const tint = Math.random();
+          const c = tint > 0.88 ? [0.79, 0.64, 0.30] : [0.95, 0.93, 0.88];
+          colors[i * 3] = c[0];
+          colors[i * 3 + 1] = c[1];
+          colors[i * 3 + 2] = c[2];
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+        const mat = new THREE.PointsMaterial({
+          size,
+          map: starTex,
+          vertexColors: true,
+          transparent: true,
+          opacity: opacity,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          sizeAttenuation: true,
+        });
+        const pts = new THREE.Points(geo, mat);
+        pts.userData.targetOpacity = opacity;
+        world.add(pts);
+        return pts;
+      }
+
+      // Crisp, delicate starry cosmos matching the original pristine demo (never clumsy or bloated)
+      const farStars = starField(1400, 20, 90, 0.52, 0.55);
+      const nearDust = starField(240, 8, 32, 0.85, 0.60);
+
+      const nodeMeshes: Array<{ sprite: THREE.Sprite; pos: THREE.Vector3; activeAt: number }> = [];
+      const lineMeshes: Array<{ line: THREE.Line; from: THREE.Vector3; to: THREE.Vector3; activeAt: number } | null> = [];
+      const labelEls: HTMLDivElement[] = [];
+
+      // Clear any previous child labels
+      nodeLayer.innerHTML = "";
+
+      NODES.forEach((n, i) => {
+        const mat = new THREE.SpriteMaterial({
+          map: goldTex,
+          transparent: true,
+          opacity: 0, // Starts invisible, reveals sequentially
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        });
+        const sprite = new THREE.Sprite(mat);
+        sprite.position.set(...n.pos);
+        sprite.scale.set(0.001, 0.001, 1);
+        world.add(sprite);
+        nodeMeshes.push({ sprite, pos: new THREE.Vector3(...n.pos), activeAt: 0 });
+
+        if (i > 0) {
+          const prev = NODES[i - 1].pos;
+          const geo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(...prev),
+            new THREE.Vector3(...prev), // Starts collapsed at 'from' point
+          ]);
+          const lmat = new THREE.LineBasicMaterial({
+            color: 0xc9a24c,
+            transparent: true,
+            opacity: 0,
+          });
+          const line = new THREE.Line(geo, lmat);
+          world.add(line);
+          lineMeshes.push({
+            line,
+            from: new THREE.Vector3(...prev),
+            to: new THREE.Vector3(...n.pos),
+            activeAt: 0,
+          });
+        } else {
+          lineMeshes.push(null);
+        }
+
+        const el = document.createElement("div");
+        el.className = "cosmos-node-label";
+        el.style.opacity = "0";
+        el.innerHTML = '<span class="cosmos-dot"></span>' + n.label;
+        el.onclick = () => dismiss(n.hash);
+        nodeLayer.appendChild(el);
+        labelEls.push(el);
       });
 
-      renderer.render(scene, camera);
-    }
-    animate();
+      // Majestic cinematic slow-loading stagger of constellation nodes
+      const nodeStart = reduced ? 20 : 1800; // Starts after starry expanse and camera dolly establish
+      const nodeStagger = reduced ? 15 : 360; // Graceful 360ms between each node
+      NODES.forEach((_, i) => {
+        nodeMeshes[i].activeAt = nodeStart + i * nodeStagger;
+        const lm = lineMeshes[i];
+        if (lm) lm.activeAt = nodeStart + i * nodeStagger;
+      });
+
+      setBottomDelaySec(reduced ? 0.3 : 5.2);
+
+      function ease(t: number) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      const mouse = { x: 0, y: 0 };
+      const onMouseMove = (e: MouseEvent) => {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = (e.clientY / window.innerHeight) * 2 - 1;
+      };
+      _onMouseMove = onMouseMove;
+      window.addEventListener("mousemove", onMouseMove);
+
+      const onResize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      };
+      _onResize = onResize;
+      window.addEventListener("resize", onResize);
+
+      const start = performance.now();
+      let lastTime = performance.now();
+      const camDuration = reduced ? 1 : 4200; // Majestic slow camera glide into constellation
+
+      function animate() {
+        if (isDisposed) return;
+        animFrameRef.current = requestAnimationFrame(animate);
+
+        const now = performance.now();
+        const elapsed = now - start;
+        const dt = Math.min((now - lastTime) / 1000, 0.1);
+        lastTime = now;
+
+        // Cinematic slow camera flight into the living constellation
+        const camT = Math.min(1, elapsed / camDuration);
+        camera.position.z = camStartZ + (camEndZ - camStartZ) * ease(camT);
+
+        // Gentle mouse parallax + ambient cosmos rotation
+        if (!reduced) {
+          world.rotation.y += dt * 0.02;
+          camera.position.x += (mouse.x * 1.1 - camera.position.x) * dt * 1.2;
+          camera.position.y += (-mouse.y * 0.7 - camera.position.y) * dt * 1.2;
+        }
+        camera.lookAt(0, 0, -6);
+
+        // Sequential slow-loading reveals for constellation nodes, lines & labels
+        nodeMeshes.forEach((n, i) => {
+          if (elapsed < n.activeAt) {
+            n.sprite.material.opacity = 0;
+            n.sprite.scale.set(0.001, 0.001, 1);
+            const lm = lineMeshes[i];
+            if (lm) (lm.line.material as THREE.LineBasicMaterial).opacity = 0;
+            const el = labelEls[i];
+            if (el) el.style.opacity = "0";
+          } else {
+            const p = Math.min(1, (elapsed - n.activeAt) / 450);
+            const e = ease(p);
+            n.sprite.material.opacity = e * 0.95;
+            const s = 0.25 + e * 0.45; // Delicate, refined golden node ember
+            n.sprite.scale.set(s, s, 1);
+
+            const lm = lineMeshes[i];
+            if (lm) {
+              const lp = Math.min(1, (elapsed - lm.activeAt) / 450);
+              const le = ease(lp);
+              (lm.line.material as THREE.LineBasicMaterial).opacity = le * 0.45;
+              const cur = lm.from.clone().lerp(lm.to, le);
+              const posAttr = lm.line.geometry.attributes.position;
+              posAttr.setXYZ(1, cur.x, cur.y, cur.z);
+              posAttr.needsUpdate = true;
+            }
+
+            // Project to screen for label
+            const wp = n.sprite.getWorldPosition(new THREE.Vector3());
+            const v = wp.clone().project(camera);
+            const sx = (v.x * 0.5 + 0.5) * window.innerWidth;
+            const sy = (-v.y * 0.5 + 0.5) * window.innerHeight;
+            const el = labelEls[i];
+            if (el) {
+              el.style.left = sx + "px";
+              el.style.top = sy + "px";
+
+              let labelOpacity = e;
+              if (sy < window.innerHeight * 0.22 || sy > window.innerHeight * 0.88) {
+                labelOpacity *= 0.15;
+              }
+              if (v.z > 1 || v.z < -1) labelOpacity = 0;
+              el.style.opacity = labelOpacity.toString();
+            }
+          }
+        });
+
+        renderer.render(scene, camera);
+      }
+      animate();
     } // end initScene
 
     return () => {
       isDisposed = true;
-      cancelAnimationFrame(initRaf1);
-      cancelAnimationFrame(initRafId);
       cancelAnimationFrame(animFrameRef.current);
       if (_onMouseMove) window.removeEventListener("mousemove", _onMouseMove);
       if (_onResize) window.removeEventListener("resize", _onResize);
       if (_renderer) { _renderer.dispose(); }
       if (_scene) { _scene.clear(); }
     };
-  }, [dismiss]);
+  }, []); // Run ONCE on mount — completely immune to parent re-renders!
 
   return (
     <>
@@ -596,4 +603,4 @@ export default function CosmosIntro({ onEnter, onAction }: CosmosIntroProps) {
       </div>
     </>
   );
-}
+});

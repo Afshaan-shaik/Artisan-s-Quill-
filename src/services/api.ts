@@ -1,5 +1,6 @@
 import { Artwork, Comment, Exhibition, UserProfile, ArtCategory, Collection, MarginReflection } from '../types';
 import { INITIAL_ARTWORKS, INITIAL_COMMENTS, INITIAL_EXHIBITIONS, CURRENT_USER, DEFAULT_USER, GUEST_USER, INITIAL_ARTIST_PROFILES, INITIAL_MARGIN_REFLECTIONS } from '../data/initialData';
+import { isDerryArtwork } from '../utils/audioResolver';
 import { VaultStorage } from './vaultStorage';
 import {
   fetchArtworksFromSupabase,
@@ -135,7 +136,7 @@ function isDisallowedProfile(p?: Partial<UserProfile> | null): boolean {
 
 export class GalleryService {
   // In-Memory Performance Cache initialized with foundational pieces for zero blank-screen flicker
-  private static _artworksCache: Artwork[] = [...INITIAL_ARTWORKS];
+  private static _artworksCache: Artwork[] = INITIAL_ARTWORKS.filter((a) => !isDerryArtwork(a));
   private static _collectionsCache: Collection[] | null = null;
   private static _profilesCache: UserProfile[] | null = null;
   private static _isInitialized = false;
@@ -144,7 +145,7 @@ export class GalleryService {
    * Clears in-memory caches (useful on external sync/reset)
    */
   static clearMemoryCache(): void {
-    this._artworksCache = [...INITIAL_ARTWORKS];
+    this._artworksCache = INITIAL_ARTWORKS.filter((a) => !isDerryArtwork(a));
     this._collectionsCache = null;
     this._profilesCache = null;
   }
@@ -417,11 +418,11 @@ export class GalleryService {
   }
 
   private static getStoredArtworks(): Artwork[] {
-    return this._artworksCache.map((a) => this.resolveArtworkArtistAvatar(a));
+    return this._artworksCache.filter((a) => !isDerryArtwork(a)).map((a) => this.resolveArtworkArtistAvatar(a));
   }
 
   private static saveArtworks(artworks: Artwork[]) {
-    this._artworksCache = artworks.map((a) => this.resolveArtworkArtistAvatar(a));
+    this._artworksCache = artworks.filter((a) => !isDerryArtwork(a)).map((a) => this.resolveArtworkArtistAvatar(a));
   }
 
   /**
@@ -433,14 +434,14 @@ export class GalleryService {
 
     // 1. Add cloud artworks from Supabase Postgres first (ordered by newest created)
     for (const a of cloudArtworks) {
-      if (a?.id) {
+      if (a?.id && !isDerryArtwork(a)) {
         mergedMap.set(a.id, this.resolveArtworkArtistAvatar(a));
       }
     }
 
     // 2. Add foundational artworks if not present
     for (const a of existing) {
-      if (a?.id && !mergedMap.has(a.id)) {
+      if (a?.id && !isDerryArtwork(a) && !mergedMap.has(a.id)) {
         mergedMap.set(a.id, this.resolveArtworkArtistAvatar(a));
       }
     }

@@ -27,7 +27,7 @@ import {
 import { Artwork, ArtCategory, UserProfile, Exhibition } from './types';
 import { DEFAULT_USER } from './data/initialData';
 import { GalleryService, isFounderUser } from './services/api';
-import { resolveAudioUrl } from './utils/audioResolver';
+import { resolveAudioUrl, isDerryArtwork } from './utils/audioResolver';
 import { useRealtimeGallery } from './hooks/useRealtimeGallery';
 import { useGalleryStore } from './store/useGalleryStore';
 import { Navbar } from './components/Navbar';
@@ -44,6 +44,10 @@ import { ExhibitionUploadModal } from './components/ExhibitionUploadModal';
 import { FloatingGuestbook } from './components/FloatingGuestbook';
 import { EditArtworkModal } from './components/EditArtworkModal';
 import { CuratorialSpotlight } from './components/CuratorialSpotlight';
+import { RedesignedHeroSection } from './components/RedesignedHeroSection';
+import { RedesignedPoetrySection } from './components/RedesignedPoetrySection';
+import { RedesignedMusicSection } from './components/RedesignedMusicSection';
+import { RedesignedFooter } from './components/RedesignedFooter';
 import { selectMasterpieceOfTheDay } from './services/masterpieceEngine';
 import { ArtisticCursor } from './components/ArtisticCursor';
 import { ShareArtworkModal } from './components/ShareArtworkModal';
@@ -142,6 +146,7 @@ export default function App() {
     const path = window.location.pathname.replace(/^\//, '').toLowerCase();
 
     const target = hash || paramView || path;
+    if (target === 'stream' || target === 'feed' || target === 'works' || target === 'preview' || target === 'redesign') return 'feed';
     const validViews = ['feed', 'cosmos', 'exhibitions', 'saved', 'about', 'recycle-bin', 'community', 'vaults'];
     if (validViews.includes(target)) {
       return target as any;
@@ -169,14 +174,29 @@ export default function App() {
       } else {
         window.location.hash = view;
       }
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
     }
   };
+
+  // Ensure any view change immediately starts from the top of that page
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [activeView]);
 
   // Bidirectional URL sync: listen to hashchange, popstate, window focus, and tab visibility switching
   useEffect(() => {
     const handleLocationSync = () => {
       const target = getValidViewFromUrl();
       setActiveView(target);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
     };
 
     window.addEventListener('hashchange', handleLocationSync);
@@ -196,6 +216,18 @@ export default function App() {
       window.removeEventListener('focus', handleLocationSync);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
+  }, []);
+
+  // Ambient gold candle-lit cursor glow tracker (Redesign Preview Engine)
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      const glowEl = document.getElementById('glow');
+      if (glowEl) {
+        glowEl.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+      }
+    };
+    window.addEventListener('pointermove', handlePointerMove);
+    return () => window.removeEventListener('pointermove', handlePointerMove);
   }, []);
   const [feedFilter, setFeedFilter] = useState<'curated' | 'popular' | 'latest'>('curated');
   const [dateRangeFilter, setDateRangeFilter] = useState<{ start?: string; end?: string; }>({});
@@ -335,7 +367,7 @@ export default function App() {
   };
 
   const artworks = React.useMemo(() => {
-    let list = [...realtimeArtworks];
+    let list = [...realtimeArtworks].filter((a) => !isDerryArtwork(a));
     
     if (activeView === 'recycle-bin') {
       list = GalleryService.getDeletedArtworks(currentUser);
@@ -524,6 +556,24 @@ export default function App() {
   );
 
   useEffect(() => {
+    // Cleanse any legacy cached Derry entries from local state
+    try {
+      const savedKey = 'atelier_user_saved_artwork_ids_v2';
+      const rawSaved = localStorage.getItem(savedKey);
+      if (rawSaved && /derry|qwTop2qs1tE/i.test(rawSaved)) {
+        const parsed = JSON.parse(rawSaved) as string[];
+        const cleansed = parsed.filter(id => !/derry|qwTop2qs1tE/i.test(id));
+        localStorage.setItem(savedKey, JSON.stringify(cleansed));
+      }
+      const historyKey = 'atelier_music_history_v1';
+      const rawHist = localStorage.getItem(historyKey);
+      if (rawHist && /derry|qwTop2qs1tE/i.test(rawHist)) {
+        const parsed = JSON.parse(rawHist) as any[];
+        const cleansed = parsed.filter(t => !/derry|qwTop2qs1tE/i.test(t.id || '') && !/derry/i.test(t.title || ''));
+        localStorage.setItem(historyKey, JSON.stringify(cleansed));
+      }
+    } catch {}
+
     GalleryService.init().then(() => {
       // Creator session preservation guard:
       const activeProfile = GalleryService.getCurrentUser();
@@ -948,6 +998,9 @@ export default function App() {
     >
     <ErrorBoundary>
       <div className="min-h-screen w-full text-neutral-200 flex flex-col font-sans selection:bg-[#c9a875]/30 selection:text-[#f8f5eb] relative overflow-x-hidden">
+      {/* Candle-lit Cursor Follower Light */}
+      <div id="glow" />
+
       {/* Animated WebGL Shader Background — "Mesh drift" (blobs shader) */}
       <MeshDriftBackground />
 
@@ -1167,15 +1220,13 @@ export default function App() {
       {/* Main Content Area */}
       <main className={`flex-1 w-full max-w-[1760px] mx-auto ${
         headerVariant === 'spine'
-          ? 'pl-20 sm:pl-[96px] pr-3 sm:pr-6 lg:pr-8 pt-20 sm:pt-24 pb-20'
+          ? 'pl-20 sm:pl-[96px] pr-3 sm:pr-6 lg:pr-8 pt-16 sm:pt-20 pb-20'
           : headerVariant === 'island'
-          ? 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-36 sm:pt-40 pb-28 md:pb-24'
+          ? 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-24 sm:pt-28 pb-24 md:pb-20'
           : headerVariant === 'dock'
-          ? 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-28 sm:pt-36 pb-36'
-          : 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-4 sm:pt-8 pb-28 md:pb-12'
+          ? 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-20 sm:pt-24 pb-32'
+          : 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-4 sm:pt-6 pb-24 md:pb-12'
       } space-y-6 sm:space-y-8 relative z-10`}>
-        
-
 
         {activeView === 'about' && (
           <AboutUsView
@@ -1221,8 +1272,8 @@ export default function App() {
 
         {activeView === 'feed' && (
           <>
-            {/* Curatorial Spotlight Hero Section */}
-            <CuratorialSpotlight
+            {/* Redesigned Hero Section with Signature Floating Arch Spotlight */}
+            <RedesignedHeroSection
               artworks={artworks.length > 0 ? artworks : realtimeArtworks}
               dailyMasterpiece={dailyMasterpiece}
               onSelectArtwork={handleOpenArtwork}
@@ -1230,170 +1281,169 @@ export default function App() {
               onToggleSave={handleToggleSave}
               onSelectArtist={handleSelectArtist}
               onShareArtwork={(art) => setArtworkToShare(art)}
+              onEnterGallery={() => {
+                const el = document.getElementById('curated-works-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
             />
 
-            {/* 3D Constellation Cosmos Gateway Banner Card */}
-            <div
-              id="feed-cosmos-banner-card"
-              onClick={() => handleSelectView('cosmos')}
-              className="relative overflow-hidden rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-[#090b14]/95 via-[#121524]/90 to-[#090b14]/95 border border-[#c9a875]/40 hover:border-[#c9a875] shadow-xl hover:shadow-[0_0_30px_rgba(201,168,117,0.25)] transition-all duration-300 cursor-pointer group select-none"
-              title="Click to view the 3D constellation of data or art data"
-            >
-              {/* Subtle background cosmic radial glow */}
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(201,168,117,0.18),transparent_65%)] pointer-events-none" />
-              <div className="absolute top-2 right-4 text-neutral-600 text-3xl font-serif-display select-none opacity-20 group-hover:opacity-40 transition-opacity">
-                ✦ 🌌 ✦
+            {/* Continuous Infinite Marquee Ribbon */}
+            <div className="infinite-marquee-ribbon my-6 sm:my-10 border-y border-[rgba(236,214,170,0.12)] py-5 overflow-hidden select-none">
+              <div>
+                <span>Poetry Cards</span>
+                <span>Motion Loops</span>
+                <span>Digital Media</span>
+                <span>Paintings</span>
+                <span>Drawings &amp; Ink</span>
+                <span>Original Music</span>
+                <span>Poetry Cards</span>
+                <span>Motion Loops</span>
+                <span>Digital Media</span>
+                <span>Paintings</span>
+                <span>Drawings &amp; Ink</span>
+                <span>Original Music</span>
               </div>
+            </div>
 
-              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1.5 max-w-2xl">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-md bg-[#c9a875]/20 border border-[#c9a875]/40 text-[10px] font-mono-code font-bold uppercase tracking-wider text-[#dfbd87]">
-                      ✦ 3D WebGL Realtime Engine
-                    </span>
-                    <span className="text-xs font-mono-code text-neutral-400">
-                      • {realtimeArtworks.length} Star Nodes Active
-                    </span>
-                  </div>
-
-                  <h3 className="text-lg sm:text-xl font-serif-display font-medium text-white group-hover:text-[#f3e3cb] transition-colors flex items-center gap-2">
-                    <span>3D Constellation Cosmos &amp; Interactive Starmap</span>
-                    <span className="text-xs text-[#c9a875] opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
-                  </h3>
-
-                  <p className="text-xs font-mono-code text-neutral-300">
-                    Click to view the 3D constellation of data or art data in a well-structured format. Every painting, poem, digital art, drawing &amp; motion loop shines as an interactive celestial star.
+            {/* The Vault — Redesigned Curated Works Suite */}
+            <div id="curated-works-section" className="space-y-6 pt-2 sm:pt-4">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[rgba(236,214,170,0.12)]">
+                <div>
+                  <span className="mono-tag text-[10.5px] font-semibold text-[#d8b779] block mb-1">
+                    ✦ The Vault · Curated Atelier Archive
+                  </span>
+                  <h2 className="font-serif-cormorant font-light text-4xl sm:text-6xl text-[#f4efe6] leading-none">
+                    Curated <em className="gt italic">works</em>
+                  </h2>
+                  <p className="text-xs text-[#8d897f] font-mono-code mt-2 flex items-center gap-2">
+                    <span>Displaying {artworks.length} indexed work{artworks.length !== 1 ? 's' : ''}</span>
+                    <span className="text-[#d8b779]">•</span>
+                    <span>Living Autonomous Stream Active</span>
                   </p>
                 </div>
 
-                <div className="shrink-0 flex items-center">
-                  <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-mono-code text-xs font-bold uppercase tracking-wider group-hover:scale-105 group-hover:shadow-[0_0_18px_rgba(201,168,117,0.5)] transition-all">
-                    <span>Explore 3D Cosmos</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </span>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-wrap">
+                  {/* Category Chips */}
+                  <div className="chips flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    {[
+                      { id: 'all', label: 'All Works' },
+                      { id: 'poetry', label: 'Poetry Cards' },
+                      { id: 'video', label: 'Motion Loops' },
+                      { id: 'digital', label: 'Digital Media' },
+                      { id: 'painting', label: 'Paintings' },
+                      { id: 'drawing', label: 'Drawings & Ink' },
+                      { id: 'music', label: 'Original Music' },
+                    ].map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => setSelectedCategory(cat.id as ArtCategory)}
+                        className={`redesign-chip cursor-pointer ${
+                          selectedCategory === cat.id ? 'is-active' : ''
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Curated / Most Liked / Latest Filter Capsule */}
+                  <div className="flex items-center gap-1.5 p-1 rounded-full bg-[#0b0c10] border border-[rgba(236,214,170,0.15)] shadow-xl backdrop-blur-md">
+                    <button
+                      id="filter-curated-btn"
+                      onClick={() => setFeedFilter('curated')}
+                      className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                        feedFilter === 'curated'
+                          ? 'bg-[#d8b779] text-[#171007] shadow-[0_0_15px_rgba(216,183,121,0.4)]'
+                          : 'text-[#8d897f] hover:text-white'
+                      }`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Curated</span>
+                    </button>
+
+                    <button
+                      id="filter-popular-btn"
+                      onClick={() => setFeedFilter('popular')}
+                      className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                        feedFilter === 'popular'
+                          ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.4)]'
+                          : 'text-[#8d897f] hover:text-white'
+                      }`}
+                    >
+                      <Heart className={`w-3.5 h-3.5 ${feedFilter === 'popular' ? 'fill-white' : ''}`} />
+                      <span>Most Liked</span>
+                    </button>
+
+                    <button
+                      id="filter-latest-btn"
+                      onClick={() => setFeedFilter('latest')}
+                      className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                        feedFilter === 'latest'
+                          ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.4)]'
+                          : 'text-[#8d897f] hover:text-white'
+                      }`}
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Latest</span>
+                    </button>
+                  </div>
+
+                  {/* Cinema Mode Button */}
+                  <button
+                    id="cinema-mode-btn"
+                    onClick={() => setIsCinemaModeOpen(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#0b0c10] border border-[rgba(236,214,170,0.15)] text-[#d8b779] hover:text-white hover:border-[#d8b779] transition-all cursor-pointer shadow-xl backdrop-blur-md"
+                    title="View Gallery as Cinematic Slideshow"
+                  >
+                    <Film className="w-3.5 h-3.5 text-[#d8b779]" />
+                    <span>Cinema</span>
+                  </button>
+
+                  {/* Curatorial Density Switcher */}
+                  <div
+                    id="curatorial-density-switcher"
+                    className="flex items-center gap-1 p-1 rounded-full bg-[#0b0c10] border border-[rgba(236,214,170,0.15)] backdrop-blur-md shadow-xl shrink-0"
+                    title="Curatorial Density Scale"
+                  >
+                    <button
+                      id="density-grande-btn"
+                      onClick={() => setGridDensity('grande')}
+                      title="2-Column Grande Scale"
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
+                        gridDensity === 'grande'
+                          ? 'bg-[#d8b779] text-[#171007] font-bold shadow-[0_0_10px_rgba(216,183,121,0.35)]'
+                          : 'text-[#8d897f] hover:text-white'
+                      }`}
+                    >
+                      2-Col
+                    </button>
+                    <button
+                      id="density-curatorial-btn"
+                      onClick={() => setGridDensity('curatorial')}
+                      title="3-Column Curatorial Salon (Default)"
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
+                        gridDensity === 'curatorial'
+                          ? 'bg-[#d8b779] text-[#171007] font-bold shadow-[0_0_10px_rgba(216,183,121,0.35)]'
+                          : 'text-[#8d897f] hover:text-white'
+                      }`}
+                    >
+                      3-Col
+                    </button>
+                    <button
+                      id="density-archive-btn"
+                      onClick={() => setGridDensity('archive')}
+                      title="4-Column Archive View"
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
+                        gridDensity === 'archive'
+                          ? 'bg-[#d8b779] text-[#171007] font-bold shadow-[0_0_10px_rgba(216,183,121,0.35)]'
+                          : 'text-[#8d897f] hover:text-white'
+                      }`}
+                    >
+                      4-Col
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-
-
-            {/* Feed Subheader & Curatorial Filter Suite */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-4 border-b border-white/10">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-serif-display tracking-[0.06em] text-white flex items-center gap-3">
-                  {selectedCategory === 'all' && 'Curated Sanctuary Stream'}
-                  {selectedCategory === 'painting' && 'Fine Oil & Pigment Paintings'}
-                  {selectedCategory === 'drawing' && 'Charcoal, Graphite & Ink on Cotton Paper'}
-                  {selectedCategory === 'digital' && 'Generative Shaders & 3D Digital Media'}
-                  {selectedCategory === 'video' && 'Motion Loops & Cinema Fluid Dynamics'}
-                  {selectedCategory === 'poetry' && 'The Poetic Archive & Lyric Verse Cards'}
-                  {selectedCategory === 'music' && 'Original Music, Compositions & Soundscapes'}
-                </h2>
-                <p className="text-xs text-neutral-400 font-mono-code mt-1.5 flex items-center gap-2">
-                  <span>Displaying {artworks.length} indexed work{artworks.length !== 1 ? 's' : ''}</span>
-                  <span className="text-[#c9a875]">•</span>
-                  <span>Curated Atelier Archive</span>
-                </p>
-              </div>
-
-              {/* Enlarged Curated / Most Liked / Latest Filter Capsule */}
-              <div className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-start md:justify-end">
-                <div className="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded-full bg-neutral-900/90 border border-white/15 shadow-xl backdrop-blur-md overflow-x-auto no-scrollbar">
-                  <button
-                    id="filter-curated-btn"
-                    onClick={() => setFeedFilter('curated')}
-                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shrink-0 ${
-                      feedFilter === 'curated'
-                        ? 'bg-[#c9a875] text-black shadow-[0_0_18px_rgba(201,168,117,0.5)]'
-                        : 'text-neutral-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <Sparkles className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${feedFilter === 'curated' ? 'text-black' : 'text-[#c9a875]'}`} />
-                    <span>Curated</span>
-                  </button>
-
-                  <button
-                    id="filter-popular-btn"
-                    onClick={() => setFeedFilter('popular')}
-                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shrink-0 ${
-                      feedFilter === 'popular'
-                        ? 'bg-rose-500 text-white shadow-[0_0_18px_rgba(244,63,94,0.5)]'
-                        : 'text-neutral-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${feedFilter === 'popular' ? 'text-white fill-white' : 'text-rose-400'}`} />
-                    <span>Most Liked</span>
-                  </button>
-
-                  <button
-                    id="filter-latest-btn"
-                    onClick={() => setFeedFilter('latest')}
-                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shrink-0 ${
-                      feedFilter === 'latest'
-                        ? 'bg-white text-black shadow-[0_0_18px_rgba(255,255,255,0.45)]'
-                        : 'text-neutral-300 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    <Clock className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${feedFilter === 'latest' ? 'text-black' : 'text-amber-400'}`} />
-                    <span>Latest</span>
-                  </button>
-                </div>
-
-                {/* Cinema Mode Button */}
-                <button
-                  id="cinema-mode-btn"
-                  onClick={() => setIsCinemaModeOpen(true)}
-                  className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-neutral-900/90 border border-white/15 text-neutral-300 hover:text-white hover:bg-white/10 hover:border-[#c9a875]/60 transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 shadow-xl backdrop-blur-md shrink-0"
-                  title="View Gallery as Cinematic Slideshow"
-                >
-                  <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#c9a875]" />
-                  <span>Cinema</span>
-                </button>
-
-                {/* Curatorial Density Switcher */}
-                <div
-                  id="curatorial-density-switcher"
-                  className="flex items-center gap-1 p-1 rounded-full bg-neutral-900/90 border border-[#c9a875]/30 backdrop-blur-md shadow-xl shrink-0"
-                  title="Curatorial Density Scale"
-                >
-                  <button
-                    id="density-grande-btn"
-                    onClick={() => setGridDensity('grande')}
-                    title="2-Column Grande Scale"
-                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
-                      gridDensity === 'grande'
-                        ? 'bg-[#c9a875] text-black font-bold shadow-[0_0_12px_rgba(201,168,117,0.4)]'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <span className="hidden sm:inline">Grande </span>2-Col
-                  </button>
-                  <button
-                    id="density-curatorial-btn"
-                    onClick={() => setGridDensity('curatorial')}
-                    title="3-Column Curatorial Salon (Default)"
-                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
-                      gridDensity === 'curatorial'
-                        ? 'bg-[#c9a875] text-black font-bold shadow-[0_0_12px_rgba(201,168,117,0.4)]'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <span className="hidden sm:inline">Curatorial </span>3-Col
-                  </button>
-                  <button
-                    id="density-archive-btn"
-                    onClick={() => setGridDensity('archive')}
-                    title="4-Column Archive View"
-                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
-                      gridDensity === 'archive'
-                        ? 'bg-[#c9a875] text-black font-bold shadow-[0_0_12px_rgba(201,168,117,0.4)]'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <span className="hidden sm:inline">Archive </span>4-Col
-                  </button>
-                </div>
-              </div>
-            </div>
 
             {/* Masonry Grid / Poetry Sanctuary / Dedicated Original Music Section */}
             {selectedCategory === 'poetry' ? (
@@ -1490,7 +1540,7 @@ export default function App() {
                 {/* Horizontal Scrolling Music Track Rail */}
                 <div className="mt-4 flex items-center gap-3.5 overflow-x-auto no-scrollbar py-1">
                   {realtimeArtworks
-                    .filter(a => a.category === 'music' || a.musicData)
+                    .filter(a => (a.category === 'music' || a.musicData) && !isDerryArtwork(a))
                     .map((track) => {
                       const isPlaying = shelfAudioPlayingId === track.id;
                       const isFounderTrack = track.artist?.name?.toLowerCase().includes('afshaan') || track.artist?.handle?.toLowerCase().includes('afshaan');
@@ -1577,6 +1627,29 @@ export default function App() {
                 </div>
               </div>
             )}
+            </div>
+
+            {/* Redesigned Poetic Sanctuary Section */}
+            <RedesignedPoetrySection
+              artworks={artworks.length > 0 ? artworks : realtimeArtworks}
+              onSelectArtwork={handleOpenArtwork}
+              onOpenInkStudio={() => setIsInkStudioOpen(true)}
+            />
+
+            {/* Redesigned Music Sanctuary Horizon Section */}
+            <RedesignedMusicSection
+              artworks={artworks.length > 0 ? artworks : realtimeArtworks}
+              onOpenMusicSanctuary={() => {
+                const b = document.getElementById('toggle-ambience-music-btn');
+                if (b) b.click();
+              }}
+            />
+
+            {/* Redesigned Atelier Footer */}
+            <RedesignedFooter
+              onOpenUpload={() => handleOpenUpload('painting')}
+              onOpenAbout={() => handleSelectView('about')}
+            />
           </>
         )}
 

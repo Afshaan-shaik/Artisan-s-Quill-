@@ -4,7 +4,7 @@
  * No localStorage / cookie gating — every visit sees the intro.
  */
 
-import { useState } from "react";
+import React, { useState, useCallback, useRef, useEffect, memo } from "react";
 import CosmosIntro from "./CosmosIntro";
 
 interface IntroWrapperProps {
@@ -13,21 +13,28 @@ interface IntroWrapperProps {
   onOpenInkStudio?: () => void;
 }
 
-export default function IntroWrapper({
+function IntroWrapper({
   children,
   onOpenBard,
   onOpenInkStudio,
 }: IntroWrapperProps) {
   const [showIntro, setShowIntro] = useState(true);
+  const onOpenBardRef = useRef(onOpenBard);
+  const onOpenInkStudioRef = useRef(onOpenInkStudio);
 
-  const handleEnter = () => {
+  useEffect(() => {
+    onOpenBardRef.current = onOpenBard;
+    onOpenInkStudioRef.current = onOpenInkStudio;
+  });
+
+  const handleEnter = useCallback(() => {
     setShowIntro(false);
-  };
+  }, []);
 
-  const handleAction = (action: "__bard__" | "__ink__") => {
-    if (action === "__bard__") onOpenBard?.();
-    if (action === "__ink__") onOpenInkStudio?.();
-  };
+  const handleAction = useCallback((action: "__bard__" | "__ink__") => {
+    if (action === "__bard__") onOpenBardRef.current?.();
+    if (action === "__ink__") onOpenInkStudioRef.current?.();
+  }, []);
 
   return (
     <>
@@ -38,3 +45,5 @@ export default function IntroWrapper({
     </>
   );
 }
+
+export default memo(IntroWrapper);

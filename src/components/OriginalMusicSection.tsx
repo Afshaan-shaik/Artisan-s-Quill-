@@ -25,7 +25,10 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
-  FolderPlus
+  FolderPlus,
+  Image as ImageIcon,
+  ShieldCheck,
+  Disc
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Artwork, ArtCategory, UserProfile } from '../types';
@@ -75,6 +78,8 @@ export const OriginalMusicSection: React.FC<OriginalMusicSectionProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'tracklist'>('grid');
+  const [heroViewMode, setHeroViewMode] = useState<'vinyl' | 'cover'>('vinyl');
+  const [isHeroSentToAmbience, setIsHeroSentToAmbience] = useState<boolean>(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -290,271 +295,367 @@ export const OriginalMusicSection: React.FC<OriginalMusicSectionProps> = ({
       <audio ref={audioRef} preload="metadata" />
 
       {/* ─────────────────────────────────────────────────────────────
-          1. HERO AUDIOPHILE SOUNDSTAGE & TURNTABLE CONSOLE
+          1. HERO AUDIOPHILE SOUNDSTAGE & LINER NOTES CONSOLE
          ───────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0c0d14] via-[#080910] to-[#040508] border border-[#c9a875]/40 shadow-[0_20px_60px_rgba(0,0,0,0.85),0_0_30px_rgba(201,168,117,0.15)] p-5 sm:p-8 lg:p-10">
-        {/* Subtle Ambient Radial Lighting */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#c9a875]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-amber-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-[22px] bg-[#0d0f14] border border-white/[0.08] shadow-[0_25px_80px_rgba(0,0,0,0.85)] p-5 sm:p-8 lg:p-10">
+        {/* Subtle Warm Amber Ambient Radial Lighting */}
+        <div
+          className="absolute top-1/2 left-1/4 -translate-y-1/2 -translate-x-1/4 w-[500px] h-[500px] rounded-full pointer-events-none opacity-45 blur-3xl"
+          style={{
+            background: 'radial-gradient(circle, rgba(217, 184, 120, 0.28) 0%, rgba(180, 110, 30, 0.12) 50%, transparent 75%)'
+          }}
+        />
 
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
           
-          {/* Left: Vinyl Turntable Visualizer */}
-          <div className="flex flex-col items-center justify-center shrink-0">
-            <div className="relative w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center group">
-              {/* Outer Turntable Deck Ring */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#12131c] via-[#1a1b26] to-[#0f1017] border-2 border-white/10 shadow-[0_10px_35px_rgba(0,0,0,0.9)]" />
+          {/* Left: Spinning Vinyl Turntable & Waveform Console */}
+          <div className="flex flex-col items-center justify-center shrink-0 w-full lg:w-auto">
+            {heroViewMode === 'vinyl' ? (
+              <div className="relative w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center group">
+                {/* Turntable Outer Deck Ring */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#12131c] via-[#1a1b26] to-[#0f1017] border-2 border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.9)]" />
 
-              {/* Spinning Vinyl Record */}
-              <div
-                className={`relative w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-[#0a0a0f] border-4 border-neutral-900 shadow-2xl flex items-center justify-center transition-transform duration-500 ${
-                  isPlaying ? 'animate-spin' : ''
-                }`}
-                style={{
-                  animationDuration: '6s',
-                  boxShadow: isPlaying ? '0 0 40px rgba(201,168,117,0.35)' : 'none'
-                }}
-              >
-                {/* Vinyl Grooves Texture */}
+                {/* Spinning Vinyl Record with continuous spin and graceful pause */}
                 <div
-                  className="absolute inset-2 rounded-full border border-white/5 opacity-70 pointer-events-none"
+                  className={`relative w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-[#0a0a0f] border-4 border-neutral-900 shadow-2xl flex items-center justify-center ${
+                    isPlaying ? 'vinyl-spin-active' : 'vinyl-spin-paused'
+                  }`}
                   style={{
-                    background:
-                      'radial-gradient(circle, transparent 40%, rgba(255,255,255,0.03) 41%, transparent 42%, rgba(255,255,255,0.03) 55%, transparent 56%, rgba(255,255,255,0.04) 70%, transparent 71%)'
+                    boxShadow: isPlaying ? '0 0 45px rgba(217,184,120,0.35)' : 'none'
+                  }}
+                >
+                  {/* Concentric Grooves Texture */}
+                  <div className="w-[88%] h-[88%] rounded-full border border-white/[0.04] p-1 flex items-center justify-center">
+                    <div className="w-[84%] h-[84%] rounded-full border border-white/[0.06] p-1 flex items-center justify-center">
+                      <div className="w-[80%] h-[80%] rounded-full border border-white/[0.04] p-1 flex items-center justify-center">
+                        {/* Center Record Label (Cover Artwork) */}
+                        <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-[#d9b878]/80 shadow-md flex items-center justify-center bg-black">
+                          <img
+                            src={coverUrl}
+                            alt={currentTrack?.title || 'Track Art'}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/curatorial-masterpiece.svg';
+                            }}
+                          />
+                          {/* Center Spindle Hole */}
+                          <div className="absolute inset-0 m-auto w-4 h-4 rounded-full bg-[#040508] border border-white/40 shadow-inner flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Central Play Overlay Button */}
+                <button
+                  onClick={togglePlay}
+                  className="absolute inset-0 m-auto w-14 h-14 rounded-full bg-black/65 backdrop-blur-md border border-[#d9b878] text-[#d9b878] hover:text-white hover:scale-110 active:scale-95 flex items-center justify-center shadow-[0_0_25px_rgba(217,184,120,0.4)] transition-all cursor-pointer z-20"
+                  title={isPlaying ? 'Pause Track' : 'Play Track'}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-6 h-6 fill-current" />
+                  ) : (
+                    <Play className="w-6 h-6 fill-current ml-1" />
+                  )}
+                </button>
+              </div>
+            ) : (
+              /* Flat High-Res Album Cover Art Card */
+              <div className="relative w-56 h-56 sm:w-64 sm:h-64 rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(217,184,120,0.2)] border border-white/10 group">
+                <img
+                  src={coverUrl}
+                  alt={currentTrack?.title || 'Track Art'}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/curatorial-masterpiece.svg';
                   }}
                 />
-
-                {/* Center Record Label (Cover Artwork) */}
-                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-[#c9a875]/80 shadow-md">
-                  <img
-                    src={coverUrl}
-                    alt={currentTrack?.title || 'Track Art'}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/curatorial-masterpiece.svg';
-                    }}
-                  />
-                  {/* Center Spindle Hole */}
-                  <div className="absolute inset-0 m-auto w-3.5 h-3.5 rounded-full bg-[#040508] border border-white/40 shadow-inner" />
-                </div>
+                <button
+                  onClick={togglePlay}
+                  className="absolute inset-0 m-auto w-14 h-14 rounded-full bg-black/60 backdrop-blur-md border border-[#d9b878] text-[#d9b878] hover:text-white hover:scale-110 active:scale-95 flex items-center justify-center shadow-xl transition-all cursor-pointer"
+                >
+                  {isPlaying ? (
+                    <Pause className="w-6 h-6 fill-current" />
+                  ) : (
+                    <Play className="w-6 h-6 fill-current ml-1" />
+                  )}
+                </button>
               </div>
+            )}
 
-              {/* Tonearm Stylus Needle */}
-              <div
-                className={`absolute -top-3 right-2 w-20 h-28 pointer-events-none transition-transform duration-700 origin-top-right ${
-                  isPlaying ? 'rotate-[24deg]' : 'rotate-0'
+            {/* Mode Switcher: Vinyl vs Album Cover */}
+            <div className="mt-4 flex items-center gap-1.5 p-1 rounded-full bg-white/[0.04] border border-white/[0.08] shadow-md">
+              <button
+                onClick={() => setHeroViewMode('vinyl')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono-code uppercase font-semibold transition-all duration-200 cursor-pointer ${
+                  heroViewMode === 'vinyl'
+                    ? 'bg-[#d9b878] text-black font-bold shadow-md'
+                    : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                <div className="w-1.5 h-20 bg-gradient-to-b from-[#dfbd87] to-neutral-400 rounded-full shadow-lg ml-auto mr-4" />
-                <div className="w-4 h-6 bg-[#c9a875] rounded-sm shadow-md ml-auto mr-2.5 -mt-1" />
-              </div>
-
-              {/* Central Floating Play Overlay */}
+                <Disc className="w-3.5 h-3.5" />
+                <span>Vinyl</span>
+              </button>
               <button
-                onClick={togglePlay}
-                className="absolute inset-0 m-auto w-14 h-14 rounded-full bg-black/60 backdrop-blur-md border border-[#c9a875] text-[#dfbd87] hover:text-white hover:scale-110 active:scale-95 flex items-center justify-center shadow-[0_0_20px_rgba(201,168,117,0.4)] transition-all cursor-pointer z-20 group-hover:bg-black/80"
-                title={isPlaying ? 'Pause Track' : 'Play Track'}
+                onClick={() => setHeroViewMode('cover')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono-code uppercase font-semibold transition-all duration-200 cursor-pointer ${
+                  heroViewMode === 'cover'
+                    ? 'bg-[#d9b878] text-black font-bold shadow-md'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
               >
-                {isPlaying ? (
-                  <Pause className="w-6 h-6 fill-current" />
-                ) : (
-                  <Play className="w-6 h-6 fill-current ml-1" />
-                )}
+                <ImageIcon className="w-3.5 h-3.5" />
+                <span>Cover</span>
               </button>
             </div>
 
-            {/* Live Audio Visualizer Bars */}
-            <div className="flex items-center gap-1 mt-4 h-6">
-              {[0.4, 0.9, 0.6, 1.0, 0.7, 0.5, 0.8, 0.3, 0.9, 0.6, 0.8, 0.4].map((h, i) => (
-                <div
-                  key={i}
-                  className={`w-1 rounded-full bg-gradient-to-t from-[#c9a875] to-[#f3e3cb] transition-all duration-200 ${
-                    isPlaying ? 'animate-pulse' : 'opacity-40'
-                  }`}
-                  style={{
-                    height: isPlaying ? `${Math.max(4, h * 22)}px` : '4px',
-                    animationDelay: `${(i % 4) * 0.15}s`
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Center: Active Track Metadata & Player Controls */}
-          <div className="flex-1 w-full space-y-4 max-w-xl">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[10px] font-mono-code font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-                <Disc3 className="w-3 h-3 text-amber-400" />
-                <span>Now Reverberating</span>
-              </span>
-              <span className="text-xs font-mono-code text-neutral-400">
-                Track {activeTrackIndex + 1} of {musicArtworks.length}
-              </span>
-            </div>
-
-            <div>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif-display font-medium text-white tracking-wide">
-                {currentTrack?.title || 'Sanctuary Master Session'}
-              </h2>
-              <div className="flex items-center gap-2 mt-1 text-sm font-mono-code text-[#c9a875]">
-                <span>by {currentTrack?.artist?.name || 'Sanctuary Musician'}</span>
-                {currentTrack?.artist?.verified && <span title="Verified Artisan">✦</span>}
-                <span className="text-neutral-600">•</span>
-                <span className="text-neutral-400 text-xs">
-                  {currentTrack?.musicData?.album || currentTrack?.medium || 'Atelier Masterpiece'}
-                </span>
+            {/* Waveform Scrubber & Timers */}
+            <div className="w-full max-w-xs mt-4 space-y-2">
+              <div
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const clickX = e.clientX - rect.left;
+                  const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+                  if (audioRef.current && duration > 0) {
+                    audioRef.current.currentTime = ratio * duration;
+                    setCurrentTime(ratio * duration);
+                  }
+                }}
+                className="flex items-center justify-between gap-1 h-8 cursor-pointer group/wave px-1 py-1 rounded-lg hover:bg-white/[0.03] transition-colors"
+              >
+                {[0.3, 0.6, 0.9, 0.4, 0.8, 1.0, 0.7, 0.5, 0.9, 0.3, 0.6, 0.8, 0.4, 0.9, 0.7, 1.0, 0.6, 0.8, 0.5, 0.9, 0.3, 0.7, 1.0, 0.6, 0.4, 0.8, 0.9, 0.5, 0.7, 0.3, 0.6, 0.4].map((h, i) => {
+                  const barProgress = (i / 32) * (duration || 100);
+                  const isPassed = currentTime >= barProgress;
+                  return (
+                    <div
+                      key={i}
+                      style={{ height: `${Math.max(4, h * 24)}px` }}
+                      className={`flex-1 rounded-full transition-all duration-150 ${
+                        isPassed
+                          ? 'bg-[#d9b878] shadow-[0_0_8px_rgba(217,184,120,0.6)]'
+                          : 'bg-white/15 group-hover/wave:bg-white/25'
+                      }`}
+                    />
+                  );
+                })}
               </div>
-            </div>
 
-            {/* Seek Bar with Timers */}
-            <div className="space-y-1.5 pt-1">
-              <div className="relative flex items-center">
-                <input
-                  type="range"
-                  min="0"
-                  max={duration || 100}
-                  step="0.1"
-                  value={currentTime}
-                  onChange={handleSeek}
-                  className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-[#c9a875]"
-                />
-              </div>
-              <div className="flex items-center justify-between text-[11px] font-mono-code text-neutral-400">
+              <div className="flex items-center justify-between text-[11px] font-mono-code text-neutral-400 px-1">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
             </div>
 
-            {/* Player Buttons Row */}
-            <div className="flex items-center justify-between gap-4 pt-2">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handlePrevTrack}
-                  className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer"
-                  title="Previous Track"
-                >
-                  <SkipBack className="w-4 h-4 fill-current" />
-                </button>
+            {/* Playback Controls Row */}
+            <div className="flex items-center justify-center gap-3 mt-3 w-full">
+              <button
+                onClick={handlePrevTrack}
+                className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer"
+                title="Previous Track"
+              >
+                <SkipBack className="w-4 h-4 fill-current" />
+              </button>
 
-                <button
-                  onClick={togglePlay}
-                  className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#c9a875] to-[#dfbd87] text-black font-bold text-xs uppercase tracking-wider font-mono-code shadow-[0_0_20px_rgba(201,168,117,0.45)] hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
-                >
-                  {isPlaying ? (
-                    <>
-                      <Pause className="w-4 h-4 fill-current" />
-                      <span>Pause Track</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 fill-current" />
-                      <span>Play Track</span>
-                    </>
-                  )}
-                </button>
+              <button
+                onClick={togglePlay}
+                className="w-12 h-12 rounded-full bg-gradient-to-r from-[#d9b878] to-[#e4cb93] text-black shadow-lg shadow-[#d9b878]/25 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+                title={isPlaying ? 'Pause' : 'Play'}
+              >
+                {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
+              </button>
 
-                <button
-                  onClick={handleNextTrack}
-                  className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer"
-                  title="Next Track"
-                >
-                  <SkipForward className="w-4 h-4 fill-current" />
-                </button>
+              <button
+                onClick={handleNextTrack}
+                className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer"
+                title="Next Track"
+              >
+                <SkipForward className="w-4 h-4 fill-current" />
+              </button>
 
-                <button
-                  onClick={() => setIsLooping(!isLooping)}
-                  className={`p-2 rounded-full transition-all cursor-pointer ${
-                    isLooping ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'text-neutral-400 hover:text-white'
-                  }`}
-                  title={isLooping ? 'Looping Active' : 'Loop Track'}
-                >
-                  <Repeat className="w-4 h-4" />
-                </button>
-              </div>
+              {/* Ambience broadcast toggle */}
+              <button
+                onClick={() => {
+                  const b = document.getElementById('toggle-ambience-music-btn');
+                  if (b) b.click();
+                  setIsHeroSentToAmbience(!isHeroSentToAmbience);
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono-code uppercase tracking-wider transition-all cursor-pointer ${
+                  isHeroSentToAmbience
+                    ? 'bg-[#d9b878] text-black font-bold shadow-md'
+                    : 'bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-[#d9b878] border border-white/10'
+                }`}
+                title="Broadcast to Ambience Bar"
+              >
+                <Radio className="w-3.5 h-3.5" />
+                <span>Ambience</span>
+              </button>
 
-              {/* Volume Slider */}
-              <div className="hidden sm:flex items-center gap-2">
-                <button
-                  onClick={toggleMute}
-                  className="text-neutral-400 hover:text-white p-1 transition-colors"
-                  title={isMuted ? 'Unmute' : 'Mute'}
-                >
-                  {isMuted || volume === 0 ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
-                </button>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={isMuted ? 0 : volume}
-                  onChange={handleVolumeChange}
-                  className="w-20 h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-[#c9a875]"
+              <button
+                onClick={() => setIsLooping(!isLooping)}
+                className={`p-2 rounded-full transition-all cursor-pointer ${
+                  isLooping ? 'bg-[#d9b878]/20 text-[#d9b878] border border-[#d9b878]/40' : 'text-neutral-400 hover:text-white'
+                }`}
+                title={isLooping ? 'Looping Active' : 'Loop Track'}
+              >
+                <Repeat className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={toggleMute}
+                className="text-neutral-400 hover:text-white p-2 transition-colors cursor-pointer"
+                title={isMuted ? 'Unmute' : 'Mute'}
+              >
+                {isMuted || volume === 0 ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-[#d9b878]" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Right: Active Track Metadata & Liner Notes Story */}
+          <div className="flex-1 w-full space-y-5 max-w-xl">
+            {/* Genre & Year Chips */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono-code text-[11px] uppercase tracking-[0.2em] px-3 py-1 rounded-full bg-[#d9b878]/15 border border-[#d9b878]/35 text-[#d9b878] font-semibold flex items-center gap-1.5">
+                <Disc3 className="w-3.5 h-3.5" />
+                <span>{currentTrack?.musicData?.genre || currentTrack?.medium || 'Acoustic Soul'}</span>
+              </span>
+              {currentTrack?.year && (
+                <span className="font-mono-code text-[11px] uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-neutral-300">
+                  {currentTrack.year}
+                </span>
+              )}
+              <span className="font-mono-code text-[11px] uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-neutral-400">
+                {currentTrack?.musicData?.album || 'Atelier Masterpiece'}
+              </span>
+              <span className="ml-auto text-xs font-mono-code text-neutral-400">
+                Track {activeTrackIndex + 1} of {musicArtworks.length}
+              </span>
+            </div>
+
+            {/* Single Large Serif Display Title */}
+            <div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-light text-[#f4efe6] leading-[1.08] tracking-[-0.01em]">
+                {currentTrack?.title || 'Sanctuary Master Session'}
+              </h2>
+            </div>
+
+            {/* Creator Row */}
+            <div
+              onClick={(e) => currentTrack?.artist && typeof currentTrack.artist === 'object' && onSelectArtist && onSelectArtist(currentTrack.artist.id, e)}
+              className="flex items-center gap-3.5 pt-1 cursor-pointer group/artist"
+            >
+              <div className="w-11 h-11 rounded-full overflow-hidden border border-[#d9b878]/50 shadow-[0_0_12px_rgba(217,184,120,0.25)] group-hover/artist:scale-105 transition-transform duration-250 bg-neutral-900 shrink-0">
+                <img
+                  src={currentTrack?.artist?.avatar || coverUrl}
+                  alt={currentTrack?.artist?.name || 'Artist'}
+                  className="w-full h-full object-cover"
                 />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-base sm:text-lg font-light tracking-wide text-white group-hover/artist:text-[#d9b878] transition-colors">
+                    {currentTrack?.artist?.name || 'Sanctuary Musician'}
+                  </h3>
+                  {currentTrack?.artist?.verified && <ShieldCheck className="w-4 h-4 text-[#d9b878]" />}
+                </div>
+                <span className="font-mono-code text-[11px] uppercase tracking-widest text-[#d9b878]/80 block">
+                  {currentTrack?.artist?.handle || '@artisan'}
+                </span>
               </div>
             </div>
 
-            {/* Quick Actions & Lyrics Toggle */}
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10">
-              {currentTrack?.musicData?.lyrics && (
-                <button
-                  onClick={() => setIsLyricsExpanded(!isLyricsExpanded)}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono-code bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 transition-all cursor-pointer"
-                >
-                  <FileText className="w-3.5 h-3.5 text-[#c9a875]" />
-                  <span>{isLyricsExpanded ? 'Hide Lyrics' : 'View Lyrics & Verse'}</span>
-                  {isLyricsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                </button>
-              )}
-
+            {/* Action Row */}
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
               <button
                 onClick={(e) => onToggleLike(currentTrack?.id, e)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono-code bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 transition-all cursor-pointer"
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-250 cursor-pointer shadow-md ${
+                  currentTrack?.isLiked
+                    ? 'bg-[#d9b878] text-black font-bold shadow-[0_0_20px_rgba(217,184,120,0.4)]'
+                    : 'bg-white/[0.04] text-white hover:bg-white/10 border border-white/[0.08]'
+                }`}
               >
-                <Heart className={`w-3.5 h-3.5 ${currentTrack?.isLiked ? 'text-rose-400 fill-rose-400' : 'text-neutral-400'}`} />
-                <span>{currentTrack?.likesCount || 0}</span>
+                <Heart className={`w-3.5 h-3.5 ${currentTrack?.isLiked ? 'fill-current' : ''}`} />
+                <span>Like</span>
+                {(currentTrack?.likesCount || 0) > 0 && <span>({currentTrack?.likesCount})</span>}
               </button>
 
               <button
                 onClick={(e) => onToggleSave(currentTrack?.id, e)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono-code bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 transition-all cursor-pointer"
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-250 cursor-pointer shadow-md ${
+                  currentTrack?.isSaved
+                    ? 'bg-[#d9b878] text-black font-bold shadow-[0_0_20px_rgba(217,184,120,0.4)]'
+                    : 'bg-white/[0.04] text-white hover:bg-white/10 border border-white/[0.08]'
+                }`}
               >
-                <Bookmark className={`w-3.5 h-3.5 ${currentTrack?.isSaved ? 'text-[#c9a875] fill-[#c9a875]' : 'text-neutral-400'}`} />
+                <Bookmark className={`w-3.5 h-3.5 ${currentTrack?.isSaved ? 'fill-current' : ''}`} />
                 <span>{currentTrack?.isSaved ? 'Saved' : 'Save'}</span>
               </button>
 
               {onShareArtwork && (
                 <button
                   onClick={() => onShareArtwork(currentTrack)}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono-code bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider bg-white/[0.04] text-white hover:bg-white/10 border border-white/[0.08] transition-all duration-250 cursor-pointer shadow-md"
                 >
-                  <Share2 className="w-3.5 h-3.5 text-neutral-400" />
+                  <Share2 className="w-3.5 h-3.5" />
                   <span>Share</span>
                 </button>
               )}
 
               <button
                 onClick={() => onSelectArtwork(currentTrack)}
-                className="ml-auto text-xs font-mono-code text-[#dfbd87] hover:underline cursor-pointer"
+                className="ml-auto text-xs font-mono-code text-[#d9b878] hover:underline cursor-pointer flex items-center gap-1 py-1"
               >
-                Inspect Master Piece →
+                <span>Inspect Masterpiece</span>
+                <span>→</span>
               </button>
             </div>
 
-            {/* Expandable Lyrics Card */}
-            <AnimatePresence>
-              {isLyricsExpanded && currentTrack?.musicData?.lyrics && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="p-4 rounded-xl bg-black/60 border border-[#c9a875]/30 text-xs font-serif italic text-neutral-200 leading-relaxed overflow-hidden"
-                >
-                  <p className="whitespace-pre-line drop-shadow-md">
-                    "{currentTrack.musicData.lyrics}"
-                  </p>
-                </motion.div>
+            {/* Liner Notes Section */}
+            <div className="pt-2 border-t border-white/[0.06] space-y-3">
+              <span className="font-mono-code text-[10px] uppercase tracking-[0.25em] text-[#d9b878] font-semibold block">
+                ✦ Liner Notes &amp; Acoustic Story
+              </span>
+
+              {/* Story Quote / Description */}
+              <div className="p-3.5 rounded-xl bg-white/[0.025] border border-white/[0.06]">
+                <p className="font-serif italic text-xs leading-relaxed text-[#ded7c8]/90">
+                  "{currentTrack?.description || `${currentTrack?.artist?.name || 'Sanctuary Musician'} — ${currentTrack?.title}. Emotive acoustic composition mastered for The Artisan's Quill.`}"
+                </p>
+                <p className="font-mono-code text-[10px] text-[#8d897f] mt-2">
+                  Composer: <strong className="text-neutral-300 font-normal">{currentTrack?.artist?.name || 'Sanctuary Artist'}</strong>
+                </p>
+              </div>
+
+              {/* Lyrics Toggle Button & Drawer */}
+              {currentTrack?.musicData?.lyrics && (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setIsLyricsExpanded(!isLyricsExpanded)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono-code bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 transition-all cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#d9b878]" />
+                    <span>{isLyricsExpanded ? 'Hide Lyrics & Verse' : 'View Lyrics & Verse'}</span>
+                    {isLyricsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
+
+                  <AnimatePresence>
+                    {isLyricsExpanded && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="p-4 rounded-xl bg-black/60 border border-[#d9b878]/30 max-h-48 overflow-y-auto custom-scrollbar"
+                      >
+                        <p className="font-serif italic text-xs leading-relaxed text-neutral-200 whitespace-pre-line select-text">
+                          {currentTrack.musicData.lyrics}
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               )}
-            </AnimatePresence>
+            </div>
           </div>
 
           {/* Right: Quick Action Hub & Cosmos Bridge */}

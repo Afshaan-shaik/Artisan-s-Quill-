@@ -1067,6 +1067,9 @@ export const DynamicIslandNavbar: React.FC<DynamicIslandNavbarProps> = ({
               onMouseEnter={() => playSound('button-hover')}
               onClick={() => {
                 playSound('menu-open');
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
                 onSelectView('about');
               }}
               className={`di-about-btn ${activeView === 'about' ? 'is-active' : ''}`}
@@ -1121,9 +1124,8 @@ export const DynamicIslandNavbar: React.FC<DynamicIslandNavbarProps> = ({
                   <small>{currentUser.handle || '@afshaanshaikh'}</small>
                 </span>
                 <ChevronDown
-                  className={`w-3.5 h-3.5 text-[#9193a8] transition-transform duration-200 ${
-                    isProfileMenuOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`w-3.5 h-3.5 text-[#9193a8] transition-transform duration-200 ${isProfileMenuOpen ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 

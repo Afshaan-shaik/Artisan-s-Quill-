@@ -1,7 +1,7 @@
 import { createClient, SupabaseClient, User as SupabaseUser, Session as SupabaseSession } from '@supabase/supabase-js';
 import { Artwork, Comment, MarginReflection, UserProfile, Exhibition, Collection, Inquiry } from '../types';
 import { INITIAL_ARTWORKS, DEFAULT_USER, INITIAL_ARTIST_PROFILES, INITIAL_COMMENTS, INITIAL_MARGIN_REFLECTIONS, INITIAL_EXHIBITIONS } from '../data/initialData';
-import { resolveAudioUrl } from '../utils/audioResolver';
+import { resolveAudioUrl, isDerryArtwork } from '../utils/audioResolver';
 
 // Environment variable resolution supporting browser Vite and Node/Serverless runtimes
 const getEnvVar = (viteKey: string, processKey: string, fallback = ''): string => {
@@ -361,7 +361,7 @@ export async function fetchArtworksFromSupabase(): Promise<Artwork[]> {
     }
 
     if (data && Array.isArray(data)) {
-      return data.map((row: CloudArtworkRow) => mapRowToArtwork(row));
+      return data.map((row: CloudArtworkRow) => mapRowToArtwork(row)).filter((a) => !isDerryArtwork(a));
     }
   } catch (err) {
     console.warn('[Supabase Artworks Fetch Exception]:', err);

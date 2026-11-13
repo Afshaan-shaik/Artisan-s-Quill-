@@ -195,12 +195,12 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
         playSound('view-masterpiece');
         onSelectArtwork(artwork);
       }}
-      className="card-chromatic relative group overflow-hidden museum-shadowbox rounded-xl border border-white/10 hover:border-[#c9a875]/60 shadow-2xl cursor-pointer w-full transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_25px_rgba(201,168,117,0.2)] hover:z-10 bg-[#06080d]"
+      className="redesign-card relative group overflow-hidden bg-[#0b0c10] cursor-pointer w-full p-2 sm:p-2.5 rounded-[28px] border border-[rgba(236,214,170,0.12)] hover:border-[#d8b779]/60 shadow-2xl transition-all duration-700 ease-out hover:-translate-y-2 hover:shadow-[0_0_0_1px_rgba(216,183,121,0.5),0_30px_70px_-20px_rgba(216,183,121,0.25)] hover:z-10"
       style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}
     >
       {/* 1. Museum Passe-Partout Inset Frame */}
       <div
-        className={`relative w-full overflow-hidden bg-[#030407] rounded-lg border border-white/10 group-hover:border-[#c9a875]/40 transition-colors ${
+        className={`relative w-full overflow-hidden bg-[#050507] rounded-[20px] border border-white/10 group-hover:border-[#c9a875]/40 transition-colors ${
           isTall ? 'aspect-[3/4]' : isWide ? 'aspect-[16/10]' : 'aspect-square'
         }`}
       >
@@ -468,7 +468,7 @@ const ArtworkParallaxCard: React.FC<ArtworkParallaxCardProps> = ({
           <span>#AQ-{(artwork.year || '2026')}-{artwork.id.slice(-4).toUpperCase()}</span>
           <span className="text-neutral-400 capitalize">{artwork.medium || artwork.category}</span>
         </div>
-        <h3 className="text-base sm:text-lg font-serif-display font-light text-white group-hover:text-[#f8f5eb] transition-colors leading-snug truncate">
+        <h3 className="text-xl sm:text-2xl font-serif-cormorant font-light text-[#f4efe6] group-hover:text-[#f6e3b4] transition-colors leading-snug truncate">
           {artwork.title}
         </h3>
         <div className="flex items-center justify-between text-xs text-neutral-400 font-mono-code pt-1 border-t border-white/[0.08]">

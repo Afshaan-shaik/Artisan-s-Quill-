@@ -74,12 +74,12 @@ export const CuratorialSpotlight: React.FC<CuratorialSpotlightProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Auto-cycle through standout nominees every 14 seconds if user is not hovering
+  // Auto-cycle through standout nominees every 5 seconds if user is not hovering
   useEffect(() => {
     if (candidateSpotlights.length <= 1 || isHovered) return;
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % candidateSpotlights.length);
-    }, 14000);
+    }, 5000);
     return () => clearInterval(timer);
   }, [candidateSpotlights.length, isHovered]);
 

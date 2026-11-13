@@ -102,19 +102,29 @@ export const AboutUsView: React.FC<AboutUsViewProps> = ({
     }
   };
 
-  // Auto-scroll to Inquiries & Collaborations if URL specifies it on mount
+  // Auto-scroll to Inquiries & Collaborations if URL specifies it on mount, otherwise ensure page starts from very top
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
     const params = new URLSearchParams(window.location.search);
     const tab = (params.get('tab') || params.get('section') || '').toLowerCase();
-    if (
+    const isSpecificInquiryTarget =
       ['connect-section', 'inquire', 'inquiries', 'collabs', 'collaborations', 'inquire-collabs'].includes(hash) ||
-      ['connect-section', 'inquire', 'inquiries', 'collabs', 'collaborations', 'inquire-collabs'].includes(tab)
-    ) {
+      ['connect-section', 'inquire', 'inquiries', 'collabs', 'collaborations', 'inquire-collabs'].includes(tab);
+
+    if (isSpecificInquiryTarget) {
       setTimeout(() => {
         handleScrollToInquiries();
       }, 300);
+    } else {
+      // Always show from the very beginning of the About page
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      const topSection = document.getElementById('about-us-view');
+      if (topSection) {
+        topSection.scrollIntoView({ behavior: 'instant', block: 'start' });
+      }
     }
   }, []);
 
