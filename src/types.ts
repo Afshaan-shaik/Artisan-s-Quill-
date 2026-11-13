@@ -1,7 +1,7 @@
 export type ArtCategory = 'all' | 'painting' | 'drawing' | 'digital' | 'video' | 'poetry' | 'music';
 
-export type PoetryTheme = 'obsidian' | 'vellum' | 'midnight' | 'emerald' | 'crimson';
-export type PoetryFont = 'cormorant' | 'newsreader' | 'playfair';
+export type PoetryTheme = 'obsidian' | 'vellum' | 'midnight' | 'emerald' | 'crimson' | 'parchment';
+export type PoetryFont = 'cormorant' | 'newsreader' | 'playfair' | 'handcrafted' | 'nastaliq' | 'cinzel';
 export type AspectRatioType = 'tall' | 'wide' | 'square' | 'portrait' | 'ultrawide';
 
 export type AtmosphereMode = 'dawn' | 'golden-hour' | 'midnight-rain' | 'candlelight';

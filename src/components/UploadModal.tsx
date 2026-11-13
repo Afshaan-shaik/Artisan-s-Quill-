@@ -20,24 +20,235 @@ const TYPES: [string, string][] = [
   ['🎞️', 'Motion loop']
 ];
 
-const STYLES = ['Painting', 'Drawing', 'Digital', 'Video'] as const;
+const STYLES = ['Poetry Cards', 'Painting', 'Drawing', 'Digital', 'Video'] as const;
 
 const RATIOS = ['Square (1:1)', 'Tall (3:4)', 'Wide (4:3)', 'Cinematic (16:9)', 'Story (9:16)'];
 const AR = ['1/1', '3/4', '4/3', '16/9', '9/16'];
 const TAGS = ['Nocturne', 'Texture', 'Portrait', 'Abstract', 'Gold', 'Ink'];
+const POETRY_TAGS = ['Free Verse', 'Ghazal', 'Solitude', 'Nocturne', 'Melancholy', 'Epiphany', 'Atelier'];
 const IDEAS = ['I made this because…', 'I created it using…', 'I hope you feel…'];
+const POETRY_IDEAS = [
+  'Written at dusk as the shadows lengthened…',
+  'A study in longing and solitary reflection…',
+  'Inspired by the sound of rain upon the glass…',
+  'In memory of a moment kept exactly as it was…',
+  'Dedicated to the moon and sleepless wanderers…',
+  'Written in one quiet, unbroken breath…'
+];
 
-// Curated Masterpiece Demo Assets
+interface PoetryThemeOption {
+  id: PoetryTheme;
+  label: string;
+  desc: string;
+  bg: string;
+  ink: string;
+  acc: string;
+  sub: string;
+  border: string;
+  medium: string;
+  palette: string[];
+}
+
+const POETRY_THEMES: PoetryThemeOption[] = [
+  {
+    id: 'obsidian',
+    label: 'Obsidian Night',
+    desc: 'Deep velvet charcoal & golden starlight',
+    bg: '#12141d',
+    ink: '#f3ead3',
+    acc: '#e3c27a',
+    sub: '#a29e94',
+    border: 'rgba(227, 194, 122, 0.35)',
+    medium: 'Golden Ink on Obsidian Vellum',
+    palette: ['#12141d', '#e3c27a', '#342918', '#f3ead3', '#08090d']
+  },
+  {
+    id: 'vellum',
+    label: 'Antique Vellum',
+    desc: 'Aged parchment with warm amber deckle',
+    bg: '#221c15',
+    ink: '#f5ebd7',
+    acc: '#d4af37',
+    sub: '#b4a693',
+    border: 'rgba(212, 175, 55, 0.35)',
+    medium: 'Iron Gall Ink on Antique Vellum',
+    palette: ['#221c15', '#d4af37', '#6e5124', '#f5ebd7', '#120e0a']
+  },
+  {
+    id: 'midnight',
+    label: 'Midnight Celestial',
+    desc: 'Indigo night sky with ice-blue typography',
+    bg: '#0e1628',
+    ink: '#dbe7f5',
+    acc: '#89b4e8',
+    sub: '#899fb8',
+    border: 'rgba(137, 180, 232, 0.35)',
+    medium: 'Celestial Typography on Starlit Linen',
+    palette: ['#0e1628', '#89b4e8', '#2a4269', '#dbe7f5', '#060a14']
+  },
+  {
+    id: 'emerald',
+    label: 'Emerald Silk',
+    desc: 'Deep botanical forest jade & sage gold',
+    bg: '#0b1c14',
+    ink: '#d4f5e3',
+    acc: '#52b788',
+    sub: '#7ba892',
+    border: 'rgba(82, 183, 136, 0.35)',
+    medium: 'Herbal Ink on Emerald Botanical Silk',
+    palette: ['#0b1c14', '#52b788', '#1a4731', '#d4f5e3', '#050f0a']
+  },
+  {
+    id: 'crimson',
+    label: 'Crimson Velvet',
+    desc: 'Passionate burgundy wine & crushed rose',
+    bg: '#240f15',
+    ink: '#fce7f3',
+    acc: '#e0536c',
+    sub: '#b87c88',
+    border: 'rgba(224, 83, 108, 0.35)',
+    medium: 'Madder Lake Pigment on Crimson Velvet Paper',
+    palette: ['#240f15', '#e0536c', '#5e1e2d', '#fce7f3', '#14060b']
+  },
+  {
+    id: 'parchment',
+    label: 'Handmade Cotton Rag',
+    desc: 'Archival warm ivory deckle paper',
+    bg: '#f7f2e7',
+    ink: '#1e1913',
+    acc: '#8c6721',
+    sub: '#5c5245',
+    border: 'rgba(140, 103, 33, 0.4)',
+    medium: 'Fountain Pen Ink on Handmade Cotton Rag',
+    palette: ['#f7f2e7', '#8c6721', '#c7bca7', '#1e1913', '#ded6c1']
+  }
+];
+
+interface PoetryFontOption {
+  id: PoetryFont;
+  label: string;
+  fontFamily: string;
+  category: string;
+}
+
+const POETRY_FONTS: PoetryFontOption[] = [
+  {
+    id: 'cormorant',
+    label: 'Cormorant Garamond',
+    fontFamily: "'Cormorant Garamond', Georgia, serif",
+    category: 'Classic Atelier Serif'
+  },
+  {
+    id: 'playfair',
+    label: 'Playfair Display',
+    fontFamily: "'Playfair Display', Georgia, serif",
+    category: 'Dramatic & Lyrical'
+  },
+  {
+    id: 'newsreader',
+    label: 'Newsreader',
+    fontFamily: "'Newsreader', 'EB Garamond', Georgia, serif",
+    category: 'Refined Literary'
+  },
+  {
+    id: 'handcrafted',
+    label: 'Caveat Script',
+    fontFamily: "'Caveat', cursive, sans-serif",
+    category: 'Organic Handwriting'
+  },
+  {
+    id: 'cinzel',
+    label: 'Cinzel Classical',
+    fontFamily: "'Cinzel', serif",
+    category: 'Archaic Royal'
+  },
+  {
+    id: 'nastaliq',
+    label: 'Noto Nastaliq (Ghazal)',
+    fontFamily: "'Noto Nastaliq Urdu', 'Amiri', serif, system-ui",
+    category: 'Urdu & Calligraphy'
+  }
+];
+
+const PRESET_POETRY_SAMPLES = [
+  {
+    title: 'Marginalia',
+    subtitle: 'From "Nocturne Fragments"',
+    author: 'Afshaan Shaikh',
+    theme: 'obsidian' as PoetryTheme,
+    font: 'cormorant' as PoetryFont,
+    alignment: 'center' as const,
+    stanzas: [
+      'I have always written in the margins,\nthat narrow corridor between the printed thought\nand the silence of the page.',
+      'Here the ink dries slower;\nhere the night is kept exactly as it fell,\nneither remembered nor forgotten.',
+      'We build with love for all the creative souls;\nlet every whisper find its sanctuary.'
+    ],
+    medium: 'Golden Ink on Obsidian Vellum',
+    palette: ['#12141d', '#e3c27a', '#342918', '#f3ead3', '#08090d']
+  },
+  {
+    title: 'Dard Aur Khamoshi (درد اور خاموشی)',
+    subtitle: 'Ghazal Collection · دفترِ غزل',
+    author: 'Afshaan Shaikh',
+    theme: 'vellum' as PoetryTheme,
+    font: 'nastaliq' as PoetryFont,
+    alignment: 'right' as const,
+    stanzas: [
+      'ہر ایک بات پہ کہتے ہو تم کہ تو کیا ہے\nتمہیں کہو کہ یہ اندازِ گفتگو کیا ہے',
+      'چپکے چپکے رات دن آنسو بہانا یاد ہے\nہم کو اب تک عاشقی کا وہ زمانہ یاد ہے',
+      'بنا کر فقیروں کا ہم بھیس غالبؔ\nتماشائے اہلِ کرم دیکھتے ہیں'
+    ],
+    medium: 'Calligraphic Nastaliq on Antique Parchment',
+    palette: ['#241e17', '#e3c27a', '#785628', '#f5ebd7', '#120e0a']
+  },
+  {
+    title: 'Anatomy of the Night Wind',
+    subtitle: 'From "Monasteries of the Rain"',
+    author: 'Elena Vance',
+    theme: 'midnight' as PoetryTheme,
+    font: 'playfair' as PoetryFont,
+    alignment: 'center' as const,
+    stanzas: [
+      'The wind carries no message other than its own cold velocity,\nparting the pine needles like rosary beads in an old cathedral.',
+      'To write at midnight is to believe that someone, somewhere,\nis awake and listening to the breathing of the dark.'
+    ],
+    medium: 'Letterpress Typography on Midnight Silk Paper',
+    palette: ['#0e1628', '#89b4e8', '#2a4269', '#dbe7f5', '#060a14']
+  }
+];
+
+const PRESET_HANDWRITTEN_SAMPLES = [
+  {
+    title: 'Autumn Journal Fragment',
+    src: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80',
+    medium: 'Vintage Fountain Pen & Ink on Moleskine Journal',
+    palette: ['#26231e', '#e3c27a', '#94836f', '#f4ecd8', '#14120f']
+  },
+  {
+    title: 'Calligraphic Stanza in Urfa Ink',
+    src: 'https://images.unsplash.com/photo-1544717302-de2939b7ef71?auto=format&fit=crop&w=1200&q=80',
+    medium: 'Dip Pen & Sepia Pigment on Handmade Deckle Paper',
+    palette: ['#1c1a17', '#d9b878', '#6b5842', '#ebe1cd', '#100e0c']
+  },
+  {
+    title: 'Midnight Poetry Draft',
+    src: 'https://images.unsplash.com/photo-1516962215378-7fa2e137ae93?auto=format&fit=crop&w=1200&q=80',
+    medium: 'Graphite & Walnut Ink on Heavy Cotton Rag',
+    palette: ['#181a1d', '#c9a875', '#4a4d52', '#d5d7db', '#0f1012']
+  }
+];
+
+// Curated Masterpiece Demo Assets for Visual Arts
 const PRESET_ART_IMAGES = [
   {
     name: 'Nocturnal Metamorphosis',
     src: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1200&q=80',
     category: 'painting' as const,
-    medium: 'Oil on Belgian Canvas',
-    palette: ['#0f0f14', '#c9a875', '#382f25', '#e9dfd0', '#635340']
+    medium: 'Oil on Belgian Linen',
+    palette: ['#161214', '#e2c277', '#875d31', '#f0e6d2', '#2f241a']
   },
   {
-    name: 'Graphite Resonance',
+    name: 'Anatomy of Solitude',
     src: 'https://images.unsplash.com/photo-1544717302-de2939b7ef71?auto=format&fit=crop&w=1200&q=80',
     category: 'drawing' as const,
     medium: 'Compressed Charcoal & Graphite',
@@ -86,7 +297,65 @@ const PRESET_MUSIC_TRACKS = [
   }
 ];
 
-// Color utilities matching the provided design
+function escapeXml(unsafe: string) {
+  return (unsafe || '').replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case "'": return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+
+function generatePoemCardDataUrl(
+  title: string,
+  subtitle: string,
+  stanzas: string[],
+  signature: string,
+  theme: PoetryTheme,
+  font: PoetryFont,
+  alignment: 'left' | 'center' | 'right'
+): string {
+  const currentTheme = POETRY_THEMES.find((t) => t.id === theme) || POETRY_THEMES[0];
+  const currentFont = POETRY_FONTS.find((f) => f.id === font) || POETRY_FONTS[0];
+
+  const textAnchor = alignment === 'center' ? 'middle' : alignment === 'right' ? 'end' : 'start';
+  const textX = alignment === 'center' ? 400 : alignment === 'right' ? 720 : 80;
+
+  const stanzaSvg = (stanzas.length > 0 ? stanzas : ['Silence speaks in verse.'])
+    .slice(0, 4)
+    .map((st, sIdx) => {
+      const lines = st.split('\n');
+      return lines
+        .map(
+          (l, lIdx) =>
+            `<tspan x="${textX}" dy="${lIdx === 0 && sIdx > 0 ? '36' : '26'}">${escapeXml(l)}</tspan>`
+        )
+        .join('');
+    })
+    .join('');
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+    <rect width="800" height="1000" fill="${currentTheme.bg}"/>
+    <rect x="24" y="24" width="752" height="952" fill="none" stroke="${currentTheme.border}" stroke-width="1.5" rx="10"/>
+    <rect x="32" y="32" width="736" height="936" fill="none" stroke="${currentTheme.border}" stroke-width="0.75" stroke-dasharray="4 4" rx="6"/>
+    <text x="400" y="85" text-anchor="middle" fill="${currentTheme.acc}" font-family="'Space Mono', monospace" font-size="11" letter-spacing="4">✦ ATELIER POETIC ARCHIVE ✦</text>
+    ${subtitle ? `<text x="400" y="130" text-anchor="middle" fill="${currentTheme.sub}" font-family="${currentFont.fontFamily}" font-size="16" font-style="italic">${escapeXml(subtitle)}</text>` : ''}
+    <text x="400" y="195" text-anchor="middle" fill="${currentTheme.ink}" font-family="${currentFont.fontFamily}" font-size="34" font-weight="600">${escapeXml(title || 'Untitled Verse')}</text>
+    <line x1="300" y1="225" x2="500" y2="225" stroke="${currentTheme.acc}" stroke-width="1" opacity="0.6"/>
+    <text y="280" fill="${currentTheme.ink}" font-family="${currentFont.fontFamily}" font-size="20" text-anchor="${textAnchor}">
+      ${stanzaSvg}
+    </text>
+    <text x="400" y="915" text-anchor="middle" fill="${currentTheme.sub}" font-family="${currentFont.fontFamily}" font-size="15" font-style="italic">${escapeXml(signature || '— Atelier Poet, 2026')}</text>
+  </svg>`;
+
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+// Color utilities
 function hex(c: string): string {
   const x = document.createElement('canvas').getContext('2d');
   if (!x) return '#c9a875';
@@ -150,12 +419,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   initialCategory,
   initialFormat
 }) => {
-  // Modal Card Ref for custom events and shake animations
   const modalRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const musicAudioInputRef = useRef<HTMLInputElement>(null);
   const musicCoverInputRef = useRef<HTMLInputElement>(null);
   const musicAudioPlayerRef = useRef<HTMLAudioElement | null>(null);
+  const handwrittenInputRef = useRef<HTMLInputElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
   const createdObjectUrlsRef = useRef<string[]>([]);
 
@@ -176,7 +445,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   // Form State
   const [step, setStep] = useState<number>(0);
   const [typeIndex, setTypeIndex] = useState<number>(2); // 0: Song, 1: Poetry, 2: Digital, 3: Integer, 4: Motion Loop
-  const [styleIndex, setStyleIndex] = useState<number>(2); // 0: Painting, 1: Drawing, 2: Digital, 3: Video
+  const [styleIndex, setStyleIndex] = useState<number>(3); // 0: Poetry Cards, 1: Painting, 2: Drawing, 3: Digital, 4: Video
   const [mediaSrc, setMediaSrc] = useState<string>('');
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [isVideo, setIsVideo] = useState<boolean>(false);
@@ -213,197 +482,243 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [musicLyrics, setMusicLyrics] = useState<string>('');
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
 
-  // Poetry Specific Fields
+  // Dedicated Poetry Studio Fields
+  const [poetryMode, setPoetryMode] = useState<'compose' | 'upload'>('compose');
+  const [poetryRawText, setPoetryRawText] = useState<string>(
+    'I have always written in the margins,\nthat narrow corridor between the printed thought\nand the silence of the page.\n\nHere the ink dries slower;\nhere the night is kept exactly as it fell,\nneither remembered nor forgotten.\n\nWe build with love for all the creative souls;\nlet every whisper find its sanctuary.'
+  );
   const [poetrySubtitle, setPoetrySubtitle] = useState<string>('From the Nocturne Fragments');
-  const [authorSignature, setAuthorSignature] = useState<string>('— Atelier Member');
+  const [authorSignature, setAuthorSignature] = useState<string>('— Afshaan Shaikh, 2026');
+  const [poetryTheme, setPoetryTheme] = useState<PoetryTheme>('obsidian');
+  const [poetryFont, setPoetryFont] = useState<PoetryFont>('cormorant');
+  const [poetryAlignment, setPoetryAlignment] = useState<'left' | 'center' | 'right'>('center');
+  const [handwrittenSrc, setHandwrittenSrc] = useState<string>('');
+  const [handwrittenFile, setHandwrittenFile] = useState<File | null>(null);
+
+  // Active theme and font objects
+  const currentTheme = useMemo(
+    () => POETRY_THEMES.find((t) => t.id === poetryTheme) || POETRY_THEMES[0],
+    [poetryTheme]
+  );
+  const currentFont = useMemo(
+    () => POETRY_FONTS.find((f) => f.id === poetryFont) || POETRY_FONTS[0],
+    [poetryFont]
+  );
+
+  // Parsed stanzas
+  const parsedStanzas = useMemo(() => {
+    return poetryRawText
+      .split(/\n\s*\n/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  }, [poetryRawText]);
 
   // Initialize from props when opened
   useEffect(() => {
     if (isOpen) {
-      // Remember previously focused element to return focus on close
       previousActiveElementRef.current = document.activeElement as HTMLElement | null;
-
-      // Lock scroll
-      const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
 
-      // Set category / format if provided
       if (initialCategory === 'music' || initialFormat?.includes('music') || initialFormat?.includes('song')) {
         setTypeIndex(0);
+        setStyleIndex(3); // Digital / audio
         setRatioIndex(0); // Square 1:1
       } else if (initialCategory === 'poetry' || initialFormat?.includes('poetry')) {
         setTypeIndex(1);
+        setStyleIndex(0); // Poetry Cards
         setRatioIndex(1); // Tall 3:4
+        setTitle('Marginalia');
+        setMedium('Golden Ink on Obsidian Vellum · Cormorant Garamond');
+        setPalette(POETRY_THEMES[0].palette);
       } else if (initialFormat === 'integer art') {
         setTypeIndex(3);
+        setStyleIndex(3);
         setMedium('Algorithmic Integer Canvas & Shader Code');
       } else if (initialCategory === 'video' || initialFormat?.includes('video') || initialFormat?.includes('motion')) {
         setTypeIndex(4);
-        setStyleIndex(3);
-        setRatioIndex(2); // Wide 4:3
+        setStyleIndex(4); // Video
+        setRatioIndex(2); // Wide
       } else if (initialCategory === 'painting') {
         setTypeIndex(2);
-        setStyleIndex(0);
+        setStyleIndex(1);
       } else if (initialCategory === 'drawing') {
         setTypeIndex(2);
-        setStyleIndex(1);
+        setStyleIndex(2);
       } else {
         setTypeIndex(2);
-        setStyleIndex(2);
+        setStyleIndex(3);
       }
-
-      return () => {
-        document.body.style.overflow = originalOverflow;
-      };
-    }
-  }, [isOpen, initialCategory, initialFormat]);
-
-  // Clean up object URLs on close or unmount
-  const revokeObjectUrls = useCallback(() => {
-    createdObjectUrlsRef.current.forEach((url) => {
-      try {
-        URL.revokeObjectURL(url);
-      } catch (e) {
-        // ignore
-      }
-    });
-    createdObjectUrlsRef.current = [];
-  }, []);
-
-  const handleClose = useCallback(() => {
-    if (musicAudioPlayerRef.current) {
-      musicAudioPlayerRef.current.pause();
-    }
-    revokeObjectUrls();
-    onClose();
-
-    // Return keyboard focus to the opening element
-    setTimeout(() => {
-      if (previousActiveElementRef.current && typeof previousActiveElementRef.current.focus === 'function') {
+    } else {
+      document.body.style.overflow = '';
+      if (previousActiveElementRef.current) {
         previousActiveElementRef.current.focus();
       }
-    }, 50);
-  }, [onClose, revokeObjectUrls]);
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, initialCategory, initialFormat]);
 
-  // Keyboard navigation & Esc key handler
+  // Clean up Object URLs on unmount
+  useEffect(() => {
+    const urls = createdObjectUrlsRef.current;
+    return () => {
+      urls.forEach((u) => {
+        try {
+          URL.revokeObjectURL(u);
+        } catch {
+          // ignore
+        }
+      });
+      if (musicAudioPlayerRef.current) {
+        musicAudioPlayerRef.current.pause();
+      }
+    };
+  }, []);
+
+  // Keyboard navigation & Focus trapping
   useEffect(() => {
     if (!isOpen) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        handleClose();
+        onClose();
+        return;
       }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, handleClose]);
-
-  // Set media source safely
-  const updateMediaSource = useCallback(
-    (src: string, isVideoMedia: boolean, file?: File) => {
-      setMediaSrc(src);
-      setMediaFile(file || null);
-      setIsVideo(isVideoMedia);
-      if (file) {
-        if (!title) {
-          const autoTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-          setTitle(autoTitle);
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
         }
       }
-      if (isVideoMedia) {
-        setPalette(randPalette());
-      } else {
-        extractColors(src).then((p) => setPalette(p));
-      }
-    },
-    [title]
-  );
+    };
 
-  // File upload handler
-  const processUploadedFile = useCallback(
-    (f: File) => {
-      if (!f) return;
-      if (f.size > 50 * 1024 * 1024) {
-        showToast('That file is over 50 MB. Try a smaller one.');
-        return;
-      }
-      if (!/^(image|video)\//.test(f.type) && !/\.(mp4|webm|mov|m4v|gif|jpg|jpeg|png|webp)$/i.test(f.name)) {
-        showToast('Please choose an image, GIF or MP4.');
-        return;
-      }
-      const isVid = f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v)$/i.test(f.name);
-      const objUrl = URL.createObjectURL(f);
-      createdObjectUrlsRef.current.push(objUrl);
-      updateMediaSource(objUrl, isVid, f);
-    },
-    [showToast, updateMediaSource]
-  );
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
-  // Audio file upload handler (for music kind)
-  const processAudioFile = useCallback(
-    (f: File) => {
-      if (!f) return;
-      if (f.size > 50 * 1024 * 1024) {
-        showToast('That audio file is over 50 MB. Try a smaller one.');
-        return;
-      }
-      const objUrl = URL.createObjectURL(f);
-      createdObjectUrlsRef.current.push(objUrl);
-      setMusicAudioSrc(objUrl);
-      if (!title) {
-        setTitle(f.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
-      }
-      if (musicAudioPlayerRef.current) {
-        musicAudioPlayerRef.current.src = objUrl;
-        musicAudioPlayerRef.current.load();
-      }
-    },
-    [showToast, title]
-  );
-
-  // Cover file upload handler (for music kind)
-  const processCoverFile = useCallback(
-    (f: File) => {
-      if (!f) return;
-      const objUrl = URL.createObjectURL(f);
-      createdObjectUrlsRef.current.push(objUrl);
-      setMusicCoverSrc(objUrl);
-      extractColors(objUrl).then((p) => setPalette(p));
-    },
-    []
-  );
-
-  // Completeness percentage
+  // Readiness Calculation
   const readyPct = useMemo(() => {
-    const hasMedia = typeIndex === 0 ? !!musicAudioSrc : !!mediaSrc;
-    const hasTitle = !!title.trim();
-    const hasMedium = !!medium.trim();
-    const hasStory = story.trim().length > 10;
-    const hasTags = tags.length > 0;
-    return Math.round((100 * ((hasMedia ? 1 : 0) + (hasTitle ? 1 : 0) + (hasMedium ? 1 : 0) + (hasStory ? 1 : 0) + (hasTags ? 1 : 0))) / 5);
-  }, [typeIndex, musicAudioSrc, mediaSrc, title, medium, story, tags]);
+    let p = 0;
+    if (typeIndex === 0) {
+      if (musicAudioSrc) p += 30;
+      if (musicCoverSrc) p += 25;
+    } else if (typeIndex === 1) {
+      if (poetryMode === 'compose') {
+        if (poetryRawText.trim().length > 10) p += 35;
+        if (poetryTheme) p += 20;
+      } else {
+        if (handwrittenSrc) p += 55;
+      }
+    } else {
+      if (mediaSrc) p += 55;
+    }
+    if (title.trim()) p += 25;
+    if (story.trim() || (typeIndex === 1 && poetryRawText.trim())) p += 10;
+    if (tags.length) p += 10;
+    return Math.min(100, p);
+  }, [typeIndex, musicAudioSrc, musicCoverSrc, poetryMode, poetryRawText, poetryTheme, handwrittenSrc, mediaSrc, title, story, tags.length]);
 
-  // Validation before advancing steps
+  // Media Source Handler
+  const updateMediaSource = (src: string, isVid = false, fileObj?: File) => {
+    setMediaSrc(src);
+    setIsVideo(isVid);
+    if (fileObj) setMediaFile(fileObj);
+    extractColors(src).then((p) => setPalette(p));
+  };
+
+  const processFile = (file: File) => {
+    if (file.size > 52428800) {
+      showToast('File is over 50 MB limit.');
+      return;
+    }
+    const isVid = file.type.startsWith('video/');
+    const url = URL.createObjectURL(file);
+    createdObjectUrlsRef.current.push(url);
+    updateMediaSource(url, isVid, file);
+    if (!title) {
+      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      setTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
+    }
+  };
+
+  const processAudioFile = (file: File) => {
+    if (file.size > 52428800) {
+      showToast('Audio file exceeds 50 MB limit.');
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    createdObjectUrlsRef.current.push(url);
+    setMusicAudioSrc(url);
+    if (!title) {
+      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      setTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
+    }
+    showToast('Master audio loaded.');
+  };
+
+  const processCoverFile = (file: File) => {
+    if (file.size > 52428800) {
+      showToast('Cover image exceeds 50 MB limit.');
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    createdObjectUrlsRef.current.push(url);
+    setMusicCoverSrc(url);
+    extractColors(url).then((p) => setPalette(p));
+  };
+
+  const processHandwrittenFile = (file: File) => {
+    if (file.size > 52428800) {
+      showToast('Manuscript file exceeds 50 MB limit.');
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    createdObjectUrlsRef.current.push(url);
+    setHandwrittenSrc(url);
+    setHandwrittenFile(file);
+    setMediaSrc(url);
+    extractColors(url).then((p) => setPalette(p));
+    if (!title) {
+      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      setTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
+    }
+    showToast('Handwritten manuscript loaded.');
+  };
+
   const validateStep = (currentStep: number): boolean => {
     if (currentStep === 1) {
       if (typeIndex === 0 && !musicAudioSrc) {
-        showToast('Add your music track first.');
+        showToast('Please add a master audio composition first.');
         return false;
       }
-      if (typeIndex !== 0 && !mediaSrc) {
-        showToast('Add your artwork first. Try a sample if you like.');
+      if (typeIndex === 1 && poetryMode === 'upload' && !handwrittenSrc) {
+        showToast('Please upload your handwritten poetry manuscript first.');
+        return false;
+      }
+      if (typeIndex !== 0 && typeIndex !== 1 && !mediaSrc) {
+        showToast('Please add your artwork file, link, or choose a sample.');
         return false;
       }
     }
     if (currentStep === 2) {
       if (!title.trim()) {
-        showToast('Please give your piece a title.');
         setHasTitleError(true);
         if (modalRef.current) {
-          modalRef.current.classList.remove('shake');
-          void modalRef.current.offsetWidth;
           modalRef.current.classList.add('shake');
+          setTimeout(() => modalRef.current?.classList.remove('shake'), 450);
         }
+        showToast('Please give your piece a title.');
         return false;
       }
     }
@@ -423,113 +738,74 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     setStep(0);
     setMediaSrc('');
     setMediaFile(null);
-    setIsVideo(false);
     setTitle('');
     setStory('');
     setTags([]);
-    setUrlInput('');
-    setHasTitleError(false);
+    setHandwrittenSrc('');
+    setHandwrittenFile(null);
     setIsSuccess(false);
-    revokeObjectUrls();
-    showToast('Cleared. Start fresh whenever you like.');
+    onClose();
   };
 
-  // Submit & Inaugurate to Sanctuary
-  const handlePublish = async () => {
-    const activeKind = TYPES[typeIndex][1];
-    const activeStyle = STYLES[styleIndex];
-
-    const isMusicTrack = typeIndex === 0;
-    const hasMedia = isMusicTrack ? !!musicAudioSrc : !!mediaSrc;
-
-    if (!hasMedia) {
-      showToast('Add your artwork to publish.');
-      if (modalRef.current) {
-        modalRef.current.classList.remove('shake');
-        void modalRef.current.offsetWidth;
-        modalRef.current.classList.add('shake');
-      }
-      setStep(1);
+  // Tag Manager
+  const addTag = (text: string) => {
+    const clean = text.trim().replace(/^#/, '');
+    if (!clean) return;
+    if (tags.length >= 6) {
+      showToast('Maximum 6 tags permitted.');
       return;
     }
+    if (!tags.includes(clean)) {
+      setTags([...tags, clean]);
+    }
+    setTagInput('');
+  };
 
+  const removeTag = (t: string) => {
+    setTags(tags.filter((x) => x !== t));
+  };
+
+  // Publish to Sanctuary
+  const handlePublish = async () => {
     if (!title.trim()) {
-      showToast('Please give your piece a title.');
       setHasTitleError(true);
-      if (modalRef.current) {
-        modalRef.current.classList.remove('shake');
-        void modalRef.current.offsetWidth;
-        modalRef.current.classList.add('shake');
-      }
       setStep(2);
+      showToast('Title is required to inaugurate.');
       return;
     }
 
     setIsSubmitting(true);
-
     try {
-      // 1. Dispatch custom event per Requirement 3
-      const publishDetail = {
-        kind: activeKind,
-        style: activeStyle,
-        file: mediaFile,
-        url: mediaFile ? '' : mediaSrc,
-        title: title.trim(),
-        medium: medium.trim(),
-        dimensions: dims.trim(),
-        year: year,
-        aspect: RATIOS[ratioIndex],
-        statement: story.trim(),
-        palette: palette,
-        tags: tags
-      };
+      const activeStyle = STYLES[styleIndex];
+      const newArtId = `aq-sanctuary-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-      if (modalRef.current) {
-        modalRef.current.dispatchEvent(
-          new CustomEvent('sanctuary:publish', {
-            bubbles: true,
-            detail: publishDetail
-          })
-        );
-      }
+      const artistObj = isGuest
+        ? {
+            id: 'guest',
+            name: guestName.trim() || 'Guest Artist',
+            handle: guestHandle.trim().startsWith('@') ? guestHandle.trim() : `@${guestHandle.trim() || 'guest_artist'}`,
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
+            verified: false
+          }
+        : currentUser;
 
-      // 2. Upload file to Supabase if present
-      let resolvedMediaUrl = mediaSrc.trim() || '/curatorial-masterpiece.svg';
+      let resolvedMediaUrl = mediaSrc;
       if (mediaFile) {
         try {
           const uploadedUrl = await uploadArtworkMediaToStorage(mediaFile);
           if (uploadedUrl) resolvedMediaUrl = uploadedUrl;
-        } catch (storageErr) {
-          console.warn('[UploadModal] Cloud storage upload fallback to local URL:', storageErr);
+        } catch (err) {
+          console.warn('Storage upload fallback to object URL:', err);
         }
       }
 
-      // 3. Prepare Artist Object
-      const artistObj = isGuest
-        ? {
-            id: `guest-${Date.now()}`,
-            name: guestName.trim() || 'Guest Artist',
-            handle: guestHandle.startsWith('@') ? guestHandle.trim() : `@${guestHandle.trim() || 'guest'}`,
-            avatar: '/curatorial-masterpiece.svg',
-            verified: false
-          }
-        : {
-            id: currentUser.id,
-            name: currentUser.name,
-            handle: currentUser.handle,
-            avatar: currentUser.avatar || '/curatorial-masterpiece.svg',
-            verified: currentUser.verified ?? true
-          };
-
-      const newArtId = `art-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-      const mappedAspect: AspectRatioType = ratioIndex === 0 ? 'square' : ratioIndex === 2 || ratioIndex === 3 ? 'wide' : 'tall';
-
-      // 4. Build Artwork Object matching database schema
       let createdArtwork: Artwork;
 
-      if (isMusicTrack) {
-        const resolvedAudio = musicAudioSrc || '/audio/wsKhe5rTKw8.mp4';
-        const resolvedCover = musicCoverSrc || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&q=80';
+      if (typeIndex === 0) {
+        // Original Music
+        let resolvedAudio = musicAudioSrc;
+        let resolvedCover = musicCoverSrc;
+
         const trackTitle = title.trim();
 
         createdArtwork = {
@@ -537,13 +813,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           title: trackTitle,
           category: 'music',
           artist: artistObj,
-          mediaUrl: resolvedAudio,
+          mediaUrl: resolvedCover,
           thumbnailUrl: resolvedCover,
-          medium: `Original Master • ${musicGenre}`,
-          dimensions: 'Master Vinyl Studio Recording',
+          dimensions: 'Master Acoustic Audio (Lossless)',
+          medium: `${musicGenre.trim() || 'Acoustic Master'} · 44.1kHz`,
           year: year,
-          description: story.trim() || `Original musical composition "${trackTitle}" published in The Artisan's Quill sanctuary.`,
-          tags: tags.length > 0 ? tags : ['Music', 'Original Song', musicGenre, 'Sanctuary Audio'],
+          description: story.trim() || `${trackTitle} — An evocative original composition recorded for The Artisan's Quill sanctuary.`,
+          tags: tags.length > 0 ? tags : ['Original Music', 'Acoustic', 'Sanctuary Master'],
           likesCount: 0,
           viewsCount: 1,
           savesCount: 0,
@@ -555,9 +831,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           colorPalette: palette,
           musicData: {
             audioUrl: resolvedAudio,
-            coverArtUrl: resolvedCover,
+            coverUrl: resolvedCover,
             album: musicAlbum.trim() || 'Atelier Master Sessions',
-            durationSeconds: musicDurationSeconds || 215,
             duration: `${Math.floor((musicDurationSeconds || 215) / 60)}:${String((musicDurationSeconds || 215) % 60).padStart(2, '0')}`,
             genre: musicGenre.trim() || 'Original Composition',
             isOriginalComposition: true,
@@ -568,7 +843,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           }
         };
 
-        // Automatically register to the floating sanctuary background ambience player queue
         registerCommunityTrack({
           id: newArtId,
           title: trackTitle,
@@ -580,23 +854,45 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           durationSeconds: musicDurationSeconds || 215
         });
       } else if (typeIndex === 1) {
-        // Poetry Card
-        const stanzas = story
-          .split(/\n\s*\n/)
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0);
+        // Poetry Card: Composed on Aesthetic Paper OR Uploaded Handwritten Manuscript
+        let poetryMedia = resolvedMediaUrl;
+
+        if (poetryMode === 'compose') {
+          // Generate a high-resolution SVG Data URL representing the exact aesthetic paper card
+          poetryMedia = generatePoemCardDataUrl(
+            title.trim(),
+            poetrySubtitle.trim(),
+            parsedStanzas,
+            authorSignature.trim() || (isGuest ? `— ${guestName.trim()}` : `— ${artistObj.name}`),
+            poetryTheme,
+            poetryFont,
+            poetryAlignment
+          );
+        } else if (handwrittenFile) {
+          try {
+            const uploadedUrl = await uploadArtworkMediaToStorage(handwrittenFile);
+            if (uploadedUrl) poetryMedia = uploadedUrl;
+          } catch (err) {
+            console.warn('Storage upload fallback:', err);
+          }
+        }
+
+        const readingTime = Math.max(1, Math.ceil((poetryRawText || story).split(/\s+/).filter(Boolean).length / 70));
 
         createdArtwork = {
           id: newArtId,
           title: title.trim(),
           category: 'poetry',
           artist: artistObj,
-          mediaUrl: resolvedMediaUrl,
-          thumbnailUrl: resolvedMediaUrl,
-          medium: medium.trim() || 'Poetic Lyric & Typography Card',
-          dimensions: dims.trim() || 'Aesthetic Card',
+          mediaUrl: poetryMedia,
+          thumbnailUrl: poetryMedia,
+          medium:
+            poetryMode === 'compose'
+              ? `${currentTheme.medium} · ${currentFont.label}`
+              : medium.trim() || 'Handwritten Manuscript on Archival Paper',
+          dimensions: dims.trim() || 'Archival Folio (1200 × 1600 px)',
           year: year,
-          description: story.trim() || 'Curated poetry card crafted in The Artisan\'s Quill.',
+          description: story.trim() || (poetrySubtitle ? `${title} (${poetrySubtitle})` : 'Curated poetry card crafted in The Artisan\'s Quill.'),
           tags: tags.length > 0 ? tags : ['Poetry', 'Lyric Verse', 'Atelier'],
           likesCount: 0,
           viewsCount: 1,
@@ -608,23 +904,23 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           featured: false,
           colorPalette: palette,
           poetryContent: {
-            stanzas: stanzas.length > 0 ? stanzas : [story || 'Silence speaks in verse.'],
-            theme: 'obsidian' as PoetryTheme,
-            fontStyle: 'cormorant' as PoetryFont,
-            alignment: 'center',
-            readingTimeMinutes: Math.max(1, Math.ceil((story || '').split(/\s+/).length / 70)),
-            authorSignature: authorSignature.trim() || (isGuest ? `— ${guestName.trim()}` : '— Atelier Poet'),
+            stanzas: parsedStanzas.length > 0 ? parsedStanzas : [poetryRawText.trim() || story.trim() || 'Silence speaks in verse.'],
+            theme: poetryTheme,
+            fontStyle: poetryFont,
+            alignment: poetryAlignment === 'right' ? 'center' : poetryAlignment,
+            readingTimeMinutes: readingTime,
+            authorSignature: authorSignature.trim() || (isGuest ? `— ${guestName.trim()}` : `— ${artistObj.name}`),
             subtitle: poetrySubtitle.trim()
           }
         };
       } else {
         // Visual Arts: Digital Art, Integer Art, Motion Loop, Painting, Drawing
-        const isMotionVideo = typeIndex === 4 || styleIndex === 3 || isVideo || resolvedMediaUrl.match(/\.(mp4|webm|mov|m4v|ogv)/i) != null;
+        const isMotionVideo = typeIndex === 4 || styleIndex === 4 || isVideo || resolvedMediaUrl.match(/\.(mp4|webm|mov|m4v|ogv)/i) != null;
         const resolvedCategory: ArtCategory = isMotionVideo
           ? 'video'
-          : styleIndex === 0
-          ? 'painting'
           : styleIndex === 1
+          ? 'painting'
+          : styleIndex === 2
           ? 'drawing'
           : 'digital';
 
@@ -648,36 +944,53 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             story.trim() ||
             (isMotionVideo
               ? "A curated motion cinema loop in The Artisan's Quill sanctuary."
-              : 'Artist piece published in the sanctuary.'),
-          tags: tags.length > 0 ? tags : [isMotionVideo ? 'VIDEO' : resolvedCategory.toUpperCase(), 'Atelier Collection'],
+              : 'Fine digital artwork inaugurated to the sanctuary collection.'),
+          tags: tags.length > 0 ? tags : ['Atelier Masterpiece', activeStyle, 'Sanctuary Archive'],
           likesCount: 0,
           viewsCount: 1,
           savesCount: 0,
           createdAt: new Date().toISOString(),
-          aspectRatio: mappedAspect,
-          colorPalette: palette,
+          aspectRatio: (AR[ratioIndex] === '1/1'
+            ? 'square'
+            : AR[ratioIndex] === '3/4'
+            ? 'tall'
+            : AR[ratioIndex] === '4/3'
+            ? 'wide'
+            : AR[ratioIndex] === '16/9'
+            ? 'ultrawide'
+            : 'portrait') as AspectRatioType,
           isLiked: false,
           isSaved: false,
           featured: false,
+          colorPalette: palette,
           videoData: isMotionVideo
             ? {
-                duration: '0:30 (Loop)',
-                isLoop: true,
-                resolution: '4K Cinema',
-                hasAudio: true
+                videoUrl: resolvedMediaUrl,
+                posterUrl: resolvedMediaUrl,
+                loopDurationSeconds: 16,
+                fps: 60,
+                resolution: '4K Volumetric Cinema',
+                codec: 'H.264 / AAC High-Fidelity',
+                audioTrackUrl: '/audio/wsKhe5rTKw8.mp4',
+                colorProfile: 'DCI-P3 Wide Gamut'
               }
             : undefined
         };
       }
 
+      // Dispatch custom event for system compatibility
+      const publishEvent = new CustomEvent('sanctuary:publish', {
+        bubbles: true,
+        detail: { artwork: createdArtwork, timestamp: Date.now() }
+      });
+      window.dispatchEvent(publishEvent);
+
       // Execute parent callback
       onSuccess(createdArtwork);
-
-      // Trigger success view
       setIsSuccess(true);
-    } catch (err: any) {
-      console.error('[UploadModal] Inauguration failed:', err);
-      showToast('Inauguration failed. Please try again.');
+    } catch (err) {
+      console.error('Inauguration error:', err);
+      showToast('Could not complete inauguration. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -685,97 +998,49 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentDisplayMedia = typeIndex === 0 ? musicCoverSrc : mediaSrc;
-  const currentMediaIsVideo = typeIndex === 0 ? false : isVideo;
-
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-md"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 backdrop-blur-xl p-3 sm:p-6 overflow-y-auto"
       onClick={(e) => {
-        if (e.target === e.currentTarget) handleClose();
+        if (e.target === e.currentTarget) onClose();
       }}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="upload-modal-title"
+      aria-label="Upload Artwork, Poem or Music to Sanctuary"
     >
-      {/* Toast Notification */}
-      <div id="qu-toast" className={isToastActive ? 'on' : ''} role="status">
+      {/* Toast Notification Container */}
+      <div id="qu-toast" className={isToastActive ? 'on' : ''}>
         {toastMessage}
       </div>
 
-      {/* Hidden Audio Player for In-Modal Preview */}
-      <audio
-        ref={musicAudioPlayerRef}
-        src={musicAudioSrc}
-        onEnded={() => setIsAudioPlaying(false)}
-        onLoadedMetadata={() => {
-          if (musicAudioPlayerRef.current?.duration) {
-            setMusicDurationSeconds(Math.round(musicAudioPlayerRef.current.duration));
-          }
-        }}
-      />
-
-      {/* Modal Card */}
-      <div ref={modalRef} className="qu my-auto">
-        {/* Success Overlay */}
-        {isSuccess && (
-          <div className="ok" role="status">
-            <div>
-              <b>✦</b>
-              <h2>Welcome to the Sanctuary</h2>
-              <p>
-                <i>{title}</i> is now live for the world to see.
-              </p>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px' }}>
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={handleClose}
-                >
-                  Explore Sanctuary
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={handleReset}
-                >
-                  Share another piece
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Top Header */}
+      <div ref={modalRef} className="qu">
+        {/* Header */}
         <header className="mh">
-          <div className="ic">🎨</div>
+          <div className="ic">
+            {typeIndex === 0 ? '🎵' : typeIndex === 1 ? '🪶' : typeIndex === 4 ? '🎞️' : '🎨'}
+          </div>
           <div>
-            <h2 id="upload-modal-title">Share your work</h2>
+            <h2>Share your work</h2>
             <p>Four calm steps. No technical knowledge needed.</p>
           </div>
-          <button
-            type="button"
-            className="x"
-            onClick={handleClose}
-            aria-label="Close"
-          >
+          <button type="button" className="x" aria-label="Close dialog" onClick={onClose}>
             ✕
           </button>
         </header>
 
         {/* Modal Body & Step Navigation */}
         <div className="mb">
-          <nav className="stp">
-            {['Choose', 'Artwork', 'Story', 'Finish'].map((stName, idx) => (
+          <nav className="stp" aria-label="Upload steps">
+            {['1. Choose', '2. Artwork', '3. Story', '4. Finish'].map((label, idx) => (
               <button
-                key={stName}
+                key={label}
                 type="button"
                 className={`${idx === step ? 'on' : ''} ${idx < step ? 'dn' : ''}`}
                 onClick={() => {
                   if (idx <= step) setStep(idx);
                 }}
               >
-                {idx + 1}. {stName}
+                {label}
               </button>
             ))}
           </nav>
@@ -793,11 +1058,20 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     className={`tc ${idx === typeIndex ? 'on' : ''}`}
                     onClick={() => {
                       setTypeIndex(idx);
-                      if (idx === 0) setRatioIndex(0); // Square 1:1
-                      if (idx === 4) {
-                        setStyleIndex(3); // Video
+                      if (idx === 0) {
+                        setStyleIndex(3);
+                        setRatioIndex(0); // Square 1:1
+                      } else if (idx === 1) {
+                        setStyleIndex(0); // Poetry Cards
+                        setRatioIndex(1); // Tall 3:4
+                        setMedium('Golden Ink on Obsidian Vellum · Cormorant Garamond');
+                        if (!title) setTitle('Marginalia');
+                      } else if (idx === 4) {
+                        setStyleIndex(4); // Video
                         setIsVideo(true);
                         setRatioIndex(2); // Wide
+                      } else {
+                        setStyleIndex(3); // Digital
                       }
                     }}
                   >
@@ -816,7 +1090,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     className={`chip ${idx === styleIndex ? 'on' : ''}`}
                     onClick={() => {
                       setStyleIndex(idx);
-                      if (idx === 3) setIsVideo(true);
+                      if (st === 'Poetry Cards') {
+                        setTypeIndex(1);
+                        setRatioIndex(1);
+                      } else if (st === 'Video') {
+                        setIsVideo(true);
+                      }
                     }}
                   >
                     {st}
@@ -846,10 +1125,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                         type="text"
                         value={guestHandle}
                         onChange={(e) => setGuestHandle(e.target.value)}
-                        placeholder="e.g. @elena.art"
+                        placeholder="e.g. @elenavance"
                       />
                     </div>
                   </div>
+                  <small style={{ color: 'var(--mute)', display: 'block', marginTop: '8px' }}>
+                    Your public creations are preserved across the sanctuary live feed.
+                  </small>
                 </div>
               )}
             </section>
@@ -858,10 +1140,18 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           {/* STEP 1: ARTWORK */}
           <div hidden={step !== 1}>
             <section className="blk">
-              <h3>Add your artwork</h3>
+              <h3>
+                {typeIndex === 0
+                  ? 'Add your master music'
+                  : typeIndex === 1
+                  ? 'Compose or upload poetry'
+                  : 'Add your artwork'}
+              </h3>
               <p className="hint">
                 {typeIndex === 0
                   ? 'Add your master audio composition and album cover artwork.'
+                  : typeIndex === 1
+                  ? 'Compose on aesthetic papers with artistic fonts, or upload a handwritten manuscript.'
                   : 'Drag a file in, or tap the box. PNG, JPG, WebP, GIF or MP4 · up to 50 MB.'}
               </p>
 
@@ -928,38 +1218,32 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                               className="rm"
                               onClick={(e) => {
                                 e.preventDefault();
-                                musicAudioInputRef.current?.click();
+                                setMusicAudioSrc('');
+                                setIsAudioPlaying(false);
                               }}
                             >
-                              Replace Audio
+                              Remove
                             </button>
                           </div>
                         )}
                       </div>
                     </label>
+                    <audio
+                      ref={musicAudioPlayerRef}
+                      src={musicAudioSrc}
+                      onEnded={() => setIsAudioPlaying(false)}
+                      style={{ display: 'none' }}
+                    />
                   </div>
 
                   <div>
-                    <h4 style={{ margin: '12px 0 8px' }}>Album Cover Art (1:1 Square)</h4>
+                    <h4 style={{ margin: '0 0 8px' }}>Album Sleeve Cover Artwork</h4>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                      <div
-                        style={{
-                          width: '90px',
-                          height: '90px',
-                          borderRadius: '16px',
-                          overflow: 'hidden',
-                          border: '2px solid var(--line)',
-                          cursor: 'pointer',
-                          flexShrink: 0
-                        }}
-                        onClick={() => musicCoverInputRef.current?.click()}
-                      >
-                        <img
-                          src={musicCoverSrc}
-                          alt="Cover Art"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      </div>
+                      <img
+                        src={musicCoverSrc}
+                        alt="Album Cover"
+                        style={{ width: '84px', height: '84px', borderRadius: '12px', objectFit: 'cover', border: '1px solid var(--line)' }}
+                      />
                       <input
                         ref={musicCoverInputRef}
                         type="file"
@@ -1004,8 +1288,305 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     ))}
                   </div>
                 </div>
+              ) : typeIndex === 1 ? (
+                /* DEDICATED POETRY STUDIO & FORMATTER */
+                <div style={{ display: 'grid', gap: '20px' }}>
+                  {/* Mode Selector */}
+                  <div className="po-mode-row">
+                    <button
+                      type="button"
+                      className={`po-mode-btn ${poetryMode === 'compose' ? 'on' : ''}`}
+                      onClick={() => setPoetryMode('compose')}
+                    >
+                      <i>✍️</i>
+                      <div>
+                        <b>Compose on Aesthetic Paper</b>
+                        <span>Write live with luxury paper textures & artistic typefaces</span>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      className={`po-mode-btn ${poetryMode === 'upload' ? 'on' : ''}`}
+                      onClick={() => setPoetryMode('upload')}
+                    >
+                      <i>📜</i>
+                      <div>
+                        <b>Upload Handwritten Manuscript</b>
+                        <span>Fountain pen, calligraphy scan, sketchbook or typed verse</span>
+                      </div>
+                    </button>
+                  </div>
+
+                  {poetryMode === 'compose' ? (
+                    <>
+                      {/* Paper Tone Selector */}
+                      <div className="po-section">
+                        <div className="po-section-header">
+                          <h4>1. Choose Aesthetic Paper Tone</h4>
+                          <span className="po-badge">{currentTheme.label}</span>
+                        </div>
+                        <div className="po-paper-grid">
+                          {POETRY_THEMES.map((th) => (
+                            <button
+                              key={th.id}
+                              type="button"
+                              className={`po-paper-card ${poetryTheme === th.id ? 'on' : ''}`}
+                              onClick={() => {
+                                setPoetryTheme(th.id);
+                                setPalette(th.palette);
+                                setMedium(`${th.medium} · ${currentFont.label}`);
+                              }}
+                            >
+                              <div className="po-paper-swatch" style={{ background: th.bg, borderColor: th.border }}>
+                                <span style={{ color: th.acc }}>✦</span>
+                              </div>
+                              <div className="po-paper-info">
+                                <b>{th.label}</b>
+                                <span>{th.desc}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Typography & Alignment Selector */}
+                      <div className="po-section">
+                        <div className="po-section-header">
+                          <h4>2. Artistic Typography & Alignment</h4>
+                          <div className="po-align-group">
+                            <button
+                              type="button"
+                              className={`po-align-btn ${poetryAlignment === 'center' ? 'on' : ''}`}
+                              onClick={() => setPoetryAlignment('center')}
+                            >
+                              ≡ Center
+                            </button>
+                            <button
+                              type="button"
+                              className={`po-align-btn ${poetryAlignment === 'left' ? 'on' : ''}`}
+                              onClick={() => setPoetryAlignment('left')}
+                            >
+                              ⇤ Left
+                            </button>
+                            <button
+                              type="button"
+                              className={`po-align-btn ${poetryAlignment === 'right' ? 'on' : ''}`}
+                              onClick={() => setPoetryAlignment('right')}
+                            >
+                              ⇥ Right (Nastaliq)
+                            </button>
+                          </div>
+                        </div>
+                        <div className="po-font-chips">
+                          {POETRY_FONTS.map((font) => (
+                            <button
+                              key={font.id}
+                              type="button"
+                              className={`po-font-chip ${poetryFont === font.id ? 'on' : ''}`}
+                              style={{ fontFamily: font.fontFamily }}
+                              onClick={() => {
+                                setPoetryFont(font.id);
+                                if (font.id === 'nastaliq') setPoetryAlignment('right');
+                                setMedium(`${currentTheme.medium} · ${font.label}`);
+                              }}
+                            >
+                              {font.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* The Aesthetic Paper Writing Canvas */}
+                      <div
+                        className="po-canvas"
+                        style={{
+                          background: currentTheme.bg,
+                          color: currentTheme.ink,
+                          borderColor: currentTheme.border
+                        }}
+                      >
+                        <div className="po-canvas-header">
+                          <span className="po-canvas-eyebrow" style={{ color: currentTheme.acc }}>
+                            ✦ THE ARTISAN'S ARCHIVE · POETRY CANVAS ✦
+                          </span>
+                          <div className="po-canvas-inputs">
+                            <input
+                              type="text"
+                              className="po-canvas-title"
+                              placeholder="Title of Verse (e.g. Marginalia, Night Wind)"
+                              value={title}
+                              style={{
+                                color: currentTheme.ink,
+                                fontFamily: currentFont.fontFamily,
+                                textAlign: poetryAlignment
+                              }}
+                              onChange={(e) => {
+                                setTitle(e.target.value);
+                                if (e.target.value.trim()) setHasTitleError(false);
+                              }}
+                            />
+                            <input
+                              type="text"
+                              className="po-canvas-subtitle"
+                              placeholder="Collection / Subtitle (e.g. From 'Nocturne Fragments')"
+                              value={poetrySubtitle}
+                              style={{
+                                color: currentTheme.sub,
+                                fontFamily: currentFont.fontFamily,
+                                textAlign: poetryAlignment
+                              }}
+                              onChange={(e) => setPoetrySubtitle(e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="po-canvas-body">
+                          <textarea
+                            rows={8}
+                            className="po-canvas-stanzas"
+                            placeholder={`Write your poetic lines here...\n\nSeparate stanzas with a double line break.\nThe paper conforms directly to your chosen font and paper theme.`}
+                            value={poetryRawText}
+                            style={{
+                              color: currentTheme.ink,
+                              fontFamily: currentFont.fontFamily,
+                              textAlign: poetryAlignment
+                            }}
+                            onChange={(e) => {
+                              setPoetryRawText(e.target.value);
+                              setStory(e.target.value);
+                            }}
+                          />
+                        </div>
+
+                        <div className="po-canvas-footer">
+                          <input
+                            type="text"
+                            className="po-canvas-signature"
+                            placeholder="Poet Signature (e.g. — Afshaan Shaikh, 2026)"
+                            value={authorSignature}
+                            style={{
+                              color: currentTheme.sub,
+                              fontFamily: currentFont.fontFamily,
+                              textAlign: poetryAlignment
+                            }}
+                            onChange={(e) => setAuthorSignature(e.target.value)}
+                          />
+                          <div className="po-canvas-stats" style={{ color: currentTheme.sub }}>
+                            <span>{parsedStanzas.length} Stanza{parsedStanzas.length !== 1 ? 's' : ''}</span>
+                            <span>·</span>
+                            <span>{poetryRawText.split('\n').filter(Boolean).length} Lines</span>
+                            <span>·</span>
+                            <span>~{Math.max(1, Math.ceil(poetryRawText.split(/\s+/).filter(Boolean).length / 70))} min read</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Curated Sanctuary Samples */}
+                      <div className="or">or try a curated sanctuary masterpiece verse</div>
+                      <div className="po-preset-row">
+                        {PRESET_POETRY_SAMPLES.map((sample, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            className="po-preset-pill"
+                            onClick={() => {
+                              setTitle(sample.title);
+                              setPoetrySubtitle(sample.subtitle);
+                              setAuthorSignature(`— ${sample.author}, 2026`);
+                              setPoetryTheme(sample.theme);
+                              setPoetryFont(sample.font);
+                              setPoetryAlignment(sample.alignment);
+                              setPoetryRawText(sample.stanzas.join('\n\n'));
+                              setStory(sample.stanzas.join('\n\n'));
+                              setPalette(sample.palette);
+                              setMedium(sample.medium);
+                              setHasTitleError(false);
+                            }}
+                          >
+                            <i>📜</i>
+                            <div>
+                              <b>{sample.title}</b>
+                              <span>{sample.author} · {sample.subtitle}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    /* Upload Handwritten Manuscript Mode */
+                    <div style={{ display: 'grid', gap: '16px' }}>
+                      <label
+                        className={`dz ${handwrittenSrc ? 'has' : ''}`}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.add('over');
+                        }}
+                        onDragLeave={(e) => {
+                          e.currentTarget.classList.remove('over');
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.remove('over');
+                          if (e.dataTransfer.files[0]) processHandwrittenFile(e.dataTransfer.files[0]);
+                        }}
+                      >
+                        <input
+                          ref={handwrittenInputRef}
+                          type="file"
+                          hidden
+                          accept="image/*,application/pdf"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) processHandwrittenFile(e.target.files[0]);
+                          }}
+                        />
+                        <div className="dzin">
+                          <i>📜</i>
+                          <b>Drop your handwritten poetry or calligraphy scan here</b>
+                          <span>Supports all formats: PNG, JPG, WebP, GIF, SVG · up to 50 MB</span>
+                        </div>
+                        {handwrittenSrc && (
+                          <div className="pv">
+                            <img src={handwrittenSrc} alt="Handwritten Poetry Preview" />
+                            <button
+                              type="button"
+                              className="rm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setHandwrittenSrc('');
+                                setHandwrittenFile(null);
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )}
+                      </label>
+
+                      <div className="or">or try a sample handwritten manuscript scan</div>
+                      <div className="smps">
+                        {PRESET_HANDWRITTEN_SAMPLES.map((sample, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            title={sample.title}
+                            onClick={() => {
+                              setHandwrittenSrc(sample.src);
+                              setMediaSrc(sample.src);
+                              setTitle(sample.title);
+                              setMedium(sample.medium);
+                              setPalette(sample.palette);
+                              setHasTitleError(false);
+                            }}
+                          >
+                            <img src={sample.src} alt={sample.title} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
-                /* Visual / Video / Poetry Artwork Upload */
+                /* Visual / Video Artwork Upload */
                 <>
                   <label
                     className={`dz ${mediaSrc ? 'has' : ''}`}
@@ -1019,30 +1600,30 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                     onDrop={(e) => {
                       e.preventDefault();
                       e.currentTarget.classList.remove('over');
-                      if (e.dataTransfer.files[0]) processUploadedFile(e.dataTransfer.files[0]);
+                      if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
                     }}
                   >
                     <input
                       ref={fileInputRef}
                       type="file"
                       hidden
-                      accept="image/*,video/mp4"
+                      accept="image/*,video/*"
                       onChange={(e) => {
-                        if (e.target.files?.[0]) processUploadedFile(e.target.files[0]);
+                        if (e.target.files?.[0]) processFile(e.target.files[0]);
                       }}
                     />
                     <div className="dzin">
-                      <i>⤒</i>
-                      <b>Drop your file here</b>
-                      <span>or click to browse your device</span>
+                      <i>{typeIndex === 4 || isVideo ? '🎞️' : '🖼️'}</i>
+                      <b>Drop your piece here</b>
+                      <span>or click to browse from your device</span>
                     </div>
                     <div className="pv">
                       {mediaSrc && (
                         <>
                           {isVideo ? (
-                            <video src={mediaSrc} autoPlay loop muted playsInline />
+                            <video src={mediaSrc} controls autoPlay loop muted />
                           ) : (
-                            <img src={mediaSrc} alt="Artwork preview" />
+                            <img src={mediaSrc} alt="Artwork Preview" />
                           )}
                           <button
                             type="button"
@@ -1091,15 +1672,14 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                         type="button"
                         title={preset.name}
                         onClick={() => {
-                          const isVid = preset.category === 'video';
-                          updateMediaSource(preset.src, isVid);
+                          updateMediaSource(preset.src, preset.category === 'video');
                           setTitle(preset.name);
                           setMedium(preset.medium);
                           setPalette(preset.palette);
-                          if (preset.category === 'painting') setStyleIndex(0);
-                          else if (preset.category === 'drawing') setStyleIndex(1);
-                          else if (preset.category === 'digital') setStyleIndex(2);
-                          else if (preset.category === 'video') setStyleIndex(3);
+                          if (preset.category === 'painting') setStyleIndex(1);
+                          else if (preset.category === 'drawing') setStyleIndex(2);
+                          else if (preset.category === 'digital') setStyleIndex(3);
+                          else if (preset.category === 'video') setStyleIndex(4);
                         }}
                       >
                         <img src={preset.src} alt={preset.name} />
@@ -1114,8 +1694,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           {/* STEP 2: STORY */}
           <div hidden={step !== 2}>
             <section className="blk">
-              <h3>Name your piece</h3>
-              <p className="hint">Only the title is required. The rest helps people understand your work.</p>
+              <h3>{typeIndex === 1 ? 'Title & poetic notes' : 'Name your piece'}</h3>
+              <p className="hint">
+                {typeIndex === 1
+                  ? 'Only the title is required. Add collection notes or inspiration behind your verse.'
+                  : 'Only the title is required. The rest helps people understand your work.'}
+              </p>
 
               <div className={`fld ${hasTitleError && !title.trim() ? 'bad' : ''}`}>
                 <label>Title *</label>
@@ -1132,7 +1716,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
               <div className="g2">
                 <div className="fld">
-                  <label>Made with</label>
+                  <label>{typeIndex === 1 ? 'Paper & Typographic Medium' : 'Made with'}</label>
                   <input
                     placeholder="e.g. Oil on canvas, Procreate"
                     value={medium}
@@ -1140,19 +1724,22 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                   />
                 </div>
                 <div className="fld">
-                  <label>Size</label>
+                  <label>Size / Resolution</label>
                   <input
-                    placeholder="e.g. 120 × 160 cm"
+                    placeholder="e.g. 120 × 160 cm, 4K"
                     value={dims}
                     onChange={(e) => setDims(e.target.value)}
                   />
                 </div>
+              </div>
+
+              <div className="g2">
                 <div className="fld">
-                  <label>Year</label>
+                  <label>Year created</label>
                   <input
                     type="number"
                     value={year}
-                    onChange={(e) => setYear(parseInt(e.target.value) || 2026)}
+                    onChange={(e) => setYear(parseInt(e.target.value) || new Date().getFullYear())}
                   />
                 </div>
                 <div className="fld">
@@ -1170,79 +1757,29 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                 </div>
               </div>
 
-              {/* Music specific details */}
-              {typeIndex === 0 && (
-                <div className="g2" style={{ marginBottom: '18px' }}>
-                  <div className="fld" style={{ marginBottom: 0 }}>
-                    <label>Album / Anthology</label>
-                    <input
-                      placeholder="e.g. Sanctuary Nocturnes Vol. I"
-                      value={musicAlbum}
-                      onChange={(e) => setMusicAlbum(e.target.value)}
-                    />
-                  </div>
-                  <div className="fld" style={{ marginBottom: 0 }}>
-                    <label>Genre / Style</label>
-                    <input
-                      placeholder="e.g. Neo-Classical / Ambient Piano"
-                      value={musicGenre}
-                      onChange={(e) => setMusicGenre(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
+              <div className="fld">
+                <label>{typeIndex === 1 ? 'Poetic Inspiration & Liner Notes' : 'Story behind it'}</label>
+                <textarea
+                  rows={4}
+                  maxLength={600}
+                  placeholder={
+                    typeIndex === 1
+                      ? 'Share the emotional moment, rain outside the window, or thoughts that sparked this poem...'
+                      : 'What inspired you? What does it mean? What should people look for?'
+                  }
+                  value={story}
+                  onChange={(e) => setStory(e.target.value)}
+                />
+                <div className="cnt">{story.length} / 600</div>
+              </div>
 
-              {/* Poetry specific subtitle */}
-              {typeIndex === 1 && (
-                <div className="g2" style={{ marginBottom: '18px' }}>
-                  <div className="fld" style={{ marginBottom: 0 }}>
-                    <label>Collection / Subtitle</label>
-                    <input
-                      placeholder="e.g. From 'Monasteries of the Rain'"
-                      value={poetrySubtitle}
-                      onChange={(e) => setPoetrySubtitle(e.target.value)}
-                    />
-                  </div>
-                  <div className="fld" style={{ marginBottom: 0 }}>
-                    <label>Author Signature</label>
-                    <input
-                      placeholder="— Elena Vance, 2026"
-                      value={authorSignature}
-                      onChange={(e) => setAuthorSignature(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-            </section>
-
-            <section className="blk">
-              <h3>Tell its story</h3>
-              <p className="hint">
-                {typeIndex === 1
-                  ? 'Enter your poetry stanzas or creative reflection.'
-                  : 'A few honest sentences are perfect. Not sure where to start? Tap an idea.'}
-              </p>
-              <textarea
-                maxLength={600}
-                placeholder={
-                  typeIndex === 1
-                    ? 'Enter your lines here...\n\nSeparate each stanza with a blank line.'
-                    : 'What did you feel, or want others to feel, when making this?'
-                }
-                value={story}
-                onChange={(e) => setStory(e.target.value)}
-              />
-              <span className="cnt">{story.length} / 600</span>
               <div className="chips sm">
-                {IDEAS.map((idea) => (
+                {(typeIndex === 1 ? POETRY_IDEAS : IDEAS).map((idea) => (
                   <button
                     key={idea}
                     type="button"
                     className="chip"
-                    onClick={() => {
-                      const suffix = story && !/\s$/.test(story) ? ' ' : '';
-                      setStory((prev) => prev + suffix + idea + ' ');
-                    }}
+                    onClick={() => setStory((prev) => (prev ? prev + ' ' + idea : idea))}
                   >
                     + {idea}
                   </button>
@@ -1253,136 +1790,157 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
           {/* STEP 3: FINISH & MUSEUM FRAME */}
           <div hidden={step !== 3}>
-            <div className="fin">
-              {/* Museum Frame Preview */}
-              <aside className="gal">
-                <div className="frame">
-                  <div className="mat">
-                    <div className="art" style={{ aspectRatio: AR[ratioIndex] }}>
-                      {currentDisplayMedia ? (
-                        currentMediaIsVideo ? (
-                          <video src={currentDisplayMedia} autoPlay loop muted playsInline />
+            <section className="blk">
+              <div className="fin">
+                {/* Museum Frame Preview */}
+                <div className="gal">
+                  <div className="frame">
+                    <div className="mat">
+                      <div className="art" style={{ aspectRatio: AR[ratioIndex] }}>
+                        {typeIndex === 1 && poetryMode === 'compose' ? (
+                          <div
+                            className="po-frame-preview"
+                            style={{
+                              background: currentTheme.bg,
+                              color: currentTheme.ink,
+                              borderColor: currentTheme.border,
+                              fontFamily: currentFont.fontFamily,
+                              textAlign: poetryAlignment
+                            }}
+                          >
+                            <div className="po-frame-badge" style={{ color: currentTheme.acc }}>
+                              ✦ POETRY CARD ✦
+                            </div>
+                            <h4 style={{ color: currentTheme.ink, margin: '4px 0 2px', fontSize: '15px', fontWeight: 600 }}>
+                              {title || 'Untitled Verse'}
+                            </h4>
+                            {poetrySubtitle && (
+                              <div style={{ fontSize: '10px', color: currentTheme.sub, fontStyle: 'italic', marginBottom: '8px' }}>
+                                {poetrySubtitle}
+                              </div>
+                            )}
+                            <div className="po-frame-stanzas">
+                              {(parsedStanzas.length > 0 ? parsedStanzas : ['Silence speaks in verse.']).slice(0, 3).map((st, i) => (
+                                <p key={i} style={{ margin: '0 0 6px', fontSize: '11px', lineHeight: 1.6 }}>
+                                  {st}
+                                </p>
+                              ))}
+                            </div>
+                            <div style={{ marginTop: 'auto', paddingTop: '6px', fontSize: '10px', color: currentTheme.sub, fontStyle: 'italic' }}>
+                              {authorSignature || '— Atelier Poet'}
+                            </div>
+                          </div>
+                        ) : typeIndex === 1 && poetryMode === 'upload' && handwrittenSrc ? (
+                          <img src={handwrittenSrc} alt="Handwritten Manuscript" />
+                        ) : typeIndex === 0 && musicCoverSrc ? (
+                          <img src={musicCoverSrc} alt="Album Cover" />
+                        ) : isVideo && mediaSrc ? (
+                          <video src={mediaSrc} autoPlay loop muted playsInline />
+                        ) : mediaSrc ? (
+                          <img src={mediaSrc} alt="Artwork" />
                         ) : (
-                          <img src={currentDisplayMedia} alt={title || 'Artwork'} />
-                        )
-                      ) : (
-                        <span>Your artwork<br />appears here</span>
-                      )}
+                          <span>Your piece will hang here</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="plate">
-                  <b>{title || 'Untitled piece'}</b>
-                  <span>
-                    {[TYPES[typeIndex][1], STYLES[styleIndex], medium, year].filter(Boolean).join(' · ')}
-                  </span>
-                  <div className="pdots">
-                    {palette.map((h, i) => (
-                      <i key={i} style={{ background: h }} />
-                    ))}
-                  </div>
-                  <div className="pbar">
-                    <i style={{ width: `${readyPct}%` }} />
-                  </div>
-                  <span style={{ display: 'block', marginTop: '6px' }}>{readyPct}% complete</span>
-                </div>
-              </aside>
 
-              {/* Final Touches: Colors & Tags */}
-              <section className="blk">
-                <h3>Final touches</h3>
-                <p className="hint">This is how your piece will hang in the Sanctuary.</p>
-
-                <h4>Colors found in your work (picked for you)</h4>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <div className="pal">
-                    {palette.length > 0 ? (
-                      palette.map((h) => (
-                        <button
-                          key={h}
-                          type="button"
-                          className="sw"
-                          title={`${h} (tap to copy)`}
-                          style={{ background: h }}
-                          onClick={() => {
-                            if (navigator.clipboard) {
-                              navigator.clipboard.writeText(h);
-                              showToast(`${h} copied`);
-                            }
-                          }}
-                        />
-                      ))
-                    ) : (
-                      <span className="hint" style={{ margin: 0 }}>
-                        Colors appear after you add artwork.
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    className="ref"
-                    title="Find new colors"
-                    onClick={() => {
-                      if (!currentDisplayMedia) {
-                        showToast('Add your artwork first.');
-                        return;
-                      }
-                      if (currentMediaIsVideo) {
-                        setPalette(randPalette());
-                      } else {
-                        extractColors(currentDisplayMedia, true).then((p) => setPalette(p));
-                      }
-                    }}
-                  >
-                    ↻
-                  </button>
-                </div>
-
-                <h4>Tags help people discover your work</h4>
-                <div className="tgbox">
-                  {tags.map((t, i) => (
-                    <span
-                      key={t + i}
-                      className="tg"
-                      onClick={() => setTags((prev) => prev.filter((_, idx) => idx !== i))}
-                    >
-                      {t} ✕
+                  {/* Brass Placard */}
+                  <div className="plate">
+                    <b>{title || 'Untitled Piece'}</b>
+                    <span>
+                      {[
+                        typeIndex === 1
+                          ? poetryMode === 'compose'
+                            ? `Poetry Card · ${currentTheme.label} · ${currentFont.label}`
+                            : 'Handwritten Poetry Manuscript'
+                          : TYPES[typeIndex][1],
+                        STYLES[styleIndex],
+                        medium,
+                        year
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
                     </span>
-                  ))}
-                  <input
-                    placeholder="Type a tag, press Enter"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ',') {
-                        e.preventDefault();
-                        const v = tagInput.trim().replace(/,/g, '');
-                        if (v && !tags.includes(v)) {
-                          setTags((prev) => [...prev, v]);
-                        }
-                        setTagInput('');
-                      }
-                    }}
-                  />
+                    <div className="pdots">
+                      {palette.map((c, i) => (
+                        <i key={i} style={{ background: c }} />
+                      ))}
+                    </div>
+                    <div className="pbar">
+                      <i style={{ width: `${readyPct}%` }} />
+                    </div>
+                    <small style={{ fontSize: '10px', opacity: 0.8, display: 'block', marginTop: '4px' }}>
+                      {readyPct}% complete
+                    </small>
+                  </div>
                 </div>
-                <div className="chips sm">
-                  {TAGS.map((t) => (
+
+                {/* Tags & Colors Panel */}
+                <div>
+                  <h3>Final touches</h3>
+                  <p className="hint">This is how your piece will hang in the Sanctuary.</p>
+
+                  <h4 style={{ margin: '0 0 10px' }}>Colors found in your work (picked for you)</h4>
+                  <div className="pal">
+                    {palette.map((c, i) => (
+                      <input
+                        key={i}
+                        type="color"
+                        value={c}
+                        onChange={(e) => {
+                          const copy = [...palette];
+                          copy[i] = e.target.value;
+                          setPalette(copy);
+                        }}
+                        className="sw"
+                        style={{ background: c }}
+                      />
+                    ))}
                     <button
-                      key={t}
                       type="button"
-                      className="chip"
+                      className="ref"
+                      title="Shuffle colors"
                       onClick={() => {
-                        if (!tags.includes(t)) {
-                          setTags((prev) => [...prev, t]);
-                        }
+                        const target = typeIndex === 0 ? musicCoverSrc : mediaSrc;
+                        if (target) extractColors(target, true).then((p) => setPalette(p));
+                        else setPalette(randPalette());
                       }}
                     >
-                      + {t}
+                      ↻
                     </button>
-                  ))}
+                  </div>
+
+                  <h4 style={{ margin: '22px 0 10px' }}>Tags help people discover your work</h4>
+                  <div className="tgbox">
+                    {tags.map((t) => (
+                      <button key={t} type="button" className="tg" onClick={() => removeTag(t)}>
+                        {t} ×
+                      </button>
+                    ))}
+                    <input
+                      placeholder="Type a tag, press Enter"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addTag(tagInput);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <div className="chips sm">
+                    {(typeIndex === 1 ? POETRY_TAGS : TAGS).map((t) => (
+                      <button key={t} type="button" className="chip" onClick={() => addTag(t)}>
+                        + {t}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </section>
-            </div>
+              </div>
+            </section>
           </div>
         </div>
 
@@ -1415,7 +1973,48 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             )}
           </div>
         </footer>
+
+        {/* Success Overlay: "Welcome to the Sanctuary" */}
+        {isSuccess && (
+          <div className="ok">
+            <div>
+              <b>✦</b>
+              <h2>Welcome to the Sanctuary</h2>
+              <p style={{ fontStyle: 'italic', color: 'var(--mute)', margin: '10px 0 24px', fontSize: '16px' }}>
+                <span style={{ color: 'var(--ink)' }}>{title}</span> is now live for the world to see.
+              </p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => {
+                    setIsSuccess(false);
+                    onClose();
+                  }}
+                >
+                  Explore Sanctuary
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setIsSuccess(false);
+                    setStep(0);
+                    setTitle('');
+                    setMediaSrc('');
+                    setHandwrittenSrc('');
+                    setStory('');
+                    setTags([]);
+                  }}
+                >
+                  Share another piece
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
+export default UploadModal;
