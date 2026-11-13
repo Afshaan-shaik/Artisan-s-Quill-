@@ -953,3 +953,4 @@ export const ArtworkCard: React.FC<ArtworkCardProps> = ({
     </>
   );
 };
+
