@@ -3,6 +3,7 @@ import { Heart, Bookmark, Play, Pause, Volume2, VolumeX, Sparkles, Image, Film, 
 import { Artwork, ArtCategory } from '../types';
 import { PoetryCard } from './PoetryCard';
 import { MusicArtworkCard } from './MusicArtworkCard';
+import { ArtworkCard } from './ArtworkCard';
 import confetti from 'canvas-confetti';
 import { motion, LayoutGroup } from 'motion/react';
 import { isVideoMedia, isAudioMedia, getMediaPoster } from '../utils/mediaUtils';
@@ -764,47 +765,23 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
                   delay: staggerDelay,
                 },
               }}
-              className="w-full relative min-w-0"
+              className="w-full aspect-square relative min-w-0"
               style={{
                 zIndex: isHoveringGrid ? 10 : 1,
               }}
             >
-              {artwork.category === 'poetry' && artwork.poetryContent ? (
-                <PoetryCard
-                  artwork={artwork}
-                  isMasterpiece={isMasterpiece}
-                  onSelect={onSelectArtwork}
-                  onToggleLike={onToggleLike}
-                  onToggleSave={onToggleSave}
-                  onSelectArtist={onSelectArtist}
-                  onShare={onShareArtwork}
-                  onAddToMoodBoard={onAddToMoodBoard}
-                  onOpenBardModal={onOpenBardModal}
-                />
-              ) : artwork.category === 'music' || artwork.musicData ? (
-                <MusicArtworkCard
-                  artwork={artwork}
-                  index={originalIndex}
-                  isMasterpiece={isMasterpiece}
-                  onSelectArtwork={onSelectArtwork}
-                  onToggleLike={onToggleLike}
-                  onToggleSave={onToggleSave}
-                  onSelectArtist={onSelectArtist}
-                  onShareArtwork={onShareArtwork}
-                  onAddToMoodBoard={onAddToMoodBoard}
-                />
-              ) : (
-                <ArtworkParallaxCard
-                  artwork={artwork}
-                  index={originalIndex}
-                  isMasterpiece={isMasterpiece}
-                  onSelectArtwork={onSelectArtwork}
-                  onToggleLike={onToggleLike}
-                  onToggleSave={onToggleSave}
-                  onShareArtwork={onShareArtwork}
-                  onAddToMoodBoard={onAddToMoodBoard}
-                />
-              )}
+              <ArtworkCard
+                artwork={artwork}
+                index={originalIndex}
+                isMasterpiece={isMasterpiece}
+                onSelectArtwork={onSelectArtwork}
+                onToggleLike={onToggleLike}
+                onToggleSave={onToggleSave}
+                onSelectArtist={onSelectArtist}
+                onShareArtwork={onShareArtwork}
+                onAddToMoodBoard={onAddToMoodBoard}
+                onOpenBardModal={onOpenBardModal}
+              />
             </motion.div>
           );
         })}

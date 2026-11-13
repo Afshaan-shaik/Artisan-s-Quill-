@@ -61,7 +61,7 @@ export interface ActiveLineState {
   lineIdx: number;
 }
 
-interface ZenOverlayProps {
+export interface ZenOverlayProps {
   artwork: Artwork;
   isReciting: boolean;
   activeLine: ActiveLineState | null;
@@ -86,7 +86,7 @@ interface ZenOverlayProps {
   onOpenStoryExporter?: () => void;
 }
 
-const ZenOverlay: React.FC<ZenOverlayProps> = ({
+export const ZenOverlay: React.FC<ZenOverlayProps> = ({
   artwork,
   isReciting,
   activeLine,

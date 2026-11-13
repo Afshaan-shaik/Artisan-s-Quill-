@@ -630,7 +630,7 @@ function GridCard({
 
   return (
     <article
-      className="rounded-2xl overflow-hidden transition-all parchment-page-appear"
+      className="w-full aspect-square rounded-2xl overflow-hidden transition-all parchment-page-appear flex flex-col justify-between"
       style={{
         background: 'linear-gradient(145deg, rgba(26,18,8,0.95) 0%, rgba(38,27,16,0.98) 100%)',
         border: `1px solid ${hovered ? 'rgba(200,160,80,0.35)' : 'rgba(200,160,80,0.12)'}`,
@@ -652,7 +652,7 @@ function GridCard({
             : 'linear-gradient(to right, #8B6331, #C8A050)',
         }}
       />
-      <div className="p-5">
+      <div className="p-5 flex-1 flex flex-col justify-between">
         {pc?.poemNumber && (
           <p className="font-im-fell italic text-xs mb-1 opacity-40" style={{ color: '#9b8060' }}>
             {pc.poemNumber}
