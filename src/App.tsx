@@ -35,7 +35,7 @@ import { MagnifyingDockNavbar } from './components/MagnifyingDockNavbar';
 import { GallerySpineNavbar } from './components/GallerySpineNavbar';
 import { DynamicIslandNavbar } from './components/DynamicIslandNavbar';
 import { MasonryGrid } from './components/MasonryGrid';
-import { MediaUploadModal } from './components/MediaUploadModal';
+import { UploadModal } from './components/UploadModal';
 import { realtimeBroker } from './services/realtimeBroker';
 import { ArtworkDetailModal } from './components/ArtworkDetailModal';
 import { ExhibitionsView } from './components/ExhibitionsView';
@@ -784,7 +784,7 @@ export default function App() {
 
   const handleUploadSuccess = (newArtwork: Artwork) => {
     realtimeBroker.broadcastArtwork(newArtwork);
-    setIsUploadModalOpen(false);
+    // Redesigned UploadModal shows the in-modal Welcome to the Sanctuary success state
     triggerNotification(`"${newArtwork.title}" successfully inaugurated into the sanctuary.`, 'success');
   };
   
@@ -1809,7 +1809,7 @@ export default function App() {
       </footer>
 
       {/* Modals Suite */}
-      <MediaUploadModal
+      <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onSuccess={handleUploadSuccess}
