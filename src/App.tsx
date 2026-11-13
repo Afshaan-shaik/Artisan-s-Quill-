@@ -48,6 +48,7 @@ import { RedesignedHeroSection } from './components/RedesignedHeroSection';
 import { RedesignedPoetrySection } from './components/RedesignedPoetrySection';
 import { RedesignedMusicSection } from './components/RedesignedMusicSection';
 import { RedesignedFooter } from './components/RedesignedFooter';
+import { NightSkyEnding } from './components/NightSkyEnding';
 import { selectMasterpieceOfTheDay } from './services/masterpieceEngine';
 import { ArtisticCursor } from './components/ArtisticCursor';
 import { ShareArtworkModal } from './components/ShareArtworkModal';
@@ -1773,6 +1774,9 @@ export default function App() {
           <div className="h-px w-24 sm:w-40 bg-gradient-to-l from-transparent to-[#c9a875]/40" />
         </div>
       </div>
+
+      {/* Night Sky Ending - Closing note from the maker */}
+      <NightSkyEnding />
 
       {/* Footer */}
       <footer className="relative z-20 py-10 px-4 sm:px-6 lg:px-8 xl:px-10 border-t border-white/10 bg-[#050608] text-neutral-400 shadow-2xl">
