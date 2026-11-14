@@ -212,18 +212,18 @@ export const MASTER_SANCTUARY_TRACKS: UniversalTrack[] = [
   {
     id: 'sanc-humsafar',
     title: 'HUMSAFAR',
-    artist: 'Akhil Sachdeva & Mansheel Gujral',
-    album: 'Badrinath Ki Dulhania',
+    artist: 'Qurat-ul-Ain Balouch (QB)',
+    album: 'Humsafar (2012 Drama Serial OST)',
     platform: 'sanctuary',
     sourceType: 'audio-stream',
-    streamUrl: '/audio/1F3Xb_f07Y4.mp4',
+    streamUrl: '/audio/humsafar-ost-2012.mp3',
     youtubeId: 'vee-ARvduA4',
-    artworkUrl: 'https://img.youtube.com/vi/vee-ARvduA4/hqdefault.jpg',
-    durationSeconds: 270,
+    artworkUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80',
+    durationSeconds: 383,
     isOriginal: true,
     versionType: 'original',
-    genre: 'Romantic Ballad',
-    subtitle: 'Akhil Sachdeva • Full Official Master'
+    genre: 'Drama OST • Soul Ghazal',
+    subtitle: 'Humsafar OST the serial of 2012'
   },
   {
     id: 'sanc-stay-interstellar',

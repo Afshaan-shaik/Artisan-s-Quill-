@@ -9,8 +9,11 @@ import { Artwork } from '../types';
 export const KNOWN_AUDIO_PRESETS: Record<string, string> = {
   'tvcaYU7uofY': '/audio/tvcaYU7uofY.mp4', // HUM - Murtaza Qizilbash
   '0enmMyV1Q48': '/audio/0enmMyV1Q48.mp4', // Tum - Murtaza Qizilbash
-  '1F3Xb_f07Y4': '/audio/1F3Xb_f07Y4.mp4', // HUMSAFAR - Akhil Sachdeva
-  'vee-ARvduA4': '/audio/vee-ARvduA4.mp4', // HUMSAFAR alternate
+  '1F3Xb_f07Y4': '/audio/humsafar-ost-2012.mp3', // HUMSAFAR OST 2012 - Qurat-ul-Ain Balouch (QB)
+  'vee-ARvduA4': '/audio/humsafar-ost-2012.mp3', // HUMSAFAR OST 2012 alternate
+  'humsafar-ost-2012': '/audio/humsafar-ost-2012.mp3', // HUMSAFAR OST 2012
+  'sanc-humsafar': '/audio/humsafar-ost-2012.mp3',
+  'music-sanc-humsafar': '/audio/humsafar-ost-2012.mp3',
   'TxuYuvWt19E': '/audio/TxuYuvWt19E.mp4', // Hum Slowed Reverb
   '4NRXx6U8ABQ': '/audio/4NRXx6U8ABQ.mp4', // Blinding Lights
   'Rif-RTvmmss': '/audio/Rif-RTvmmss.mp4', // Starboy
@@ -65,6 +68,12 @@ export function isYouTubeWatchUrl(url?: string | null): boolean {
 export function resolveAudioUrl(input: Artwork | string | undefined | null, explicitYtId?: string): string {
   if (!input) return '';
 
+  // Guaranteed Humsafar resolution: always plays the 2012 OST attached audio
+  const inputTitle = typeof input === 'object' ? String(input.title || input.id || '') : String(input || '');
+  if (/humsafar/i.test(inputTitle)) {
+    return '/audio/humsafar-ost-2012.mp3';
+  }
+
   let rawUrl = '';
   let ytId = explicitYtId || '';
 
@@ -79,6 +88,11 @@ export function resolveAudioUrl(input: Artwork | string | undefined | null, expl
     if (!ytId) {
       ytId = extractYouTubeId(rawUrl) || '';
     }
+  }
+
+  // Check if ytId matches Humsafar presets
+  if (ytId === '1F3Xb_f07Y4' || ytId === 'vee-ARvduA4' || ytId === 'humsafar-ost-2012') {
+    return '/audio/humsafar-ost-2012.mp3';
   }
 
   // If a known YouTube ID is identified, use the high-fidelity pre-cached local stream
@@ -113,11 +127,16 @@ export function resolveAudioUrl(input: Artwork | string | undefined | null, expl
 export function getAudioFallbackUrl(currentSrc?: string | null): string | null {
   if (!currentSrc) return null;
 
+  if (/humsafar/i.test(currentSrc)) {
+    return `${SUPABASE_AUDIO_BASE}humsafar-ost-2012.mp3`;
+  }
+
   // If currently using a local /audio/ path, fall back to Supabase Cloud Storage
   const match = currentSrc.match(/\/audio\/([a-zA-Z0-9_-]+)\.(mp4|m4a|mp3)/i);
   if (match) {
     const filename = match[1];
-    return `${SUPABASE_AUDIO_BASE}${filename}.mp4`;
+    const ext = match[2];
+    return `${SUPABASE_AUDIO_BASE}${filename}.${ext}`;
   }
 
   // If currently on Supabase and it has a corresponding local path

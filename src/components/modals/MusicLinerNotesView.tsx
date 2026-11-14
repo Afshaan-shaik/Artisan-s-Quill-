@@ -236,6 +236,7 @@ export const MusicLinerNotesView: React.FC<MusicLinerNotesViewProps> = ({
     <div className="w-full h-full flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden select-none">
       <audio
         ref={audioRef}
+        id="music-liner-notes-audio"
         src={audioSrc}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
@@ -394,6 +395,7 @@ export const MusicLinerNotesView: React.FC<MusicLinerNotesViewProps> = ({
 
               {/* Large Gold Circular Play/Pause Button */}
               <button
+                id="music-liner-play-btn"
                 onClick={togglePlay}
                 className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-gradient-to-r from-[#d9b878] to-[#f4e4b5] text-black flex items-center justify-center shadow-[0_0_25px_rgba(217,184,120,0.5)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
                 title={isPlaying ? 'Pause Studio Audio' : 'Play Studio Audio'}
