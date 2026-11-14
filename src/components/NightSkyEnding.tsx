@@ -1,17 +1,24 @@
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+
+const LINE_1 = 'Build with love';
+const LINE_2 = 'for all the creative artists out there,';
+
+// Smooth, fluid typing rhythm (within specified 35–50ms typing and 20–30ms deletion ranges)
+const CHAR_TYPE_INTERVAL = 42; // ms per char
+const CHAR_DELETE_INTERVAL = 24; // ms per char
+const LINE_PAUSE_INTERVAL = 220; // ms pause between line 1 and line 2
+const COMPLETED_HOLD_INTERVAL = 1450; // ms pause when both lines are fully rendered
+const RESTART_PAUSE_INTERVAL = 380; // ms pause after erasing before re-typing
 
 export const NightSkyEnding: React.FC = () => {
-  const secRef = useRef<HTMLElement | null>(null);
-  const lineARef = useRef<HTMLSpanElement | null>(null);
-  const lineBRef = useRef<HTMLSpanElement | null>(null);
-  const lineCRef = useRef<HTMLSpanElement | null>(null);
-  const runIdRef = useRef(0);
-  const startedRef = useRef(false);
+  const [line1, setLine1] = useState('');
+  const [line2, setLine2] = useState('');
+  const [activeCursorLine, setActiveCursorLine] = useState<1 | 2>(1);
+  const [isCompleted, setIsCompleted] = useState(false);
 
-  // 46 deterministic twinkling stars
+  // 46 deterministic twinkling stars across the dark night sky
   const stars = useMemo(() => {
     return Array.from({ length: 46 }, (_, i) => {
-      // Deterministic spread across the sky
       const left = ((i * 17.3 + 7.9) % 100).toFixed(2);
       const top = ((i * 31.7 + 13.1) % 94).toFixed(2);
       const size = (1 + ((i * 7) % 20) / 10).toFixed(2);
@@ -27,115 +34,100 @@ export const NightSkyEnding: React.FC = () => {
     });
   }, []);
 
-  const play = useCallback(async () => {
-    const sec = secRef.current;
-    if (!sec) return;
+  useEffect(() => {
+    let isCancelled = false;
 
-    const lineA = lineARef.current;
-    const lineB = lineBRef.current;
-    const lineC = lineCRef.current;
-    if (!lineA || !lineB || !lineC) return;
+    const sleep = (ms: number) =>
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, ms);
+      });
 
-    const lines = [lineA, lineB, lineC];
-    const id = ++runIdRef.current;
-    sec.classList.remove('done');
+    // Check user accessibility preference for reduced motion
+    const reduceMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Check prefers-reduced-motion
-    const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    // Reset lines
-    lines.forEach((l) => {
-      l.innerHTML = '';
-    });
-
-    if (reduce) {
-      // Instant render for reduced motion
-      lineA.textContent = 'Build with love';
-      lineB.textContent = 'for all the creative artists out there,';
-      lineC.textContent = 'be creative, be you.';
-      const st = document.createElement('span');
-      st.className = 'st';
-      st.textContent = '⭐';
-      lineC.appendChild(st);
-      sec.classList.add('done');
+    if (reduceMotion) {
+      setLine1(LINE_1);
+      setLine2(LINE_2);
+      setIsCompleted(true);
       return;
     }
 
-    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-    const caret = document.createElement('span');
-    caret.className = 'caret';
+    // Continuous automatic typewriter lifecycle
+    const runTypewriterCycle = async () => {
+      while (!isCancelled) {
+        // 1. Reset text and begin with Line 1
+        setActiveCursorLine(1);
+        setIsCompleted(false);
+        setLine1('');
+        setLine2('');
 
-    for (let li = 0; li < lines.length; li++) {
-      const l = lines[li];
-      const textAttr = l.getAttribute('data-t') || '';
-      const words = textAttr.split(' ');
-
-      for (let wi = 0; wi < words.length; wi++) {
-        if (id !== runIdRef.current) return;
-        const w = document.createElement('span');
-        l.appendChild(w);
-        if (wi < words.length - 1) {
-          l.appendChild(document.createTextNode(' '));
-        }
-        w.after(caret);
-
-        for (let ci = 0; ci < words[wi].length; ci++) {
-          if (id !== runIdRef.current) return;
-          w.textContent += words[wi][ci];
-          await sleep(50 + Math.random() * 70);
+        // 2. Type Line 1 character-by-character
+        for (let i = 1; i <= LINE_1.length; i++) {
+          if (isCancelled) return;
+          setLine1(LINE_1.slice(0, i));
+          await sleep(CHAR_TYPE_INTERVAL);
         }
 
-        if (id !== runIdRef.current) return;
-        await sleep(/[,.]$/.test(words[wi]) ? 380 : 110);
+        if (isCancelled) return;
+        await sleep(LINE_PAUSE_INTERVAL);
+
+        // 3. Move cursor to Line 2 and type character-by-character
+        setActiveCursorLine(2);
+        for (let i = 1; i <= LINE_2.length; i++) {
+          if (isCancelled) return;
+          setLine2(LINE_2.slice(0, i));
+          await sleep(CHAR_TYPE_INTERVAL);
+        }
+
+        if (isCancelled) return;
+
+        // 4. Both lines completely displayed: trigger hold & shooting star
+        setIsCompleted(true);
+        await sleep(COMPLETED_HOLD_INTERVAL);
+
+        if (isCancelled) return;
+        setIsCompleted(false);
+
+        // 5. Smoothly erase Line 2 character-by-character
+        setActiveCursorLine(2);
+        for (let i = LINE_2.length - 1; i >= 0; i--) {
+          if (isCancelled) return;
+          setLine2(LINE_2.slice(0, i));
+          await sleep(CHAR_DELETE_INTERVAL);
+        }
+
+        if (isCancelled) return;
+
+        // 6. Smoothly erase Line 1 character-by-character
+        setActiveCursorLine(1);
+        for (let i = LINE_1.length - 1; i >= 0; i--) {
+          if (isCancelled) return;
+          setLine1(LINE_1.slice(0, i));
+          await sleep(CHAR_DELETE_INTERVAL);
+        }
+
+        if (isCancelled) return;
+
+        // 7. Brief calm breath before beginning the cycle again
+        await sleep(RESTART_PAUSE_INTERVAL);
       }
+    };
 
-      caret.remove();
-      const sticker = l.getAttribute('data-s');
-      if (sticker) {
-        const st = document.createElement('span');
-        st.className = 'st';
-        st.textContent = sticker;
-        l.appendChild(st);
-      }
-      await sleep(350);
-    }
-
-    if (id === runIdRef.current) {
-      sec.classList.add('done');
-    }
-  }, []);
-
-  useEffect(() => {
-    const sec = secRef.current;
-    if (!sec) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !startedRef.current) {
-            startedRef.current = true;
-            play();
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    observer.observe(sec);
+    runTypewriterCycle();
 
     return () => {
-      observer.disconnect();
-      runIdRef.current++;
+      isCancelled = true;
     };
-  }, [play]);
+  }, []);
 
   return (
     <section
-      ref={secRef}
-      className="nsk"
+      className={`nsk ${isCompleted ? 'done' : ''}`}
       id="night-sky-ending"
       data-stars="46"
-      aria-label="Closing note from the maker"
+      aria-label="Closing continuous signature from the maker"
     >
       {/* 46 Starry Night Twinkling Stars */}
       {stars.map((star) => (
@@ -159,36 +151,22 @@ export const NightSkyEnding: React.FC = () => {
       </span>
       <span className="shoot" aria-hidden="true" />
 
-      {/* Typed Quote */}
+      {/* Continuous Animated Quote */}
       <p
         className="q"
-        aria-label="Build with love for all the creative artists out there, be creative, be you."
+        aria-label="Build with love for all the creative artists out there,"
       >
-        <span ref={lineARef} className="ln a" data-t="Build with love" />
-        <span
-          ref={lineBRef}
-          className="ln b"
-          data-t="for all the creative artists out there,"
-        />
-        <span
-          ref={lineCRef}
-          className="ln c"
-          data-t="be creative, be you."
-          data-s="⭐"
-        />
+        <span className="ln a">
+          {line1}
+          {activeCursorLine === 1 && !isCompleted && <span className="caret" />}
+        </span>
+        <span className="ln b">
+          {line2}
+          {(activeCursorLine === 2 || isCompleted) && <span className="caret" />}
+        </span>
       </p>
-
-      {/* Replay Button */}
-      <button
-        className="rep"
-        type="button"
-        onClick={() => play()}
-        aria-label="Replay closing animation"
-      >
-        ↻ replay
-      </button>
     </section>
   );
 };
-export default NightSkyEnding;
 
+export default NightSkyEnding;

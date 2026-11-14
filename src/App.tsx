@@ -1221,12 +1221,12 @@ export default function App() {
       {/* Main Content Area */}
       <main className={`flex-1 w-full max-w-[1760px] mx-auto ${
         headerVariant === 'spine'
-          ? 'pl-20 sm:pl-[96px] pr-3 sm:pr-6 lg:pr-8 pt-16 sm:pt-20 pb-20'
+          ? 'pl-20 sm:pl-[96px] pr-3 sm:pr-6 lg:pr-8 pt-16 sm:pt-20 pb-10'
           : headerVariant === 'island'
-          ? 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-24 sm:pt-28 pb-24 md:pb-20'
+          ? 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-24 sm:pt-28 pb-8 md:pb-6'
           : headerVariant === 'dock'
-          ? 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-20 sm:pt-24 pb-32'
-          : 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-4 sm:pt-6 pb-24 md:pb-12'
+          ? 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-20 sm:pt-24 pb-16'
+          : 'px-3 sm:px-6 lg:px-8 xl:px-10 pt-4 sm:pt-6 pb-12 md:pb-8'
       } space-y-6 sm:space-y-8 relative z-10`}>
 
         {activeView === 'about' && (
@@ -1763,17 +1763,6 @@ export default function App() {
           </div>
         )}
       </main>
-
-      {/* Museum Hallmark & End-of-Gallery Divider */}
-      <div className="relative z-10 w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-12 pb-2 flex items-center justify-center">
-        <div className="flex items-center gap-4 text-neutral-600">
-          <div className="h-px w-24 sm:w-40 bg-gradient-to-r from-transparent to-[#c9a875]/40" />
-          <span className="font-serif-display italic text-xs tracking-[0.3em] uppercase text-[#c9a875]/70 flex items-center gap-2">
-            ✦ Atelier Sanctuary Archive ✦
-          </span>
-          <div className="h-px w-24 sm:w-40 bg-gradient-to-l from-transparent to-[#c9a875]/40" />
-        </div>
-      </div>
 
       {/* Night Sky Ending - Closing note from the maker */}
       <NightSkyEnding />

@@ -10,7 +10,7 @@ export const RedesignedFooter: React.FC<RedesignedFooterProps> = ({
   onOpenAbout
 }) => {
   return (
-    <footer className="w-full max-w-[1360px] mx-auto pt-24 pb-16 px-4 sm:px-8 text-center" id="atelier-footer">
+    <footer className="w-full max-w-[1360px] mx-auto pt-16 sm:pt-20 pb-4 px-4 sm:px-8 text-center" id="atelier-footer">
       <div className="space-y-6 select-none">
         <span className="mono-tag text-xs tracking-[0.38em] text-[#d8b779] uppercase block font-semibold">
           ✦ The Artisan’s Quill ✦
@@ -31,7 +31,7 @@ export const RedesignedFooter: React.FC<RedesignedFooterProps> = ({
           </button>
         </div>
 
-        <div className="pt-16 border-t border-[rgba(236,214,170,0.12)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono-code text-[#8d897f]">
+        <div className="pt-10 sm:pt-12 border-t border-[rgba(236,214,170,0.12)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono-code text-[#8d897f]">
           <p>
             Original works belong to their respective creators &amp; visionaries · © 2026
           </p>
